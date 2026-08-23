@@ -263,13 +263,19 @@
                       </label>
                     </div>
                   </div>
+                  <!-- Error Message -->
+                  <div v-if="error" class="mb-4 text-sm text-red-500 bg-red-50 p-3 rounded-lg dark:bg-red-500/10 dark:text-red-400">
+                    {{ error }}
+                  </div>
                   <!-- Button -->
                   <div>
                     <button
                       type="submit"
-                      class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600"
+                      :disabled="isLoading"
+                      class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Sign Up
+                      <span v-if="isLoading">Signing up...</span>
+                      <span v-else>Sign Up</span>
                     </button>
                   </div>
                 </div>
@@ -313,7 +319,8 @@
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 
 const firstName = ref('')
 const lastName = ref('')
@@ -321,19 +328,29 @@ const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const agreeToTerms = ref(false)
+const router = useRouter()
+
+const { register, isLoading, error } = useAuth()
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-const handleSubmit = () => {
-  // Implement form submission logic here
-  console.log('Form submitted', {
+const handleSubmit = async () => {
+  if (!agreeToTerms.value) {
+    error.value = "You must agree to the Terms and Conditions."
+    return
+  }
+
+  const success = await register({
     firstName: firstName.value,
     lastName: lastName.value,
     email: email.value,
     password: password.value,
-    agreeToTerms: agreeToTerms.value,
   })
+
+  if (success) {
+    router.push('/')
+  }
 }
 </script>

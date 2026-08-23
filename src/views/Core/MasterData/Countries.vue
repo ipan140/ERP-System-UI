@@ -1,0 +1,210 @@
+<template>
+  <AdminLayout>
+    <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+      <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 class="text-title-md2 font-bold text-black dark:text-white">
+          Daftar Negara (Countries)
+        </h2>
+        <div class="flex gap-2">
+          <button
+            @click="fetchData"
+            class="inline-flex items-center justify-center rounded-md border border-gray-300 py-2 px-4 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            Refresh
+          </button>
+          <button
+            @click="openModal('create')"
+            class="inline-flex items-center justify-center rounded-md bg-brand-500 py-2 px-6 text-center font-medium text-white hover:bg-brand-600"
+          >
+            + Tambah Negara
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Section -->
+      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="max-w-full overflow-x-auto custom-scrollbar">
+          <table class="min-w-full">
+            <thead>
+              <tr class="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">ID</p></th>
+                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nama Negara</p></th>
+                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Kode (ISO)</p></th>
+                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Mata Uang (ID)</p></th>
+                <th class="px-5 py-3 text-right sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Aksi</p></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+              <tr v-if="isLoading" class="border-t border-gray-100 dark:border-gray-800">
+                <td colspan="5" class="px-5 py-4 text-center text-gray-500">Memuat data...</td>
+              </tr>
+              <tr v-else-if="error" class="border-t border-gray-100 dark:border-gray-800">
+                <td colspan="5" class="px-5 py-4 text-center text-red-500">{{ error }}</td>
+              </tr>
+              <tr v-else-if="records.length === 0" class="border-t border-gray-100 dark:border-gray-800">
+                <td colspan="5" class="px-5 py-4 text-center text-gray-500">Data belum ada. Klik "Tambah Negara" untuk mulai.</td>
+              </tr>
+              <tr v-for="record in records" :key="record.id" class="border-t border-gray-100 dark:border-gray-800">
+                <td class="px-5 py-4 sm:px-6"><p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ record.id || '-' }}</p></td>
+                <td class="px-5 py-4 sm:px-6">
+                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ record.name || record.nama || '-' }}</span>
+                </td>
+                <td class="px-5 py-4 sm:px-6"><p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ record.code || '-' }}</p></td>
+                <td class="px-5 py-4 sm:px-6"><p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ record.currency_id || '-' }}</p></td>
+                <td class="px-5 py-4 sm:px-6 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
+                    <button @click="deleteRecord(record.id)" class="text-red-500 hover:text-red-700 font-medium">Hapus</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </AdminLayout>
+
+  <!-- Generic Modal (Simulated with absolute div for simplicity if Modal.vue is complex) -->
+  <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800">
+      <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+        {{ modalMode === 'create' ? 'Tambah Negara' : 'Edit Negara' }}
+      </h3>
+      
+      <form @submit.prevent="saveRecord">
+        <div class="mb-4">
+          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Negara</label>
+          <input v-model="formData.name" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+        </div>
+        
+        <div class="mb-4">
+          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Kode ISO (Contoh: ID, US)</label>
+          <input v-model="formData.code" type="text" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+        </div>
+
+        <div class="mb-6">
+          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">ID Mata Uang</label>
+          <input v-model="formData.currency_id" type="number" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+        </div>
+
+        <div class="flex justify-end gap-3">
+          <button type="button" @click="closeModal" class="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
+          <button type="submit" :disabled="isSaving" class="rounded-md bg-brand-500 px-4 py-2 text-white hover:bg-brand-600 disabled:opacity-50">
+            {{ isSaving ? 'Menyimpan...' : 'Simpan' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import AdminLayout from '@/components/layout/AdminLayout.vue'
+import { API_BASE_URL } from '@/config/api'
+
+// State Data
+const records = ref<any[]>([])
+const isLoading = ref(false)
+const error = ref<string | null>(null)
+
+// State Modal
+const isModalOpen = ref(false)
+const modalMode = ref<'create' | 'edit'>('create')
+const isSaving = ref(false)
+const formData = ref({
+  id: null,
+  name: '',
+  code: '',
+  currency_id: null as number | null
+})
+
+// === CRUD: READ ===
+const fetchData = async () => {
+  isLoading.value = true
+  error.value = null
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`${API_BASE_URL}/core/base/countries`, {
+      headers: { 'Authorization': token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' }
+    })
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
+    
+    const data = await res.json()
+    records.value = Array.isArray(data) ? data : (data.data || [])
+  } catch (err: any) {
+    error.value = 'Gagal mengambil data dari server. (' + err.message + ')'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// === Modal Handlers ===
+const openModal = (mode: 'create' | 'edit', data: any = null) => {
+  modalMode.value = mode
+  if (mode === 'edit' && data) {
+    formData.value = { ...data }
+  } else {
+    formData.value = { id: null, name: '', code: '', currency_id: null }
+  }
+  isModalOpen.value = true
+}
+
+const closeModal = () => {
+  isModalOpen.value = false
+}
+
+// === CRUD: CREATE & UPDATE ===
+const saveRecord = async () => {
+  isSaving.value = true
+  try {
+    const token = localStorage.getItem('token')
+    const isEdit = modalMode.value === 'edit'
+    const method = isEdit ? 'PUT' : 'POST'
+    const url = isEdit 
+      ? `${API_BASE_URL}/core/base/countries/${formData.value.id}` 
+      : `${API_BASE_URL}/core/base/countries`
+
+    const payload = { ...formData.value }
+    delete payload.id // usually backend doesn't need ID in body for POST/PUT
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Authorization': token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    
+    if (!res.ok) throw new Error('Gagal menyimpan data')
+    
+    closeModal()
+    fetchData() // Refresh tabel
+  } catch (err: any) {
+    alert(err.message)
+  } finally {
+    isSaving.value = false
+  }
+}
+
+// === CRUD: DELETE ===
+const deleteRecord = async (id: number) => {
+  if (!confirm('Anda yakin ingin menghapus data ini?')) return
+  
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`${API_BASE_URL}/core/base/countries/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+    })
+    
+    if (!res.ok) throw new Error('Gagal menghapus data')
+    fetchData() // Refresh tabel
+  } catch (err: any) {
+    alert(err.message)
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
+</script>

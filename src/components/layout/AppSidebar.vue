@@ -240,13 +240,62 @@ const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
 const menuGroups = [
   {
-    title: "Menu",
+    title: "FASE 1: CORE & AUTH",
     items: [
       {
         icon: GridIcon,
         name: "Dashboard",
-        subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+        path: "/",
       },
+      {
+        icon: BoxCubeIcon,
+        name: "Master Data",
+        subItems: [
+          { name: "Countries", path: "/core/countries", pro: false },
+          { name: "Currencies", path: "/core/currencies", pro: false },
+        ],
+      },
+      {
+        icon: UserCircleIcon,
+        name: "Access Control",
+        subItems: [
+          { name: "User Roles", path: "/core/user-roles", pro: false },
+          { name: "Permissions", path: "/core/permissions", pro: false },
+        ],
+      },
+      {
+        icon: ChatIcon,
+        name: "Communications",
+        subItems: [
+          { name: "Discuss", path: "/core/discuss", pro: false },
+          { name: "Mailer", path: "/core/mailer", pro: false },
+          { name: "VoIP", path: "/core/voip", pro: false },
+          { name: "WhatsApp", path: "/core/whatsapp", pro: false },
+        ],
+      },
+      {
+        icon: DocsIcon,
+        name: "Documents",
+        subItems: [
+          { name: "Storage", path: "/core/storage", pro: false },
+          { name: "Documents", path: "/core/documents", pro: false },
+          { name: "Report", path: "/core/report", pro: false },
+        ],
+      },
+      {
+        icon: PlugInIcon,
+        name: "Advanced Features",
+        subItems: [
+          { name: "Knowledge (Wiki)", path: "/core/knowledge", pro: false },
+          { name: "IoT", path: "/core/iot", pro: false },
+          { name: "AI Prompts", path: "/core/ai", pro: false },
+        ],
+      }
+    ],
+  },
+  {
+    title: "Template: Menu",
+    items: [
       {
         icon: CalenderIcon,
         name: "Calendar",
@@ -257,7 +306,6 @@ const menuGroups = [
         name: "User Profile",
         path: "/profile",
       },
-
       {
         name: "Forms",
         icon: ListIcon,
@@ -281,7 +329,7 @@ const menuGroups = [
     ],
   },
   {
-    title: "Others",
+    title: "Template: Others",
     items: [
       {
         icon: PieChartIcon,
@@ -311,7 +359,6 @@ const menuGroups = [
           { name: "Signup", path: "/signup", pro: false },
         ],
       },
-      // ... Add other menu items here
     ],
   },
 ];
