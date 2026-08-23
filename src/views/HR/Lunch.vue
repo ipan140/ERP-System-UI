@@ -3,7 +3,7 @@
     <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
       <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 class="text-title-md2 font-bold text-black dark:text-white">
-          Laporan
+          Makan Siang
         </h2>
         <div class="flex gap-2">
           <button @click="fetchData" class="inline-flex items-center justify-center rounded-md border border-gray-300 py-2 px-4 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
@@ -21,7 +21,7 @@
             <thead>
               <tr class="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
                 <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">ID</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nama Laporan</p></th><th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Modul Terkait</p></th>
+                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">ID Karyawan</p></th><th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Tanggal</p></th>
                 <th class="px-5 py-3 text-right sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Aksi</p></th>
               </tr>
             </thead>
@@ -31,7 +31,7 @@
               <tr v-else-if="records.length === 0"><td colspan="4" class="px-5 py-4 text-center text-gray-500">Data masih kosong.</td></tr>
               <tr v-for="record in records" :key="record.id" class="border-t border-gray-100 dark:border-gray-800">
                 <td class="px-5 py-4 sm:px-6"><p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ record.id || '-' }}</p></td>
-                <td class="px-5 py-4 sm:px-6"><p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ record.report_name || '-' }}</p></td><td class="px-5 py-4 sm:px-6"><p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ record.module || '-' }}</p></td>
+                <td class="px-5 py-4 sm:px-6"><p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ record.employee_id || '-' }}</p></td><td class="px-5 py-4 sm:px-6"><p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ record.date || '-' }}</p></td>
                 <td class="px-5 py-4 sm:px-6 text-right">
                   <div class="flex items-center justify-end gap-3">
                     <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
@@ -55,14 +55,16 @@
       <form @submit.prevent="saveRecord">
         
         <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Laporan</label>
-          <input v-model="formData.report_name" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">ID Karyawan</label>
+          <input v-model="formData.employee_id" type="number" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
         </div>
         <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Modul Terkait</label>
-          <select v-model="formData.module" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-            <option value="Finance">Finance</option><option value="HRD">HRD</option><option value="Sales">Sales</option><option value="Core">Core</option>
-          </select>
+          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Tanggal</label>
+          <input v-model="formData.date" type="date" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+        </div>
+        <div class="mb-4">
+          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Menu / Tunjangan</label>
+          <input v-model="formData.menu_or_allowance" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
         </div>
         <div class="flex justify-end gap-3 mt-6">
           <button type="button" @click="closeModal" class="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
@@ -87,13 +89,13 @@ const error = ref<string | null>(null)
 const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
 const isSaving = ref(false)
-const formData = ref({ id: null, report_name: '', module: 'Core' })
+const formData = ref({ id: null, employee_id: null, date: '', menu_or_allowance: '' })
 
 const fetchData = async () => {
   isLoading.value = true; error.value = null
   try {
     const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/core/report`, {
+    const res = await fetch(`${API_BASE_URL}/hr/lunch`, {
       headers: { 'Authorization': token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' }
     })
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
@@ -105,9 +107,9 @@ const fetchData = async () => {
 const openModal = (mode: 'create' | 'edit', data: any = null) => {
   modalMode.value = mode
   if (mode === 'edit' && data) {
-    formData.value = { id: data.id, report_name: data.report_name || '', module: data.module || 'Core' }
+    formData.value = { id: data.id, employee_id: data.employee_id || null, date: data.date || '', menu_or_allowance: data.menu_or_allowance || '' }
   } else {
-    formData.value = { id: null, report_name: '', module: 'Core' }
+    formData.value = { id: null, employee_id: null, date: '', menu_or_allowance: '' }
   }
   isModalOpen.value = true
 }
@@ -120,7 +122,7 @@ const saveRecord = async () => {
     const token = localStorage.getItem('token')
     const isEdit = modalMode.value === 'edit'
     const method = isEdit ? 'PUT' : 'POST'
-    const url = isEdit ? `${API_BASE_URL}/core/report/${formData.value.id}` : `${API_BASE_URL}/core/report`
+    const url = isEdit ? `${API_BASE_URL}/hr/lunch/${formData.value.id}` : `${API_BASE_URL}/hr/lunch`
     
     const payload = { ...formData.value }
     delete payload.id
@@ -139,7 +141,7 @@ const deleteRecord = async (id: number) => {
   if (!confirm('Hapus data ini?')) return
   try {
     const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/core/report/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/hr/lunch/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': token ? `Bearer ${token}` : '' }
     })

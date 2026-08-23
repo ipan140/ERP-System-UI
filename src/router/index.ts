@@ -221,6 +221,61 @@ const router = createRouter({
       component: () => import('../views/Core/Advanced/ArtificialIntelligence.vue'),
       meta: { title: 'Artificial Intelligence' },
     },
+    // FASE 2 ROUTES (HRD)
+    {
+      path: '/hr/employees',
+      name: 'Employees',
+      component: () => import('../views/HR/Employees.vue'),
+      meta: { title: 'Employees' },
+    },
+    {
+      path: '/hr/recruitment',
+      name: 'Recruitment',
+      component: () => import('../views/HR/Recruitment.vue'),
+      meta: { title: 'Recruitment' },
+    },
+    {
+      path: '/hr/attendances',
+      name: 'Attendances',
+      component: () => import('../views/HR/Attendances.vue'),
+      meta: { title: 'Attendances' },
+    },
+    {
+      path: '/hr/time-off',
+      name: 'TimeOff',
+      component: () => import('../views/HR/TimeOff.vue'),
+      meta: { title: 'Time Off' },
+    },
+    {
+      path: '/hr/appraisals',
+      name: 'Appraisals',
+      component: () => import('../views/HR/Appraisals.vue'),
+      meta: { title: 'Appraisals' },
+    },
+    {
+      path: '/hr/referrals',
+      name: 'Referrals',
+      component: () => import('../views/HR/Referrals.vue'),
+      meta: { title: 'Referrals' },
+    },
+    {
+      path: '/hr/payroll',
+      name: 'Payroll',
+      component: () => import('../views/HR/Payroll.vue'),
+      meta: { title: 'Payroll' },
+    },
+    {
+      path: '/hr/lunch',
+      name: 'Lunch',
+      component: () => import('../views/HR/Lunch.vue'),
+      meta: { title: 'Lunch' },
+    },
+    {
+      path: '/hr/fleet',
+      name: 'Fleet',
+      component: () => import('../views/HR/Fleet.vue'),
+      meta: { title: 'Fleet' },
+    },
   ],
 })
 

@@ -240,7 +240,7 @@ const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
 const menuGroups = [
   {
-    title: "FASE 1: CORE & AUTH",
+    title: "CORE & AUTH",
     items: [
       {
         icon: GridIcon,
@@ -291,6 +291,44 @@ const menuGroups = [
           { name: "AI Prompts", path: "/core/ai", pro: false },
         ],
       }
+    ],
+  },
+  {
+    title: "HRD & MANAJEMEN",
+    items: [
+      {
+        icon: UserCircleIcon,
+        name: "Data Induk",
+        subItems: [
+          { name: "Employees", path: "/hr/employees", pro: false },
+          { name: "Recruitment", path: "/hr/recruitment", pro: false },
+        ],
+      },
+      {
+        icon: CalenderIcon,
+        name: "Kehadiran",
+        subItems: [
+          { name: "Attendances", path: "/hr/attendances", pro: false },
+          { name: "Time Off", path: "/hr/time-off", pro: false },
+        ],
+      },
+      {
+        icon: ListIcon,
+        name: "Kinerja & Reward",
+        subItems: [
+          { name: "Appraisals", path: "/hr/appraisals", pro: false },
+          { name: "Referrals", path: "/hr/referrals", pro: false },
+        ],
+      },
+      {
+        icon: PieChartIcon,
+        name: "Benefit & Gaji",
+        subItems: [
+          { name: "Payroll", path: "/hr/payroll", pro: false },
+          { name: "Lunch", path: "/hr/lunch", pro: false },
+          { name: "Fleet (Kendaraan)", path: "/hr/fleet", pro: false },
+        ],
+      },
     ],
   },
   {

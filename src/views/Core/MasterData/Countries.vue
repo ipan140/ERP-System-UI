@@ -126,7 +126,7 @@ const fetchData = async () => {
   error.value = null
   try {
     const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/core/base/countries`, {
+    const res = await fetch(`${API_BASE_URL}/base/country`, {
       headers: { 'Authorization': token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' }
     })
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
@@ -162,9 +162,7 @@ const saveRecord = async () => {
     const token = localStorage.getItem('token')
     const isEdit = modalMode.value === 'edit'
     const method = isEdit ? 'PUT' : 'POST'
-    const url = isEdit 
-      ? `${API_BASE_URL}/core/base/countries/${formData.value.id}` 
-      : `${API_BASE_URL}/core/base/countries`
+    const url = isEdit ? `${API_BASE_URL}/base/country/${formData.value.id}` : `${API_BASE_URL}/base/country`
 
     const payload = { ...formData.value }
     delete payload.id // usually backend doesn't need ID in body for POST/PUT
@@ -192,7 +190,7 @@ const deleteRecord = async (id: number) => {
   
   try {
     const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/core/base/countries/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/base/country/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': token ? `Bearer ${token}` : '' }
     })

@@ -110,7 +110,7 @@ const fetchData = async () => {
   isLoading.value = true; error.value = null
   try {
     const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/core/base/currencies`, {
+    const res = await fetch(`${API_BASE_URL}/base`, {
       headers: { 'Authorization': token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' }
     })
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
@@ -141,7 +141,7 @@ const saveRecord = async () => {
     const token = localStorage.getItem('token')
     const isEdit = modalMode.value === 'edit'
     const method = isEdit ? 'PUT' : 'POST'
-    const url = isEdit ? `${API_BASE_URL}/core/base/currencies/${formData.value.id}` : `${API_BASE_URL}/core/base/currencies`
+    const url = isEdit ? `${API_BASE_URL}/base/${formData.value.id}` : `${API_BASE_URL}/base`
     
     const payload = { ...formData.value }
     delete payload.id
@@ -162,7 +162,7 @@ const deleteRecord = async (id: number) => {
   if (!confirm('Anda yakin ingin menghapus data ini?')) return
   try {
     const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/core/base/currencies/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/base/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': token ? `Bearer ${token}` : '' }
     })
