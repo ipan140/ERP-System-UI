@@ -19,30 +19,11 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/">
-        <img
-          v-if="isExpanded || isHovered || isMobileOpen"
-          class="dark:hidden"
-          src="/images/logo/logo.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img
-          v-if="isExpanded || isHovered || isMobileOpen"
-          class="hidden dark:block"
-          src="/images/logo/logo-dark.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img
-          v-else
-          src="/images/logo/logo-icon.svg"
-          alt="Logo"
-          width="32"
-          height="32"
-        />
+      <router-link to="/" class="flex items-center gap-3">
+        <img src="/images/logo/logo-icon.svg" alt="Logo" width="32" height="32" />
+        <h1 v-if="isExpanded || isHovered || isMobileOpen" class="text-2xl font-bold text-brand-500 dark:text-white">
+          ERP System
+        </h1>
       </router-link>
     </div>
     <div
@@ -206,7 +187,7 @@
           </div>
         </div>
       </nav>
-      <SidebarWidget v-if="isExpanded || isHovered || isMobileOpen" />
+      <!-- Widget removed -->
     </div>
   </aside>
 </template>
@@ -240,13 +221,10 @@ const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
 const menuGroups = [
   {
-    title: "CORE & AUTH",
+    title: "PENGATURAN (SETTING)",
     items: [
-      {
-        icon: GridIcon,
-        name: "Dashboard",
-        path: "/",
-      },
+      { icon: GridIcon, name: "Dashboard", path: "/core/dashboard" },
+      
       {
         icon: BoxCubeIcon,
         name: "Master Data",
@@ -296,6 +274,8 @@ const menuGroups = [
   {
     title: "HRD & MANAJEMEN",
     items: [
+      { icon: GridIcon, name: "Dashboard HRD", path: "/hr/dashboard" },
+      { icon: CalenderIcon, name: "Kalender HRD", path: "/hr/calendar" },
       {
         icon: UserCircleIcon,
         name: "Data Induk",
@@ -332,73 +312,122 @@ const menuGroups = [
     ],
   },
   {
-    title: "Template: Menu",
+    title: "PENJUALAN (SALES)",
     items: [
+      { icon: GridIcon, name: "Dashboard Penjualan", path: "/sales/dashboard" },
+      { icon: CalenderIcon, name: "Kalender Penjualan", path: "/sales/calendar" },
       {
-        icon: CalenderIcon,
-        name: "Calendar",
-        path: "/calendar",
-      },
-      {
-        icon: UserCircleIcon,
-        name: "User Profile",
-        path: "/profile",
-      },
-      {
-        name: "Forms",
-        icon: ListIcon,
+        icon: PlugInIcon,
+        name: "Penjualan (Sales)",
         subItems: [
-          { name: "Form Elements", path: "/form-elements", pro: false },
+          { name: "CRM (Leads)", path: "/sales/crm", pro: false },
+          { name: "Pesanan Penjualan", path: "/sales/core", pro: false },
+          { name: "Point of Sale", path: "/sales/pos", pro: false },
+          { name: "Langganan", path: "/sales/subscriptions", pro: false },
+          { name: "Penyewaan", path: "/sales/rental", pro: false },
         ],
-      },
-      {
-        name: "Tables",
-        icon: TableIcon,
-        subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-      },
-      {
-        name: "Pages",
-        icon: PageIcon,
-        subItems: [
-          { name: "Black Page", path: "/blank", pro: false },
-          { name: "404 Page", path: "/error-404", pro: false },
-        ],
-      },
+      }
     ],
   },
   {
-    title: "Template: Others",
+    title: "PEMASARAN (MARKETING)",
     items: [
+      { icon: GridIcon, name: "Dashboard Pemasaran", path: "/marketing/dashboard" },
+      { icon: CalenderIcon, name: "Kalender Pemasaran", path: "/marketing/calendar" },
       {
-        icon: PieChartIcon,
-        name: "Charts",
+        icon: MailIcon,
+        name: "Pemasaran (Marketing)",
         subItems: [
-          { name: "Line Chart", path: "/line-chart", pro: false },
-          { name: "Bar Chart", path: "/bar-chart", pro: false },
+          { name: "Otomatisasi", path: "/marketing/automation", pro: false },
+          { name: "Email Massal", path: "/marketing/mass-mailing", pro: false },
+          { name: "Pemasaran SMS", path: "/marketing/sms-marketing", pro: false },
+          { name: "Media Sosial", path: "/marketing/social-marketing", pro: false },
+          { name: "Manajemen Acara", path: "/marketing/events", pro: false },
+          { name: "Survei", path: "/marketing/surveys", pro: false },
         ],
-      },
-      {
-        icon: BoxCubeIcon,
-        name: "Ui Elements",
-        subItems: [
-          { name: "Alerts", path: "/alerts", pro: false },
-          { name: "Avatars", path: "/avatars", pro: false },
-          { name: "Badge", path: "/badge", pro: false },
-          { name: "Buttons", path: "/buttons", pro: false },
-          { name: "Images", path: "/images", pro: false },
-          { name: "Videos", path: "/videos", pro: false },
-        ],
-      },
-      {
-        icon: PlugInIcon,
-        name: "Authentication",
-        subItems: [
-          { name: "Signin", path: "/signin", pro: false },
-          { name: "Signup", path: "/signup", pro: false },
-        ],
-      },
+      }
     ],
   },
+  {
+    title: "LAYANAN (SERVICES)",
+    items: [
+      { icon: GridIcon, name: "Dashboard Layanan", path: "/services/dashboard" },
+      { icon: CalenderIcon, name: "Kalender Layanan", path: "/services/calendar" },
+      {
+        icon: UserCircleIcon,
+        name: "Layanan (Services)",
+        subItems: [
+          { name: "Pemesanan Jadwal", path: "/services/appointments", pro: false },
+          { name: "Layanan Lapangan", path: "/services/field_service", pro: false },
+          { name: "Helpdesk", path: "/services/helpdesk", pro: false },
+          { name: "Perencanaan", path: "/services/planning", pro: false },
+          { name: "Manajemen Proyek", path: "/services/project", pro: false },
+          { name: "Reparasi", path: "/services/repairs", pro: false },
+          { name: "Pencatatan Waktu", path: "/services/timesheets", pro: false },
+        ],
+      }
+    ],
+  },
+  {
+    title: "RANTAI PASOK (SUPPLY CHAIN)",
+    items: [
+      { icon: GridIcon, name: "Dashboard Rantai Pasok", path: "/supply_chain/dashboard" },
+      { icon: CalenderIcon, name: "Kalender Rantai Pasok", path: "/supply_chain/calendar" },
+      {
+        icon: BoxCubeIcon,
+        name: "Rantai Pasok (Supply)",
+        subItems: [
+          { name: "Sistem Barcode", path: "/supply_chain/barcode", pro: false },
+          { name: "Gudang & Stok", path: "/supply_chain/inventory", pro: false },
+          { name: "Pemeliharaan", path: "/supply_chain/maintenance", pro: false },
+          { name: "Produksi", path: "/supply_chain/manufacturing", pro: false },
+          { name: "PLM", path: "/supply_chain/plm", pro: false },
+          { name: "Pembelian (PO)", path: "/supply_chain/purchase", pro: false },
+          { name: "Kontrol Kualitas", path: "/supply_chain/quality", pro: false },
+        ],
+      }
+    ],
+  },
+  {
+    title: "KEUANGAN (FINANCE)",
+    items: [
+      { icon: GridIcon, name: "Dashboard Keuangan", path: "/finance/dashboard" },
+      { icon: CalenderIcon, name: "Kalender Keuangan", path: "/finance/calendar" },
+      {
+        icon: PieChartIcon,
+        name: "Keuangan (Finance)",
+        subItems: [
+          { name: "Faktur & Tagihan", path: "/finance/invoicing", pro: false },
+          { name: "Klaim Pengeluaran", path: "/finance/expenses", pro: false },
+          { name: "Akuntansi & Pajak", path: "/finance/accounting", pro: false },
+          { name: "Persetujuan", path: "/finance/approvals", pro: false },
+          { name: "Tanda Tangan Digital", path: "/finance/sign", pro: false },
+          { name: "Konsolidasi", path: "/finance/consolidation", pro: false },
+          { name: "Business Intelligence", path: "/finance/spreadsheet_bi", pro: false },
+          { name: "Dokumen Keuangan", path: "/finance/documents", pro: false },
+        ],
+      }
+    ],
+  },
+  {
+    title: "WEBSITE & PORTAL",
+    items: [
+      { icon: GridIcon, name: "Dashboard Website", path: "/website/dashboard" },
+      { icon: CalenderIcon, name: "Kalender Website", path: "/website/calendar" },
+      {
+        icon: GridIcon,
+        name: "Website & Portal",
+        subItems: [
+          { name: "Toko Online", path: "/website/ecommerce", pro: false },
+          { name: "Blog & Artikel", path: "/website/blog", pro: false },
+          { name: "Website Builder", path: "/website/website_builder", pro: false },
+          { name: "e-Learning", path: "/website/elearning", pro: false },
+          { name: "Forum Komunitas", path: "/website/forum", pro: false },
+          { name: "Live Chat", path: "/website/live_chat", pro: false },
+        ],
+      }
+    ],
+  }
 ];
 
 const isActive = (path) => route.path === path;

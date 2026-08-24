@@ -1,20 +1,10 @@
 <template>
-  <div class="fixed inset-0 flex items-center justify-center overflow-y-auto z-99999">
-    <div
-      v-if="fullScreenBackdrop"
-      class="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
-      aria-hidden="true"
-      @click="$emit('close')"
-    ></div>
-    <slot name="body"></slot>
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800 my-8 relative">
+      <slot></slot>
+    </div>
   </div>
 </template>
 
-<script setup lang="ts">
-interface ModalProps {
-  fullScreenBackdrop?: boolean
-}
-
-defineProps<ModalProps>()
-defineEmits(['close'])
+<script setup>
 </script>
