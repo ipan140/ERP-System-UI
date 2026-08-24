@@ -106,7 +106,8 @@
   </AdminLayout>
 
   <!-- Generic Modal (Simulated with absolute div for simplicity if Modal.vue is complex) -->
-  <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+  <Teleport to="body">
+    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4">
     <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800">
       <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
         {{ modalMode === 'create' ? 'Tambah Negara' : 'Edit Negara' }}
@@ -137,6 +138,7 @@
       </form>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">

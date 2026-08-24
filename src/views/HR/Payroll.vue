@@ -99,7 +99,8 @@
   </AdminLayout>
 
   <!-- Modal CRUD -->
-  <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+  <Teleport to="body">
+    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
     <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800 my-8">
       <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
         {{ modalMode === 'create' ? 'Tambah Data' : 'Edit Data' }}
@@ -127,6 +128,7 @@
       </form>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
