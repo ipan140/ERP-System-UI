@@ -39,7 +39,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
 import { HomeIcon } from '@/icons'
 
 interface BreadcrumbProps {

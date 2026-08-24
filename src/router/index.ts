@@ -6,14 +6,22 @@ const router = createRouter({
     return savedPosition || { left: 0, top: 0 }
   },
   routes: [
+    {
+      path: '/signin',
+      name: 'Signin',
+      component: () => import('../views/Auth/Signin.vue'),
+      meta: { title: 'Sign In' },
+    },
+    {
+      path: '/signup',
+      name: 'Signup',
+      component: () => import('../views/Auth/Signup.vue'),
+      meta: { title: 'Sign Up' },
+    },
     { path: '/profile', name: 'Profile', component: () => import('../views/Core/Profile.vue'), meta: { title: 'User Profile' } },
     {
       path: '/',
-      name: 'Ecommerce',
-      component: () => import('../views/Ecommerce.vue'),
-      meta: {
-        title: 'eCommerce Dashboard',
-      },
+      redirect: '/core/dashboard'
     },
     {
       path: '/core/countries',
@@ -420,6 +428,6 @@ const router = createRouter({
 export default router
 
 router.beforeEach((to, from, next) => {
-  document.title = `Vue.js ${to.meta.title} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
+  document.title = `${to.meta.title} | ERP-System`
   next()
 })
