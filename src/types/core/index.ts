@@ -1,0 +1,14 @@
+export * from './artificial_intelligence.dto';
+export * from './auth.dto';
+export * from './base.dto';
+export * from './dashboards.dto';
+export * from './discuss.dto';
+export * from './iot.dto';
+export * from './knowledge.dto';
+export * from './mailer.dto';
+export * from './permissions.dto';
+export * from './report.dto';
+export * from './storage.dto';
+export * from './user_roles.dto';
+export * from './voip.dto';
+export * from './whatsapp.dto';export * from './roles.dto';

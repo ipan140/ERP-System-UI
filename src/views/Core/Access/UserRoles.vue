@@ -70,18 +70,18 @@
                   </div>
                 </td>
                 <td class="px-5 py-4 sm:px-6">
-                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ record.name || record.title || 'Data ' + (index+1) }}</span>
-                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ record.description || record.job_title || '-' }}</span>
+                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ record.name || 'Data ' + (index+1) }}</span>
+                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ record.description || '-' }}</span>
                 </td>
                 <td class="px-5 py-4 sm:px-6">
                   <Badge color="success">
-                    {{ record.status || 'Active' }}
+                    Active
                   </Badge>
                 </td>
                 <td class="px-5 py-4 sm:px-6 text-right">
                   <div class="flex items-center justify-end gap-3">
                     <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
-                    <button @click="deleteRecord(record.id)" class="text-gray-500 hover:text-error-500 transition-colors" title="Hapus">
+                    <button @click="record.id && deleteRecord(record.id)" class="text-gray-500 hover:text-error-500 transition-colors" title="Hapus">
                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"></path></svg>
                     </button>
                   </div>
@@ -139,8 +139,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import { appRoleService } from '@/services/appRole.service'
-import type { IRoleDto } from '@/types'
+import { appRoleService } from '@/services/core/role.service'
+import type { IRoleDto } from '@/types/core'
 
 const records = ref<IRoleDto[]>([])
 const isLoading = ref(false)

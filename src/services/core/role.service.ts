@@ -1,5 +1,6 @@
-import { http } from "./http";
-import type { IResponse, IRoleDto } from "@/types";
+import { http } from "@/services/http";
+import type { IResponse } from "@/types";
+import type { IRoleDto } from "@/types/core";
 
 export const appRoleService = {
   async getAll(): Promise<IRoleDto[]> {
