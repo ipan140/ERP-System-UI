@@ -17,26 +17,26 @@
         
         <div class="flex items-center gap-4 mb-8">
           <div class="w-16 h-16 rounded-full bg-gray-200 overflow-hidden">
-            <img src="https://ui-avatars.com/api/?name=Musharof+Chowdhury&background=random" alt="Avatar" class="w-full h-full object-cover" />
+            <img :src="currentUser.avatar" alt="Avatar" class="w-full h-full object-cover" />
           </div>
           <div>
-            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">Musharof Chowdhury</h4>
-            <p class="text-sm text-gray-500">Team Manager <span class="mx-2">|</span> Arizona, United States.</p>
+            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ currentUser.name }}</h4>
+            <p class="text-sm text-gray-500">{{ currentUser.role }} <span class="mx-2">|</span> Arizona, United States.</p>
           </div>
         </div>
 
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p class="text-sm text-gray-500 mb-1">First Name</p>
-            <p class="font-medium text-gray-800 dark:text-white/90">Chowdury</p>
+            <p class="font-medium text-gray-800 dark:text-white/90">{{ currentUser.firstName }}</p>
           </div>
           <div>
             <p class="text-sm text-gray-500 mb-1">Last Name</p>
-            <p class="font-medium text-gray-800 dark:text-white/90">Musharof</p>
+            <p class="font-medium text-gray-800 dark:text-white/90">{{ currentUser.lastName }}</p>
           </div>
           <div>
             <p class="text-sm text-gray-500 mb-1">Email address</p>
-            <p class="font-medium text-gray-800 dark:text-white/90">randomuser@pimjo.com</p>
+            <p class="font-medium text-gray-800 dark:text-white/90">{{ currentUser.email }}</p>
           </div>
           <div>
             <p class="text-sm text-gray-500 mb-1">Phone</p>
@@ -44,7 +44,7 @@
           </div>
           <div>
             <p class="text-sm text-gray-500 mb-1">Bio</p>
-            <p class="font-medium text-gray-800 dark:text-white/90">Team Manager</p>
+            <p class="font-medium text-gray-800 dark:text-white/90">{{ currentUser.role }}</p>
           </div>
           <div class="lg:col-span-3">
             <p class="text-sm text-gray-500 mb-1">Social Links</p>
@@ -147,6 +147,34 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+
+const currentUser = ref({
+  name: '',
+  firstName: '',
+  lastName: '',
+  email: '',
+  role: '',
+  avatar: ''
+})
+
+onMounted(() => {
+  try {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      const user = JSON.parse(userStr)
+      currentUser.value.name = user.name || user.email || currentUser.value.name
+      const nameParts = currentUser.value.name.split(' ')
+      currentUser.value.firstName = nameParts[0]
+      currentUser.value.lastName = nameParts.slice(1).join(' ') || nameParts[0]
+      currentUser.value.email = user.email || currentUser.value.email
+      currentUser.value.role = user.role || currentUser.value.role
+      currentUser.value.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.value.name)}&background=random`
+    }
+  } catch (e) {
+    console.error('Failed to parse user', e)
+  }
+})
 </script>

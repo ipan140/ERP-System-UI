@@ -422,6 +422,15 @@ const router = createRouter({
 export default router
 
 router.beforeEach((to, from, next) => {
-  document.title = `${to.meta.title} | ERP-System`
-  next()
+  document.title = `${to.meta.title || 'App'} | ERP-System`
+  
+  const isAuthenticated = !!localStorage.getItem('token')
+  
+  if (to.name !== 'Signin' && to.name !== 'Signup' && !isAuthenticated) {
+    next({ name: 'Signin' })
+  } else if ((to.name === 'Signin' || to.name === 'Signup') && isAuthenticated) {
+    next({ path: '/' })
+  } else {
+    next()
+  }
 })

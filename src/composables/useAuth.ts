@@ -27,10 +27,14 @@ export function useAuth() {
 
       const data = await response.json();
       
-      // Store token (assuming the backend returns { token: '...' } or similar)
       const token = data.token || data.data?.token;
+      const user = data.user || data.data?.user;
+      
       if (token) {
         localStorage.setItem('token', token);
+        if (user) {
+          localStorage.setItem('user', JSON.stringify(user));
+        }
       } else {
         console.warn('Login successful but no token found in response:', data);
       }
@@ -65,8 +69,12 @@ export function useAuth() {
       // If backend auto-logins after register, it might return a token
       const data = await response.json();
       const token = data.token || data.data?.token;
+      const user = data.user || data.data?.user;
       if (token) {
         localStorage.setItem('token', token);
+        if (user) {
+          localStorage.setItem('user', JSON.stringify(user));
+        }
       }
 
       return true;
@@ -80,6 +88,7 @@ export function useAuth() {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     router.push('/signin');
   };
 
