@@ -31,7 +31,7 @@
               <tr v-else-if="records.length === 0"><td colspan="4" class="px-5 py-4 text-center text-gray-500">Data masih kosong.</td></tr>
               <tr v-for="record in records" :key="record.id" class="border-t border-gray-100 dark:border-gray-800">
                 <td class="px-5 py-4 sm:px-6"><p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ record.id || '-' }}</p></td>
-                <td class="px-5 py-4 sm:px-6"><p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ record.customer_name || '-' }}</p></td><td class="px-5 py-4 sm:px-6"><p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ record.total_amount || '-' }}</p></td>
+                <td class="px-5 py-4 sm:px-6"><p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ (record as any).customer_name || '-' }}</p></td><td class="px-5 py-4 sm:px-6"><p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ record.total_amount || '-' }}</p></td>
                 <td class="px-5 py-4 sm:px-6 text-right">
                   <div class="flex items-center justify-end gap-3">
                     <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
@@ -127,7 +127,7 @@ const saveRecord = async () => {
     const url = isEdit ? `${API_BASE_URL}/sales/core/${formData.value.id}` : `${API_BASE_URL}/sales/core`
     
     const payload = { ...formData.value }
-    delete payload.id
+    if (payload && (payload as any).id) delete (payload as any).id
 
     const res = await fetch(url, {
       method,

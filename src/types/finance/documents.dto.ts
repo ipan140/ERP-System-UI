@@ -2,7 +2,7 @@ export interface IFinanceDocumentDto {
   created_at?: string;
   id?: number;
   name?: string;
-  partner?: IPartnerDto;
+  partner?: any;
   partner_id?: number;
 }
 

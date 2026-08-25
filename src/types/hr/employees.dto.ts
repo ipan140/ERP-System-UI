@@ -1,6 +1,6 @@
 export interface IContractDto {
   created_at?: string;
-  employee?: IEmployeeDto;
+  employee?: any;
   employee_id?: number;
   end_date?: string;
   id?: number;
@@ -16,14 +16,14 @@ export interface IContractDto {
 export interface IDepartmentDto {
   created_at?: string;
   id?: number;
-  manager?: IEmployeeDto;
+  manager?: any;
   manager_id?: number;
   name?: string;
   parent?: IDepartmentDto;
   parent_id?: number;
 }
 
-export interface IEmployeeDto {
+export interface IDummy2Dto {
   created_at?: string;
   department?: IDepartmentDto;
   department_id?: number;
@@ -32,17 +32,17 @@ export interface IEmployeeDto {
   id?: number;
   job_position?: IJobPositionDto;
   job_position_id?: number;
-  manager?: IEmployeeDto;
+  manager?: any;
   manager_id?: number;
   name?: string;
-  user?: IUserDto;
+  user?: any;
   user_id?: number;
   work_email?: string;
   work_phone?: string;
 }
 
 export interface IEmployeeSkillDto {
-  employee?: IEmployeeDto;
+  employee?: any;
   employee_id?: number;
   id?: number;
   skill?: ISkillDto;
@@ -64,7 +64,7 @@ export interface IResumeLineDto {
   date_end?: string;
   date_start?: string;
   description?: string;
-  employee?: IEmployeeDto;
+  employee?: any;
   employee_id?: number;
   id?: number;
   title?: string;

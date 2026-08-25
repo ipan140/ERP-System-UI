@@ -4,6 +4,6 @@ export interface ISurveyDto {
   id?: number;
   state?: string;
   title?: string;
-  user?: IUserDto;
+  user?: any;
   user_id?: number;
 }

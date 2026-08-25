@@ -10,7 +10,7 @@ export interface ILoginRequestDto {
   password?: string;
 }
 
-export interface IUserDto {
+export interface IDummy0Dto {
   company?: ICompanyDto;
   company_id?: number;
   created_at?: string;

@@ -70,18 +70,18 @@
                   </div>
                 </td>
                 <td class="px-5 py-4 sm:px-6">
-                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ record.name || record.title || 'Data ' + (index+1) }}</span>
-                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ record.description || record.job_title || '-' }}</span>
+                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ (record as any).name || 'Data ' + (index+1) }}</span>
+                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ (record as any).description || '-' }}</span>
                 </td>
                 <td class="px-5 py-4 sm:px-6">
                   <Badge color="success">
-                    {{ record.status || 'Active' }}
+                    {{ 'Active' }}
                   </Badge>
                 </td>
                 <td class="px-5 py-4 sm:px-6 text-right">
                   <div class="flex items-center justify-end gap-3">
                     <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
-                    <button @click="deleteRecord(record.id)" class="text-gray-500 hover:text-error-500 transition-colors" title="Hapus">
+                    <button @click="record.id && deleteRecord(record.id)" class="text-gray-500 hover:text-error-500 transition-colors" title="Hapus">
                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"></path></svg>
                     </button>
                   </div>
@@ -139,12 +139,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import { API_BASE_URL } from '@/config/api'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Alert from '@/components/ui/Alert.vue'
 import Badge from '@/components/ui/Badge.vue'
-import { API_BASE_URL } from '@/config/api'
+import { permissionsService } from '@/services/core/permissions.service'
+import type { IRolePermissionDto } from '@/types/core'
 
-const records = ref<any[]>([])
+const records = ref<IRolePermissionDto[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
@@ -185,36 +187,28 @@ const closeModal = () => { isModalOpen.value = false }
 const saveRecord = async () => {
   isSaving.value = true
   try {
-    const token = localStorage.getItem('token')
-    const isEdit = modalMode.value === 'edit'
-    const method = isEdit ? 'PUT' : 'POST'
-    const url = isEdit ? `${API_BASE_URL}/core/permissions/${formData.value.id}` : `${API_BASE_URL}/core/permissions`
-    
-    const { id, ...payload } = formData.value
-
-    const res = await fetch(url, {
-      method,
-      headers: { 'Authorization': token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    if (!res.ok) throw new Error('Gagal menyimpan data')
-    
+    if (modalMode.value === 'edit' && formData.value.id) {
+      await permissionsService.update(formData.value.id, formData.value)
+    } else {
+      await permissionsService.create(formData.value)
+    }
     closeModal()
     fetchData()
-  } catch (err: any) { alert(err.message) } finally { isSaving.value = false }
+  } catch (err: any) {
+    alert(err.response?.data?.message || err.message)
+  } finally {
+    isSaving.value = false
+  }
 }
 
 const deleteRecord = async (id: number) => {
-  if (!confirm('Anda yakin ingin menghapus data ini?')) return
+  if (!confirm('Hapus data ini?')) return
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/core/permissions/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': token ? `Bearer ${token}` : '' }
-    })
-    if (!res.ok) throw new Error('Gagal menghapus data')
+    await permissionsService.delete(id)
     fetchData()
-  } catch (err: any) { alert(err.message) }
+  } catch (err: any) {
+    alert(err.response?.data?.message || err.message)
+  }
 }
 
 onMounted(() => fetchData())

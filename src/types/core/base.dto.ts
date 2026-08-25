@@ -19,7 +19,7 @@ export interface ICurrencyDto {
   symbol?: string;
 }
 
-export interface IPartnerDto {
+export interface IDummy1Dto {
   city?: string;
   country?: any;
   country_id?: number;

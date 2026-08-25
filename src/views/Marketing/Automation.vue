@@ -35,7 +35,7 @@
                 <td class="px-5 py-4 sm:px-6 text-right">
                   <div class="flex items-center justify-end gap-3">
                     <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
-                    <button @click="deleteRecord(record.id)" class="text-red-500 hover:text-red-700 font-medium">Hapus</button>
+                    <button @click="record.id && deleteRecord(record.id)" class="text-red-500 hover:text-red-700 font-medium">Hapus</button>
                   </div>
                 </td>
               </tr>
@@ -82,7 +82,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import { API_BASE_URL } from '@/config/api'
+import { marketingAutomationService } from '@/services/marketing/automation.service'
 
 const records = ref<any[]>([])
 const isLoading = ref(false)
@@ -96,14 +96,13 @@ const formData = ref({ id: null, campaign_name: '', trigger: '', status: 'Active
 const fetchData = async () => {
   isLoading.value = true; error.value = null
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/marketing/automation`, {
-      headers: { 'Authorization': token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' }
-    })
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
-    const data = await res.json()
-    records.value = Array.isArray(data) ? data : (data.data || [])
-  } catch (err: any) { error.value = 'Gagal: ' + err.message } finally { isLoading.value = false }
+    const data = await marketingAutomationService.getAll()
+    records.value = data
+  } catch (err: any) {
+    error.value = 'Gagal: ' + (err.response?.data?.message || err.message)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const openModal = (mode: 'create' | 'edit', data: any = null) => {
@@ -121,35 +120,28 @@ const closeModal = () => { isModalOpen.value = false }
 const saveRecord = async () => {
   isSaving.value = true
   try {
-    const token = localStorage.getItem('token')
-    const isEdit = modalMode.value === 'edit'
-    const method = isEdit ? 'PUT' : 'POST'
-    const url = isEdit ? `${API_BASE_URL}/marketing/automation/${formData.value.id}` : `${API_BASE_URL}/marketing/automation`
-    
-    const payload = { ...formData.value }
-    delete payload.id
-
-    const res = await fetch(url, {
-      method,
-      headers: { 'Authorization': token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    if (!res.ok) throw new Error('Gagal menyimpan data')
-    closeModal(); fetchData()
-  } catch (err: any) { alert(err.message) } finally { isSaving.value = false }
+    if (modalMode.value === 'edit' && formData.value.id) {
+      await marketingAutomationService.update(formData.value.id, formData.value)
+    } else {
+      await marketingAutomationService.create(formData.value)
+    }
+    closeModal()
+    fetchData()
+  } catch (err: any) {
+    alert(err.response?.data?.message || err.message)
+  } finally {
+    isSaving.value = false
+  }
 }
 
 const deleteRecord = async (id: number) => {
   if (!confirm('Hapus data ini?')) return
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/marketing/automation/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': token ? `Bearer ${token}` : '' }
-    })
-    if (!res.ok) throw new Error('Gagal menghapus')
+    await marketingAutomationService.delete(id)
     fetchData()
-  } catch (err: any) { alert(err.message) }
+  } catch (err: any) {
+    alert(err.response?.data?.message || err.message)
+  }
 }
 
 onMounted(() => fetchData())

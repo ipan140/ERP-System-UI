@@ -70,8 +70,8 @@
                   </div>
                 </td>
                 <td class="px-5 py-4 sm:px-6">
-                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ record.name || 'Data ' + (index+1) }}</span>
-                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ record.description || '-' }}</span>
+                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ (record as any).name || 'Data ' + (index+1) }}</span>
+                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ (record as any).description || '-' }}</span>
                 </td>
                 <td class="px-5 py-4 sm:px-6">
                   <Badge color="success">

@@ -1,7 +1,7 @@
 export interface ILoyaltyProgramDto {
   id?: number;
   name?: string;
-  reward?: IProductDto;
+  reward?: any;
   reward_id?: number;
   type?: string;
 }
@@ -13,11 +13,11 @@ export interface IPosConfigDto {
   name?: string;
 }
 
-export interface IPosOrderDto {
+export interface IDummy3Dto {
   created_at?: string;
   id?: number;
   name?: string;
-  partner?: IPartnerDto;
+  partner?: any;
   partner_id?: number;
   session?: IPosSessionDto;
   session_id?: number;
@@ -27,10 +27,10 @@ export interface IPosOrderDto {
 
 export interface IPosOrderLineDto {
   id?: number;
-  order?: ISaleOrderDto;
+  order?: any;
   order_id?: number;
   price_unit?: number;
-  product?: IProductDto;
+  product?: any;
   product_id?: number;
   qty?: number;
   sub_total?: number;
@@ -40,7 +40,7 @@ export interface IPosPaymentDto {
   amount?: number;
   id?: number;
   method?: string;
-  order?: ISaleOrderDto;
+  order?: any;
   order_id?: number;
 }
 

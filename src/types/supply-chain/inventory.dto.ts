@@ -1,4 +1,4 @@
-export interface IProductDto {
+export interface IDummy5Dto {
   barcode?: string;
   created_at?: string;
   default_code?: string;

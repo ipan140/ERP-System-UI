@@ -9,7 +9,7 @@ export interface IInvoiceDto {
   incoterm_id?: number;
   invoice_date?: string;
   name?: string;
-  partner?: IPartnerDto;
+  partner?: any;
   partner_id?: number;
   payment_term?: IPaymentTermDto;
   payment_term_id?: number;

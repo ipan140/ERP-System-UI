@@ -127,7 +127,7 @@ const saveRecord = async () => {
     const url = isEdit ? `${API_BASE_URL}/sales/pos/${formData.value.id}` : `${API_BASE_URL}/sales/pos`
     
     const payload = { ...formData.value }
-    delete payload.id
+    delete (payload as any).id
 
     const res = await fetch(url, {
       method,

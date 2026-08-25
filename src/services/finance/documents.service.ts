@@ -1,7 +1,7 @@
 import { http } from "@/services/http";
 import type { IResponse } from "@/types";
 
-export const financeDocumentsService = {
+export const documentsService = {
   async getAll(): Promise<any[]> {
     const response = await http.get<IResponse<any[]>>("/finance/documents");
     return response.data.data ?? response.data;

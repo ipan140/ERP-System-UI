@@ -26,7 +26,7 @@ export interface IQuotationTemplateDto {
   name?: string;
 }
 
-export interface ISaleOrderDto {
+export interface IDummy4Dto {
   amount_tax?: number;
   amount_total?: number;
   amount_untaxed?: number;

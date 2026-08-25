@@ -1,5 +1,5 @@
 export interface IBlogPostDto {
-  author?: IUserDto;
+  author?: any;
   author_id?: number;
   content?: string;
   created_at?: string;

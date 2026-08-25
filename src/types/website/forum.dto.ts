@@ -1,5 +1,5 @@
 export interface IForumPostDto {
-  author?: IPartnerDto;
+  author?: any;
   author_id?: number;
   created_at?: string;
   forum_id?: number;
