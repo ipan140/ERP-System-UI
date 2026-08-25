@@ -139,32 +139,25 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
-import Alert from '@/components/ui/Alert.vue'
-import Badge from '@/components/ui/Badge.vue'
-import { API_BASE_URL } from '@/config/api'
+import { appRoleService } from '@/services/appRole.service'
+import type { IRoleDto } from '@/types'
 
-const records = ref<any[]>([])
+const records = ref<IRoleDto[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
 const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
 const isSaving = ref(false)
-const formData = ref({ id: null, name: '', description: '' })
+const formData = ref<IRoleDto>({ name: '', description: '' })
 
 const fetchData = async () => {
   isLoading.value = true; error.value = null
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/core/user_roles`, {
-      headers: { 'Authorization': token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' }
-    })
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
-    const data = await res.json()
-    records.value = Array.isArray(data) ? data : (data.data || [])
+    const data = await appRoleService.getAll()
+    records.value = data
   } catch (err: any) {
-    error.value = 'Gagal mengambil data dari server. (' + err.message + ')'
+    error.value = 'Gagal mengambil data dari server. (' + (err.response?.data?.message || err.message) + ')'
   } finally {
     isLoading.value = false
   }
@@ -175,7 +168,7 @@ const openModal = (mode: 'create' | 'edit', data: any = null) => {
   if (mode === 'edit' && data) {
     formData.value = { ...data }
   } else {
-    formData.value = { id: null, name: '', description: '' }
+    formData.value = { name: '', description: '' }
   }
   isModalOpen.value = true
 }
@@ -185,36 +178,28 @@ const closeModal = () => { isModalOpen.value = false }
 const saveRecord = async () => {
   isSaving.value = true
   try {
-    const token = localStorage.getItem('token')
-    const isEdit = modalMode.value === 'edit'
-    const method = isEdit ? 'PUT' : 'POST'
-    const url = isEdit ? `${API_BASE_URL}/core/user_roles/${formData.value.id}` : `${API_BASE_URL}/core/user_roles`
-    
-    const { id, ...payload } = formData.value
-
-    const res = await fetch(url, {
-      method,
-      headers: { 'Authorization': token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    if (!res.ok) throw new Error('Gagal menyimpan data')
-    
+    if (modalMode.value === 'edit' && formData.value.id) {
+      await appRoleService.update(formData.value.id, formData.value)
+    } else {
+      await appRoleService.create(formData.value)
+    }
     closeModal()
     fetchData()
-  } catch (err: any) { alert(err.message) } finally { isSaving.value = false }
+  } catch (err: any) {
+    alert(err.response?.data?.message || err.message)
+  } finally {
+    isSaving.value = false
+  }
 }
 
 const deleteRecord = async (id: number) => {
   if (!confirm('Anda yakin ingin menghapus data ini?')) return
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/core/user_roles/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': token ? `Bearer ${token}` : '' }
-    })
-    if (!res.ok) throw new Error('Gagal menghapus data')
+    await appRoleService.delete(id)
     fetchData()
-  } catch (err: any) { alert(err.message) }
+  } catch (err: any) {
+    alert(err.response?.data?.message || err.message)
+  }
 }
 
 onMounted(() => fetchData())
