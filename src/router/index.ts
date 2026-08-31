@@ -426,11 +426,49 @@ router.beforeEach((to, from, next) => {
   
   const isAuthenticated = !!localStorage.getItem('token')
   
+  // 1. Authentication Guard
   if (to.name !== 'Signin' && to.name !== 'Signup' && !isAuthenticated) {
-    next({ name: 'Signin' })
+    return next({ name: 'Signin' })
   } else if ((to.name === 'Signin' || to.name === 'Signup') && isAuthenticated) {
-    next({ path: '/' })
-  } else {
-    next()
+    return next({ path: '/' })
   }
+
+  // 2. Authorization / Role Guard
+  if (isAuthenticated) {
+    let userRole = '';
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      userRole = user.role ? user.role.toUpperCase() : '';
+    } catch (e) {}
+
+    // If superadmin, allow everything
+    if (userRole !== 'SUPERADMIN') {
+      const pathPrefix = to.path.split('/')[1]; // e.g. 'marketing' from '/marketing/calendar'
+      
+      const roleModuleMap: Record<string, string[]> = {
+        'HR': ['hr', 'core'],
+        'SALES': ['sales', 'core'],
+        'MARKETING': ['marketing', 'core'],
+        'FINANCE': ['finance', 'core'],
+        'SERVICES': ['services', 'core'],
+        'SUPPLYCHAIN': ['supply_chain', 'core'],
+        'WEBSITE': ['website', 'core']
+      };
+
+      const allowedModules = roleModuleMap[userRole] || ['core'];
+      const knownModules = ['hr', 'sales', 'marketing', 'finance', 'services', 'supply_chain', 'website'];
+      
+      // If navigating to a known restricted module that is NOT in the user's allowed list
+      if (knownModules.includes(pathPrefix) && !allowedModules.includes(pathPrefix)) {
+        alert(`Access Denied! Your role (${userRole || 'UNKNOWN'}) does not have permission to access the ${pathPrefix.toUpperCase()} module.`);
+        // If they were trying to load it directly, redirect to their own dashboard
+        if (from.path === '/') {
+          return next({ path: `/${allowedModules[0]}/dashboard` });
+        }
+        return next(false); // Cancel navigation
+      }
+    }
+  }
+
+  next()
 })

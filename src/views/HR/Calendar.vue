@@ -35,36 +35,65 @@
                 />
               </div>
 
-              <div class="mt-6">
-                <label class="block mb-4 text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Event Color
+                <div class="mt-4">
+                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Description</label>
+                  <textarea v-model="eventDescription" class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800" rows="3"></textarea>
+                </div>
+                <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Location</label>
+                    <input v-model="eventLocation" type="text" class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800" />
+                  </div>
+                  <div>
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Meeting URL</label>
+                    <input v-model="eventMeetingUrl" type="url" class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800" />
+                  </div>
+                </div>
+                <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Event Type</label>
+                    <input v-model="eventType" type="text" class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800" />
+                  </div>
+                  <div>
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Visibility</label>
+                    <select v-model="eventVisibility" class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
+                      <option value="private">Private</option>
+                      <option value="public">Public</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="mt-6">
+                  <label class="block mb-4 text-sm font-medium text-gray-700 dark:text-gray-400">
+                    Event Color
                 </label>
                 <div class="flex flex-wrap items-center gap-4 sm:gap-5">
-                  <div v-for="(value, key) in calendarsEvents" :key="key" class="n-chk">
-                    <div :class="`form-check form-check-${value} form-check-inline`">
-                      <label
-                        class="flex items-center text-sm text-gray-700 form-check-label dark:text-gray-400"
-                        :for="`modal${key}`"
-                      >
-                        <span class="relative">
-                          <input
-                            type="radio"
-                            :name="'event-level'"
-                            :value="key"
-                            :id="`modal${key}`"
-                            v-model="eventLevel"
-                            class="sr-only form-check-input"
-                          />
-                          <span
-                            class="flex items-center justify-center w-5 h-5 mr-2 border border-gray-300 rounded-full box dark:border-gray-700"
-                          >
-                            <span class="w-2 h-2 bg-white rounded-full dark:bg-transparent"></span>
+                  
+                    <div v-for="evt in calendarsEvents" :key="evt.value" class="n-chk">
+                      <div :class="`form-check form-check-${evt.value} form-check-inline`">
+                        <label
+                          class="flex items-center text-sm text-gray-700 form-check-label dark:text-gray-400"
+                          :for="`modal${evt.value}`"
+                        >
+                          <span class="relative">
+                            <input
+                              type="radio"
+                              :name="'event-level'"
+                              :value="evt.value"
+                              :id="`modal${evt.value}`"
+                              v-model="eventLevel"
+                              class="sr-only form-check-input"
+                            />
+                            <span
+                              class="flex items-center justify-center w-5 h-5 mr-2 border border-gray-300 rounded-full box dark:border-gray-700"
+                            >
+                              <span class="w-2 h-2 bg-white rounded-full dark:bg-transparent"></span>
+                            </span>
                           </span>
-                        </span>
-                        {{ key }}
-                      </label>
+                          {{ evt.label }}
+                        </label>
+                      </div>
                     </div>
-                  </div>
                 </div>
               </div>
 
@@ -74,7 +103,7 @@
                 </label>
                 <input
                   v-model="eventStartDate"
-                  type="date"
+                  type="datetime-local"
                   class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                 />
               </div>
@@ -85,7 +114,7 @@
                 </label>
                 <input
                   v-model="eventEndDate"
-                  type="date"
+                  type="datetime-local"
                   class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                 />
               </div>
@@ -180,7 +209,7 @@
                 </label>
                 <input
                   v-model="eventStartDate"
-                  type="date"
+                  type="datetime-local"
                   class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                 />
               </div>
@@ -191,7 +220,7 @@
                 </label>
                 <input
                   v-model="eventEndDate"
-                  type="date"
+                  type="datetime-local"
                   class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                 />
               </div>
@@ -228,47 +257,59 @@ import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
+  import listPlugin from '@fullcalendar/list'
 import Modal from '@/components/ui/Modal.vue'
+  import { fetchEvents, createEvent, updateEvent, deleteEvent } from '@/services/calendar.service'
 
 const calendarRef = ref(null)
 const isOpen = ref(false)
 const selectedEvent = ref(null)
 const eventTitle = ref('')
+  const eventAllDay = ref(false)
+  const eventDescription = ref('')
+  const eventLocation = ref('')
+  const eventMeetingUrl = ref('')
+  const eventType = ref('')
+  const eventVisibility = ref('private')
 const eventStartDate = ref('')
 const eventEndDate = ref('')
-const eventLevel = ref('')
+const eventLevel = ref('primary')
 const events = ref([])
 
-const calendarsEvents = reactive({
-  Danger: 'danger',
-  Success: 'success',
-  Primary: 'primary',
-  Warning: 'warning',
-})
-
-onMounted(() => {
-  events.value = [
-    {
-      id: '1',
-      title: 'Event Conf.',
-      start: new Date().toISOString().split('T')[0],
-      extendedProps: { calendar: 'Danger' },
-    },
-    {
-      id: '2',
-      title: 'Meeting',
-      start: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-      extendedProps: { calendar: 'Success' },
-    },
-    {
-      id: '3',
-      title: 'Workshop',
-      start: new Date(Date.now() + 172800000).toISOString().split('T')[0],
-      end: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-      extendedProps: { calendar: 'Primary' },
-    },
+const calendarsEvents = [
+    { value: 'danger', label: 'Urgent' },
+    { value: 'warning', label: 'Penting' },
+    { value: 'primary', label: 'Normal' },
+    { value: 'success', label: 'Info' }
   ]
-})
+
+const resModel = 'HR';
+  const loadEvents = async () => {
+    try {
+      const data = await fetchEvents(resModel);
+      events.value = data.map(e => ({
+        id: e.id.toString(),
+        title: e.title,
+        start: e.start,
+        end: e.end ? e.end : '',
+        allDay: e.allDay,
+        extendedProps: { 
+          calendar: e.color || 'primary',
+          description: e.description,
+          location: e.location,
+          meeting_url: e.meeting_url,
+          event_type: e.event_type,
+          visibility: e.visibility
+        }
+      }));
+    } catch (err) {
+      console.error('Failed to load events', err);
+    }
+  }
+
+  onMounted(() => {
+    loadEvents();
+  })
 
 const openModal = () => {
   isOpen.value = true
@@ -281,95 +322,136 @@ const closeModal = () => {
 
 const resetModalFields = () => {
   eventTitle.value = ''
+    eventAllDay.value = false
+    eventDescription.value = ''
+    eventLocation.value = ''
+    eventMeetingUrl.value = ''
+    eventType.value = ''
+    eventVisibility.value = 'private'
   eventStartDate.value = ''
   eventEndDate.value = ''
-  eventLevel.value = ''
+  eventLevel.value = 'primary'
   selectedEvent.value = null
 }
 
-const handleDateSelect = (selectInfo) => {
-  resetModalFields()
-  eventStartDate.value = selectInfo.startStr
-  eventEndDate.value = selectInfo.endStr || selectInfo.startStr
-  openModal()
-}
+
+  const formatDateTimeLocal = (str) => {
+    if (!str) return '';
+    if (str.length === 10) return str + 'T00:00';
+    return str.substring(0, 16);
+  }
+  const handleDateSelect = (selectInfo) => {
+    resetModalFields()
+    eventStartDate.value = formatDateTimeLocal(selectInfo.startStr)
+    eventEndDate.value = selectInfo.endStr ? formatDateTimeLocal(selectInfo.endStr) : formatDateTimeLocal(selectInfo.startStr)
+    openModal()
+  }
 
 const handleEventClick = (clickInfo) => {
-  const event = clickInfo.event
-  selectedEvent.value = event
-  eventTitle.value = event.title
-  eventStartDate.value = event.start?.toISOString().split('T')[0] || ''
-  eventEndDate.value = event.end?.toISOString().split('T')[0] || ''
-  eventLevel.value = event.extendedProps.calendar
-  openModal()
-}
+    const event = clickInfo.event
+    selectedEvent.value = event
+    eventTitle.value = event.title
+    eventDescription.value = event.extendedProps.description || ''
+    eventLocation.value = event.extendedProps.location || ''
+    eventMeetingUrl.value = event.extendedProps.meeting_url || ''
+    eventType.value = event.extendedProps.event_type || ''
+    eventVisibility.value = event.extendedProps.visibility || 'private'
+    eventStartDate.value = event.startStr ? formatDateTimeLocal(event.startStr) : ''
+    eventEndDate.value = event.endStr ? formatDateTimeLocal(event.endStr) : ''
+    eventAllDay.value = event.allDay
+    eventLevel.value = event.extendedProps.calendar
+    openModal()
+  }
 
-const handleAddOrUpdateEvent = () => {
-  if (selectedEvent.value) {
-    // Update existing event
-    events.value = events.value.map((event) =>
-      event.id === selectedEvent.value.id
-        ? {
-            ...event,
-            title: eventTitle.value,
-            start: eventStartDate.value,
-            end: eventEndDate.value,
-            extendedProps: { calendar: eventLevel.value },
-          }
-        : event,
-    )
-  } else {
-    // Add new event
-    const newEvent = {
-      id: Date.now().toString(),
-      title: eventTitle.value,
-      start: eventStartDate.value,
-      end: eventEndDate.value,
-      allDay: true,
-      extendedProps: { calendar: eventLevel.value },
+const handleAddOrUpdateEvent = async () => {
+    try {
+      const payload = {
+        title: eventTitle.value,
+        description: eventDescription.value,
+        location: eventLocation.value,
+        meeting_url: eventMeetingUrl.value,
+        event_type: eventType.value,
+        visibility: eventVisibility.value,
+        start: eventStartDate.value + ':00Z',
+        end: eventEndDate.value ? eventEndDate.value + ':00Z' : null,
+        color: eventLevel.value,
+        res_model: resModel,
+        allDay: eventAllDay.value
+      };
+      
+      if (selectedEvent.value) {
+        await updateEvent(selectedEvent.value.id, payload);
+      } else {
+        await createEvent(payload);
+      }
+      await loadEvents();
+      closeModal();
+    } catch (err) {
+      console.error('Failed to save event', err);
+      alert('Gagal menyimpan event');
     }
-    events.value.push(newEvent)
   }
-  closeModal()
-}
-const handleDeleteEvent = () => {
-  if (selectedEvent.value) {
-    events.value = events.value.filter((event) => event.id !== selectedEvent.value.id)
-    closeModal()
+const handleDeleteEvent = async () => {
+    if (selectedEvent.value) {
+      try {
+        await deleteEvent(selectedEvent.value.id);
+        await loadEvents();
+        closeModal();
+      } catch (err) {
+        console.error('Failed to delete event', err);
+        alert('Gagal menghapus event');
+      }
+    }
   }
-}
 
 const renderEventContent = (eventInfo) => {
-  const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar.toLowerCase()}`
-  return {
-    html: `
-      <div class="event-fc-color flex fc-event-main ${colorClass} p-1 rounded-sm">
-        <div class="fc-daygrid-event-dot"></div>
-        <div class="fc-event-time">${eventInfo.timeText}</div>
-        <div class="fc-event-title">${eventInfo.event.title}</div>
-      </div>
-    `,
+    const colorMap = {
+      danger: 'bg-error-500 text-white border border-error-600',
+      warning: 'bg-orange-500 text-white border border-orange-600',
+      primary: 'bg-brand-500 text-white border border-brand-600',
+      success: 'bg-success-500 text-white border border-success-600'
+    };
+    const evtColor = eventInfo.event.extendedProps.calendar ? eventInfo.event.extendedProps.calendar.toLowerCase() : 'primary';
+    const colorClass = colorMap[evtColor] || colorMap.primary;
+    
+    return {
+      html: `
+        <div class="flex items-center w-full px-1.5 py-0.5 overflow-hidden rounded-md text-xs font-semibold shadow-sm ${colorClass}">
+          ${eventInfo.timeText ? `<span class="mr-1.5 opacity-90 whitespace-nowrap">${eventInfo.timeText}</span>` : ''}
+          <span class="truncate whitespace-nowrap">${eventInfo.event.title}</span>
+        </div>
+      `,
+    }
   }
-}
 
-const calendarOptions = reactive({
-  plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-  initialView: 'dayGridMonth',
-  headerToolbar: {
-    left: 'prev,next addEventButton',
-    center: 'title',
-    right: 'dayGridMonth,timeGridWeek',
-  },
-  events: events,
-  selectable: true,
-  select: handleDateSelect,
-  eventClick: handleEventClick,
-  eventContent: renderEventContent,
-  customButtons: {
-    addEventButton: {
-      text: 'Add Event +',
-      click: openModal,
+  const calendarOptions = reactive({
+    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+    initialView: 'dayGridMonth',
+    headerToolbar: {
+      left: 'prev,next addEventButton',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek',
     },
-  },
-})
+    events: events,
+    selectable: true,
+    eventTimeFormat: {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    },
+    slotLabelFormat: {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    },
+    select: handleDateSelect,
+    eventClick: handleEventClick,
+    eventContent: renderEventContent,
+    customButtons: {
+      addEventButton: {
+        text: 'Add Event +',
+        click: openModal,
+      },
+    },
+  })
 </script>

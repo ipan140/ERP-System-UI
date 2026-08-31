@@ -12,3 +12,4 @@ export * from './storage.dto';
 export * from './user_roles.dto';
 export * from './voip.dto';
 export * from './whatsapp.dto';export * from './roles.dto';
+export * from './calendar.dto';

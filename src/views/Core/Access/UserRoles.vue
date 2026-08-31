@@ -116,7 +116,7 @@
       <form @submit.prevent="saveRecord">
         <div class="mb-4">
           <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Role</label>
-          <input v-model="formData.name" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+          <select v-model="formData.name" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"><option value="" disabled>-- Pilih Role Sistem --</option><option v-for="r in systemRoles" :key="r" :value="r">{{ r }}</option></select>
         </div>
         
         <div class="mb-6">
@@ -138,6 +138,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import axios from 'axios'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { appRoleService } from '@/services/core/role.service'
 import type { IRoleDto } from '@/types/core'
@@ -153,6 +154,10 @@ const formData = ref<IRoleDto>({ name: '', description: '' })
 
 const fetchData = async () => {
   isLoading.value = true; error.value = null
+    try {
+      const roleRes = await axios.get('http://localhost:8080/api/core/user_roles/constants', { headers: { Authorization: 'Bearer ' + localStorage.getItem('token') } })
+      systemRoles.value = roleRes.data.data || []
+    } catch(e) {}
   try {
     const data = await appRoleService.getAll()
     records.value = data
@@ -204,3 +209,4 @@ const deleteRecord = async (id: number) => {
 
 onMounted(() => fetchData())
 </script>
+
