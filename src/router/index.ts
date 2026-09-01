@@ -109,6 +109,12 @@ const router = createRouter({
     },
     // FASE 2 ROUTES (HRD)
     {
+      path: '/hr/departments',
+      name: 'Departments',
+      component: () => import('../views/HR/Departments.vue'),
+      meta: { title: 'Departemen' },
+    },
+    {
       path: '/hr/employees',
       name: 'Employees',
       component: () => import('../views/HR/Employees.vue'),

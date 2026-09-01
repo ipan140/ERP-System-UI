@@ -280,6 +280,7 @@ const menuGroups = [
         icon: UserCircleIcon,
         name: "Data Induk",
         subItems: [
+          { name: "Departments", path: "/hr/departments", pro: false },
           { name: "Employees", path: "/hr/employees", pro: false },
           { name: "Recruitment", path: "/hr/recruitment", pro: false },
         ],

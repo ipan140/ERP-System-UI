@@ -2,6 +2,7 @@ export interface IContractDto {
   created_at?: string;
   employee?: any;
   employee_id?: number;
+  is_active?: boolean;
   end_date?: string;
   id?: number;
   job_position?: IJobPositionDto;
@@ -23,7 +24,8 @@ export interface IDepartmentDto {
   parent_id?: number;
 }
 
-export interface IDummy2Dto {
+export interface IEmployeeDto {
+  is_active?: boolean;
   created_at?: string;
   department?: IDepartmentDto;
   department_id?: number;

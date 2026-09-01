@@ -1,146 +1,174 @@
 <template>
   <AdminLayout>
-    <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+    <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 h-full flex flex-col">
       <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <PageBreadcrumb pageTitle="Recruitment" />
+        <PageBreadcrumb pageTitle="Rekrutmen (Pelamar)" />
         
         <div class="flex gap-2">
-          <button @click="fetchData" class="inline-flex items-center justify-center rounded-md border border-gray-300 py-2 px-4 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
+          <button @click="fetchData" class="inline-flex items-center justify-center rounded-md border border-gray-300 py-2 px-4 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors">
             Refresh
           </button>
-          <button @click="openModal('create')" class="inline-flex items-center justify-center rounded-md bg-brand-500 py-2 px-6 text-center font-medium text-white hover:bg-brand-600">
-            + Tambah Data
+          <button @click="openModal('create')" class="inline-flex items-center justify-center rounded-md bg-brand-500 py-2 px-6 text-center font-medium text-white hover:bg-brand-600 transition-colors shadow-sm">
+            + Tambah Pelamar
           </button>
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        
-        <div class="flex flex-col sm:flex-row items-start justify-between p-5 border-b border-gray-200 dark:border-gray-700 gap-4">
-          <h3 class="font-bold text-gray-800 dark:text-white/90 text-title-sm">Recent Data</h3>
-          <div class="flex items-center gap-3 w-full sm:w-auto">
-            <div class="relative w-full sm:w-64">
-              <input type="text" placeholder="Search..." class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" />
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M19.7 18.3l-4.8-4.8c1-1.3 1.6-2.9 1.6-4.7 0-4.3-3.5-7.8-7.8-7.8S1 4.5 1 8.8s3.5 7.8 7.8 7.8c1.8 0 3.4-.6 4.7-1.6l4.8 4.8c.2.2.4.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4zM2.5 8.8c0-3.5 2.8-6.3 6.3-6.3s6.3 2.8 6.3 6.3-2.8 6.3-6.3 6.3-6.3-2.8-6.3-6.3z"/></svg>
+      <!-- Loader & Error -->
+      <div v-if="isLoading" class="py-10 text-center">
+        <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+      <Alert v-else-if="error" variant="error" title="Gagal Memuat" :message="error || ''" class="mb-4" />
+
+      <!-- KANBAN BOARD -->
+      <div class="flex-1 overflow-x-auto pb-4 custom-scrollbar">
+        <div class="flex gap-6 h-full min-w-max items-start">
+          
+          <!-- Loop through stages -->
+          <div v-for="stage in stages" :key="stage.id" class="w-80 flex flex-col bg-gray-50/50 dark:bg-gray-800/20 rounded-xl border border-gray-200 dark:border-gray-700 h-full max-h-[75vh]">
+            
+            <!-- Column Header -->
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-900 rounded-t-xl sticky top-0 z-10">
+              <div class="flex items-center gap-2">
+                <div :class="['w-3 h-3 rounded-full', stage.colorClass]"></div>
+                <h3 class="font-bold text-gray-800 dark:text-white">{{ stage.name }}</h3>
+              </div>
+              <span class="text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-1 px-2.5 rounded-full">
+                {{ getApplicantsByStage(stage.id).length }}
               </span>
             </div>
-            <button class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              Filter
-            </button>
-          </div>
-        </div>
 
-        <div class="max-w-full overflow-x-auto custom-scrollbar">
-          <table class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700">
-                <th class="w-12 px-5 py-3 sm:px-6">
-                  <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800" />
-                </th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">ID / Info</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nama / Judul</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Status</p></th>
-                <th class="px-5 py-3 text-right sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Aksi</p></th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-if="isLoading">
-                <td colspan="5" class="py-10 text-center">
-                  <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Memuat data...</p>
-                </td>
-              </tr>
-              <tr v-else-if="error"><td colspan="5" class="p-4"><Alert variant="error" title="Gagal" :message="error" /></td></tr>
-              <tr v-else-if="records.length === 0"><td colspan="5" class="px-5 py-4 text-center text-gray-500">Data masih kosong.</td></tr>
-              <tr v-for="(record, index) in records" :key="record.id || index" class="border-t border-gray-100 dark:border-gray-800">
-                <td class="px-5 py-4 sm:px-6">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold dark:bg-gray-800">
-                      {{ record.id || (index + 1) }}
+            <!-- Draggable Area -->
+            <div class="p-3 flex-1 overflow-y-auto custom-scrollbar flex flex-col">
+              <draggable 
+                :list="getApplicantsByStage(stage.id)" 
+                item-key="id" 
+                group="applicants" 
+                @change="onCardMove($event, stage.id)"
+                class="min-h-[100px] flex flex-col gap-3"
+                ghost-class="opacity-50"
+              >
+                <template #item="{ element }">
+                  <div class="bg-white dark:bg-gray-900 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 cursor-move hover:shadow-md transition-shadow group relative">
+                    <!-- Actions -->
+                    <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10 bg-white dark:bg-gray-900 rounded">
+                      <button @click="openModal('edit', element)" class="p-1.5 text-gray-400 hover:text-brand-500 rounded transition-colors" title="Edit">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                      </button>
+                      <button @click="deleteRecord(element.id)" class="p-1.5 text-gray-400 hover:text-error-500 rounded transition-colors" title="Hapus">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                      </button>
+                    </div>
+
+                    <h4 class="font-bold text-gray-800 dark:text-white mb-1 pr-12">{{ element.name || 'Pelamar Tanpa Nama' }}</h4>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">{{ element.jobposition?.name || 'Posisi Tidak Ditentukan' }}</p>
+                    
+                    <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700/50 pt-3">
+                      <div class="flex items-center gap-1" title="Email" v-if="element.email">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        <span class="truncate w-20">{{ element.email }}</span>
+                      </div>
+                      <div class="flex items-center gap-1" title="Ekspektasi Gaji" v-if="element.expected_salary">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span class="truncate">{{ element.expected_salary.toLocaleString('id-ID') }}</span>
+                      </div>
                     </div>
                   </div>
-                </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ (record as any).name || 'Data ' + (index+1) }}</span>
-                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ (record as any).description || '-' }}</span>
-                </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <Badge color="success">
-                    {{ 'Active' }}
-                  </Badge>
-                </td>
-                <td class="px-5 py-4 sm:px-6 text-right">
-                  <div class="flex items-center justify-end gap-3">
-                    <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
-                    <button @click="record.id && deleteRecord(record.id)" class="text-gray-500 hover:text-error-500 transition-colors" title="Hapus">
-                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"></path></svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="flex items-center justify-end gap-4 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">&larr; Previous</button>
-          <div class="flex items-center gap-1">
-            <button class="w-8 h-8 flex items-center justify-center text-sm font-medium text-white bg-brand-500 rounded-lg">1</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">2</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">3</button>
+                </template>
+              </draggable>
+              
+              <!-- Quick Add Button -->
+              <button @click="openQuickAdd(stage.id)" class="w-full py-2.5 mt-3 flex items-center justify-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700/50 rounded-lg transition-colors border border-dashed border-transparent hover:border-gray-300 dark:hover:border-gray-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Tambah
+              </button>
+            </div>
+            
           </div>
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">Next &rarr;</button>
         </div>
-
       </div>
     </div>
   </AdminLayout>
 
   <!-- Modal CRUD -->
   <Teleport to="body">
-    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800 my-8">
-      <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
-        {{ modalMode === 'create' ? 'Tambah Data' : 'Edit Data' }}
-      </h3>
-      <form @submit.prevent="saveRecord">
-        
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Pelamar</label>
-          <input v-model="formData.applicant_name" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Posisi Dilamar</label>
-          <input v-model="formData.position" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-          <select v-model="formData.status" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-            <option value="Pelamar">Pelamar</option><option value="Interview">Interview</option><option value="Diterima">Diterima</option><option value="Ditolak">Ditolak</option>
-          </select>
-        </div>
-        <div class="flex justify-end gap-3 mt-6">
-          <button type="button" @click="closeModal" class="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-md bg-brand-500 px-4 py-2 text-white hover:bg-brand-600 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan' }}
+    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+      <div class="w-full max-w-lg rounded-2xl bg-white shadow-2xl dark:bg-gray-800 my-8 overflow-hidden">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+            {{ modalMode === 'create' ? 'Tambah Pelamar Baru' : 'Edit Data Pelamar' }}
+          </h3>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
-      </form>
+
+        <!-- Modal Body -->
+        <form @submit.prevent="saveRecord">
+          <div class="p-6 space-y-4">
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Lengkap</label>
+              <input v-model="formData.name" type="text" required placeholder="Nama pelamar" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow" />
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                <input v-model="formData.email" type="email" placeholder="email@contoh.com" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow" />
+              </div>
+              <div>
+                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">No. Telepon</label>
+                <input v-model="formData.phone" type="text" placeholder="0812..." class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Tahap (Stage)</label>
+                <select v-model="formData.stage_id" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                  <option v-for="stage in stages" :key="stage.id" :value="stage.id">{{ stage.name }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Ekspektasi Gaji</label>
+                <input v-model.number="formData.expected_salary" type="number" placeholder="Mis. 5000000" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow" />
+              </div>
+            </div>
+          </div>
+          
+          <!-- Modal Footer -->
+          <div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" @click="closeModal" class="rounded-lg px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors">
+              Batal
+            </button>
+            <button type="submit" :disabled="isSaving" class="rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-70 transition-colors shadow-sm">
+              {{ isSaving ? 'Menyimpan...' : 'Simpan' }}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import draggable from 'vuedraggable'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Alert from '@/components/ui/Alert.vue'
-import Badge from '@/components/ui/Badge.vue'
 import { recruitmentService } from '@/services/hr/recruitment.service'
-import type { IApplicantDto } from '@/types/hr'
+import type { IApplicantDto } from '@/types/hr/recruitment.dto'
+
+// Dummy stages for Odoo-like recruitment process
+const stages = ref([
+  { id: 1, name: 'Kualifikasi Awal', colorClass: 'bg-blue-400' },
+  { id: 2, name: 'Wawancara Pertama', colorClass: 'bg-yellow-400' },
+  { id: 3, name: 'Wawancara Kedua', colorClass: 'bg-orange-400' },
+  { id: 4, name: 'Penawaran Kontrak', colorClass: 'bg-purple-400' },
+  { id: 5, name: 'Diterima', colorClass: 'bg-green-500' }
+])
 
 const records = ref<IApplicantDto[]>([])
 const isLoading = ref(false)
@@ -149,7 +177,36 @@ const error = ref<string | null>(null)
 const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
 const isSaving = ref(false)
-const formData = ref({ id: null, applicant_name: '', position: '', status: 'Pelamar' })
+
+const formData = ref<Partial<IApplicantDto>>({ 
+  id: undefined, 
+  name: '', 
+  email: '', 
+  phone: '', 
+  expected_salary: undefined,
+  stage_id: 1 
+})
+
+// Dapatkan daftar applicant berdasarkan stage
+const getApplicantsByStage = (stageId: number) => {
+  return records.value.filter(app => (app.stage_id || 1) === stageId)
+}
+
+// Handler saat kartu didrag & drop antar kolom
+const onCardMove = async (evt: any, toStageId: number) => {
+  if (evt.added) {
+    const movedElement = evt.added.element
+    movedElement.stage_id = toStageId
+    
+    // Panggil API untuk update stage_id secara background
+    try {
+      await recruitmentService.update(movedElement.id, { stage_id: toStageId })
+    } catch (err: any) {
+      console.error('Gagal update posisi:', err)
+      fetchData() // Rollback jika gagal
+    }
+  }
+}
 
 const fetchData = async () => {
   isLoading.value = true; error.value = null
@@ -157,7 +214,7 @@ const fetchData = async () => {
     const data = await recruitmentService.getAll()
     records.value = data
   } catch (err: any) {
-    error.value = 'Gagal: ' + (err.response?.data?.message || err.message)
+    error.value = 'Gagal memuat data: ' + (err.response?.data?.message || err.message)
   } finally {
     isLoading.value = false
   }
@@ -166,10 +223,23 @@ const fetchData = async () => {
 const openModal = (mode: 'create' | 'edit', data: any = null) => {
   modalMode.value = mode
   if (mode === 'edit' && data) {
-    formData.value = { id: data.id, applicant_name: data.applicant_name || '', position: data.position || '', status: data.status || 'Pelamar' }
+    formData.value = { 
+      id: data.id, 
+      name: data.name || '', 
+      email: data.email || '', 
+      phone: data.phone || '', 
+      expected_salary: data.expected_salary,
+      stage_id: data.stage_id || 1 
+    }
   } else {
-    formData.value = { id: null, applicant_name: '', position: '', status: 'Pelamar' }
+    formData.value = { id: undefined, name: '', email: '', phone: '', expected_salary: undefined, stage_id: 1 }
   }
+  isModalOpen.value = true
+}
+
+const openQuickAdd = (stageId: number) => {
+  formData.value = { id: undefined, name: '', email: '', phone: '', expected_salary: undefined, stage_id: stageId }
+  modalMode.value = 'create'
   isModalOpen.value = true
 }
 
@@ -193,7 +263,7 @@ const saveRecord = async () => {
 }
 
 const deleteRecord = async (id: number) => {
-  if (!confirm('Hapus data ini?')) return
+  if (!confirm('Hapus data pelamar ini?')) return
   try {
     await recruitmentService.delete(id)
     fetchData()
