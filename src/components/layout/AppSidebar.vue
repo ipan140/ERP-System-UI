@@ -235,10 +235,11 @@ const menuGroups = [
       },
       {
         icon: UserCircleIcon,
-        name: "Access Control",
+        name: "Sistem & Keamanan",
         subItems: [
           { name: "User Roles", path: "/core/user-roles", pro: false },
           { name: "Permissions", path: "/core/permissions", pro: false },
+          { name: "Jejak Audit", path: "/sys/audit", pro: false },
         ],
       },
       {
@@ -281,7 +282,16 @@ const menuGroups = [
         name: "Data Induk",
         subItems: [
           { name: "Departments", path: "/hr/departments", pro: false },
+          { name: "Job Positions", path: "/hr/job-positions", pro: false },
+            { name: "Skills", path: "/hr/skills", pro: false },
           { name: "Employees", path: "/hr/employees", pro: false },
+            { name: "Org Chart", path: "/hr/org-chart", pro: false },
+            { name: "Surat Peringatan", path: "/hr/warning-letters", pro: false },
+            { name: "Onboarding & Offboarding", path: "/hr/onboarding", pro: false },
+            { name: "Lembur", path: "/hr/overtime", pro: false },
+            { name: "Kasbon / Pinjaman", path: "/hr/loans", pro: false },
+            { name: "Reimbursement", path: "/hr/expenses", pro: false },
+            { name: "Contracts", path: "/hr/contracts", pro: false },
           { name: "Recruitment", path: "/hr/recruitment", pro: false },
         ],
       },
@@ -290,6 +300,7 @@ const menuGroups = [
         name: "Kehadiran",
         subItems: [
           { name: "Attendances", path: "/hr/attendances", pro: false },
+            { name: "Working Schedules", path: "/hr/working-schedules", pro: false },
           { name: "Time Off", path: "/hr/time-off", pro: false },
         ],
       },

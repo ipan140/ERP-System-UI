@@ -21,11 +21,11 @@
       <Alert v-else-if="error" variant="error" title="Gagal Memuat" :message="error || ''" class="mb-4" />
 
       <!-- KANBAN BOARD -->
-      <div class="flex-1 overflow-x-auto pb-4 custom-scrollbar">
-        <div class="flex gap-6 h-full min-w-max items-start">
+      <div class="flex-1 overflow-y-auto pb-4 custom-scrollbar">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-start">
           
           <!-- Loop through stages -->
-          <div v-for="stage in stages" :key="stage.id" class="w-80 flex flex-col bg-gray-50/50 dark:bg-gray-800/20 rounded-xl border border-gray-200 dark:border-gray-700 h-full max-h-[75vh]">
+          <div v-for="stage in stages" :key="stage.id" class="flex flex-col bg-gray-50/50 dark:bg-gray-800/20 rounded-xl border border-gray-200 dark:border-gray-700 h-full max-h-[75vh]">
             
             <!-- Column Header -->
             <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-900 rounded-t-xl sticky top-0 z-10">
@@ -49,7 +49,7 @@
                 ghost-class="opacity-50"
               >
                 <template #item="{ element }">
-                  <div class="bg-white dark:bg-gray-900 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 cursor-move hover:shadow-md transition-shadow group relative">
+                  <div :class="[`bg-white dark:bg-gray-900 p-4 rounded-lg shadow-sm border-y border-r border-l-4 border-y-gray-200 border-r-gray-200 dark:border-y-gray-700 dark:border-r-gray-700 cursor-move hover:shadow-md transition-shadow group relative`, stage.colorClass.replace(`bg-`, `border-l-`)]">
                     <!-- Actions -->
                     <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10 bg-white dark:bg-gray-900 rounded">
                       <button @click="openModal('edit', element)" class="p-1.5 text-gray-400 hover:text-brand-500 rounded transition-colors" title="Edit">
@@ -112,7 +112,15 @@
               <input v-model="formData.name" type="text" required placeholder="Nama pelamar" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow" />
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
+            
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Posisi yang Dilamar</label>
+              <select v-model="formData.job_position_id" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" required>
+                <option :value="undefined" disabled>Pilih posisi...</option>
+                <option v-for="job in jobPositionsList" :key="job.id" :value="job.id">{{ job.name }}</option>
+              </select>
+            </div>
+              <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
                 <input v-model="formData.email" type="email" placeholder="email@contoh.com" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow" />
@@ -159,9 +167,12 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Alert from '@/components/ui/Alert.vue'
 import { recruitmentService } from '@/services/hr/recruitment.service'
+import { employeesService } from '@/services/hr/employees.service'
 import type { IApplicantDto } from '@/types/hr/recruitment.dto'
 
 // Dummy stages for Odoo-like recruitment process
+  // Tailwind dynamic classes hack: border-l-blue-400 border-l-yellow-400 border-l-orange-400 border-l-purple-400 border-l-green-500
+const jobPositionsList = ref<any[]>([])
 const stages = ref([
   { id: 1, name: 'Kualifikasi Awal', colorClass: 'bg-blue-400' },
   { id: 2, name: 'Wawancara Pertama', colorClass: 'bg-yellow-400' },
@@ -211,8 +222,12 @@ const onCardMove = async (evt: any, toStageId: number) => {
 const fetchData = async () => {
   isLoading.value = true; error.value = null
   try {
-    const data = await recruitmentService.getAll()
-    records.value = data
+    const [data, jobsData] = await Promise.all([
+      recruitmentService.getAll(),
+      import('@/services/http').then(m => m.http.get('/hr/employees/jobposition')).then(res => res.data.data ?? res.data)
+    ]);
+    records.value = data;
+    jobPositionsList.value = jobsData;
   } catch (err: any) {
     error.value = 'Gagal memuat data: ' + (err.response?.data?.message || err.message)
   } finally {
@@ -229,16 +244,16 @@ const openModal = (mode: 'create' | 'edit', data: any = null) => {
       email: data.email || '', 
       phone: data.phone || '', 
       expected_salary: data.expected_salary,
-      stage_id: data.stage_id || 1 
+      stage_id: data.stage_id || 1, job_position_id: data.job_position_id || undefined 
     }
   } else {
-    formData.value = { id: undefined, name: '', email: '', phone: '', expected_salary: undefined, stage_id: 1 }
+    formData.value = { id: undefined, name: '', email: '', phone: '', expected_salary: undefined, stage_id: 1, job_position_id: undefined }
   }
   isModalOpen.value = true
 }
 
 const openQuickAdd = (stageId: number) => {
-  formData.value = { id: undefined, name: '', email: '', phone: '', expected_salary: undefined, stage_id: stageId }
+  formData.value = { id: undefined, name: '', email: '', phone: '', expected_salary: undefined, stage_id: stageId, job_position_id: undefined }
   modalMode.value = 'create'
   isModalOpen.value = true
 }

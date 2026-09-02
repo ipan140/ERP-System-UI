@@ -25,10 +25,6 @@
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
             Check In
           </button>
-          <button @click="quickCheckOut" class="flex items-center gap-2 rounded-full bg-orange-500 py-3 px-8 text-lg font-bold text-white hover:bg-orange-600 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-            Check Out
-          </button>
         </div>
       </div>
 
@@ -174,18 +170,26 @@ const fetchData = async () => {
   }
 }
 
-const quickCheckIn = async () => {
-  try {
-    await attendancesService.create({ employee_id: 1, check_in: new Date().toISOString() })
-    alert("Berhasil Check In!")
-    fetchData()
-  } catch (e: any) { alert("Gagal Check In: " + e.message) }
-}
+  const quickCheckIn = async () => {
+    try {
+      const now = new Date();
+      const checkOutTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 0, 0);
+      
+      let workedHours = 0;
+      if (checkOutTime > now) {
+        workedHours = (checkOutTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+      }
 
-const quickCheckOut = async () => {
-  // Dalam real-app, cari record check_in hari ini tanpa check_out, lalu update
-  alert("Simulasi Check Out Berhasil!")
-}
+      await attendancesService.create({ 
+        employee_id: 1, 
+        check_in: now.toISOString(),
+        check_out: checkOutTime.toISOString(),
+        worked_hours: workedHours
+      })
+      alert("Berhasil Check In! Waktu Check-Out telah otomatis diset ke jam 17:00 hari ini, dan Jam Kerja telah dihitung.")
+      fetchData()
+    } catch (e: any) { alert("Gagal Check In: " + e.message) }
+  }
 
 const openModal = (mode: 'create' | 'edit', data: any = null) => {
   modalMode.value = mode
@@ -205,21 +209,30 @@ const openModal = (mode: 'create' | 'edit', data: any = null) => {
 const closeModal = () => { isModalOpen.value = false }
 
 const saveRecord = async () => {
-  isSaving.value = true
-  try {
-    const payload = {
-      employee_id: formData.value.employee_id,
-      check_in: formData.value.check_in ? new Date(formData.value.check_in).toISOString() : undefined,
-      check_out: formData.value.check_out ? new Date(formData.value.check_out).toISOString() : undefined
-    }
-    if (modalMode.value === 'edit' && formData.value.id) {
-      await attendancesService.update(formData.value.id, payload)
-    } else {
-      await attendancesService.create(payload)
-    }
-    closeModal()
-    fetchData()
-  } catch (err: any) {
+    isSaving.value = true
+    try {
+      const payload: any = {
+        employee_id: formData.value.employee_id,
+        check_in: formData.value.check_in ? new Date(formData.value.check_in).toISOString() : undefined,
+        check_out: formData.value.check_out ? new Date(formData.value.check_out).toISOString() : undefined
+      }
+
+      if (payload.check_in && payload.check_out) {
+        const inTime = new Date(payload.check_in).getTime()
+        const outTime = new Date(payload.check_out).getTime()
+        if (outTime > inTime) {
+          payload.worked_hours = (outTime - inTime) / (1000 * 60 * 60)
+        }
+      }
+
+      if (modalMode.value === 'edit' && formData.value.id) {
+        await attendancesService.update(formData.value.id, payload)
+      } else {
+        await attendancesService.create(payload)
+      }
+      closeModal()
+      fetchData()
+    } catch (err: any) {
     alert(err.response?.data?.message || err.message)
   } finally {
     isSaving.value = false

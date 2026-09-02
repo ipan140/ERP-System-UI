@@ -18,10 +18,15 @@ const router = createRouter({
       component: () => import('../views/Auth/Signup.vue'),
       meta: { title: 'Sign Up' },
     },
-    { path: '/profile', name: 'Profile', component: () => import('../views/Core/Profile.vue'), meta: { title: 'User Profile' } },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('../views/Core/Profile.vue'),
+      meta: { title: 'User Profile' },
+    },
     {
       path: '/',
-      redirect: '/core/dashboard'
+      redirect: '/core/dashboard',
     },
     {
       path: '/core/countries',
@@ -115,6 +120,61 @@ const router = createRouter({
       meta: { title: 'Departemen' },
     },
     {
+      path: '/hr/job-positions',
+      name: 'JobPositions',
+      component: () => import('../views/HR/JobPositions.vue'),
+      meta: { title: 'Posisi Pekerjaan' },
+    },
+    {
+      path: '/hr/skills',
+      name: 'Skills',
+      component: () => import('../views/HR/Skills.vue'),
+      meta: { title: 'Keterampilan (Skills)' },
+    },
+    {
+      path: '/hr/contracts',
+      name: 'Contracts',
+      component: () => import('../views/HR/Contracts.vue'),
+      meta: { title: 'Kontrak Kerja' },
+    },
+    {
+      path: '/hr/employees/:id',
+      name: 'EmployeeDetail',
+      component: () => import('../views/HR/EmployeeDetail.vue'),
+      meta: { title: 'Profil Pegawai' },
+    },
+    {
+      path: '/hr/org-chart',
+      name: 'OrgChart',
+      component: () => import('../views/HR/OrgChart.vue'),
+      meta: { title: 'Struktur Organisasi' },
+    },
+    {
+      path: '/hr/warning-letters',
+      name: 'WarningLetters',
+      component: () => import('../views/HR/WarningLetters.vue'),
+      meta: { title: 'Surat Peringatan' },
+    },
+    {
+      path: '/hr/onboarding',
+      name: 'Onboarding',
+      component: () => import('../views/HR/Onboarding.vue'),
+      meta: { title: 'Onboarding & Offboarding' },
+    },
+    { path: '/hr/overtime', name: 'Overtime', component: () => import('../views/HR/Overtime.vue') },
+    {
+      path: '/hr/loans',
+      name: 'EmployeeLoans',
+      component: () => import('../views/HR/EmployeeLoans.vue'),
+    },
+    { path: '/hr/expenses', name: 'Expenses', component: () => import('../views/HR/Expenses.vue') },
+    {
+      path: '/sys/audit',
+      name: 'AuditLogs',
+      component: () => import('../views/HR/AuditLogs.vue'),
+      meta: { title: 'Jejak Audit' },
+    },
+    {
       path: '/hr/employees',
       name: 'Employees',
       component: () => import('../views/HR/Employees.vue'),
@@ -125,6 +185,12 @@ const router = createRouter({
       name: 'Recruitment',
       component: () => import('../views/HR/Recruitment.vue'),
       meta: { title: 'Recruitment' },
+    },
+    {
+      path: '/hr/working-schedules',
+      name: 'WorkingSchedules',
+      component: () => import('../views/HR/WorkingSchedules.vue'),
+      meta: { title: 'Jadwal Kerja' },
     },
     {
       path: '/hr/attendances',
@@ -403,35 +469,108 @@ const router = createRouter({
     },
 
     // DASHBOARDS
-    { path: '/core/dashboard', name: 'CoreDashboard', component: () => import('../views/Core/Dashboard.vue'), meta: { title: 'Dashboard Pengaturan' } },
-    { path: '/hr/dashboard', name: 'HRDashboard', component: () => import('../views/HR/Dashboard.vue'), meta: { title: 'Dashboard HRD' } },
-    { path: '/sales/dashboard', name: 'SalesDashboard', component: () => import('../views/Sales/Dashboard.vue'), meta: { title: 'Dashboard Penjualan' } },
-    { path: '/marketing/dashboard', name: 'MarketingDashboard', component: () => import('../views/Marketing/Dashboard.vue'), meta: { title: 'Dashboard Pemasaran' } },
-    { path: '/services/dashboard', name: 'ServicesDashboard', component: () => import('../views/Services/Dashboard.vue'), meta: { title: 'Dashboard Layanan' } },
-    { path: '/supply_chain/dashboard', name: 'SupplyChainDashboard', component: () => import('../views/SupplyChain/Dashboard.vue'), meta: { title: 'Dashboard Rantai Pasok' } },
-    { path: '/finance/dashboard', name: 'FinanceDashboard', component: () => import('../views/Finance/Dashboard.vue'), meta: { title: 'Dashboard Keuangan' } },
-    { path: '/website/dashboard', name: 'WebsiteDashboard', component: () => import('../views/Website/Dashboard.vue'), meta: { title: 'Dashboard Website' } },
+    {
+      path: '/core/dashboard',
+      name: 'CoreDashboard',
+      component: () => import('../views/Core/Dashboard.vue'),
+      meta: { title: 'Dashboard Pengaturan' },
+    },
+    {
+      path: '/hr/dashboard',
+      name: 'HRDashboard',
+      component: () => import('../views/HR/Dashboard.vue'),
+      meta: { title: 'Dashboard HRD' },
+    },
+    {
+      path: '/sales/dashboard',
+      name: 'SalesDashboard',
+      component: () => import('../views/Sales/Dashboard.vue'),
+      meta: { title: 'Dashboard Penjualan' },
+    },
+    {
+      path: '/marketing/dashboard',
+      name: 'MarketingDashboard',
+      component: () => import('../views/Marketing/Dashboard.vue'),
+      meta: { title: 'Dashboard Pemasaran' },
+    },
+    {
+      path: '/services/dashboard',
+      name: 'ServicesDashboard',
+      component: () => import('../views/Services/Dashboard.vue'),
+      meta: { title: 'Dashboard Layanan' },
+    },
+    {
+      path: '/supply_chain/dashboard',
+      name: 'SupplyChainDashboard',
+      component: () => import('../views/SupplyChain/Dashboard.vue'),
+      meta: { title: 'Dashboard Rantai Pasok' },
+    },
+    {
+      path: '/finance/dashboard',
+      name: 'FinanceDashboard',
+      component: () => import('../views/Finance/Dashboard.vue'),
+      meta: { title: 'Dashboard Keuangan' },
+    },
+    {
+      path: '/website/dashboard',
+      name: 'WebsiteDashboard',
+      component: () => import('../views/Website/Dashboard.vue'),
+      meta: { title: 'Dashboard Website' },
+    },
 
     // CALENDARS
-    { path: '/hr/calendar', name: 'HRCalendar', component: () => import('../views/HR/Calendar.vue'), meta: { title: 'Kalender HRD' } },
-    { path: '/sales/calendar', name: 'SalesCalendar', component: () => import('../views/Sales/Calendar.vue'), meta: { title: 'Kalender Penjualan' } },
-    { path: '/marketing/calendar', name: 'MarketingCalendar', component: () => import('../views/Marketing/Calendar.vue'), meta: { title: 'Kalender Pemasaran' } },
-    { path: '/services/calendar', name: 'ServicesCalendar', component: () => import('../views/Services/Calendar.vue'), meta: { title: 'Kalender Layanan' } },
-    { path: '/supply_chain/calendar', name: 'SupplyChainCalendar', component: () => import('../views/SupplyChain/Calendar.vue'), meta: { title: 'Kalender Rantai Pasok' } },
-    { path: '/finance/calendar', name: 'FinanceCalendar', component: () => import('../views/Finance/Calendar.vue'), meta: { title: 'Kalender Keuangan' } },
-    { path: '/website/calendar', name: 'WebsiteCalendar', component: () => import('../views/Website/Calendar.vue'), meta: { title: 'Kalender Website' } },
+    {
+      path: '/hr/calendar',
+      name: 'HRCalendar',
+      component: () => import('../views/HR/Calendar.vue'),
+      meta: { title: 'Kalender HRD' },
+    },
+    {
+      path: '/sales/calendar',
+      name: 'SalesCalendar',
+      component: () => import('../views/Sales/Calendar.vue'),
+      meta: { title: 'Kalender Penjualan' },
+    },
+    {
+      path: '/marketing/calendar',
+      name: 'MarketingCalendar',
+      component: () => import('../views/Marketing/Calendar.vue'),
+      meta: { title: 'Kalender Pemasaran' },
+    },
+    {
+      path: '/services/calendar',
+      name: 'ServicesCalendar',
+      component: () => import('../views/Services/Calendar.vue'),
+      meta: { title: 'Kalender Layanan' },
+    },
+    {
+      path: '/supply_chain/calendar',
+      name: 'SupplyChainCalendar',
+      component: () => import('../views/SupplyChain/Calendar.vue'),
+      meta: { title: 'Kalender Rantai Pasok' },
+    },
+    {
+      path: '/finance/calendar',
+      name: 'FinanceCalendar',
+      component: () => import('../views/Finance/Calendar.vue'),
+      meta: { title: 'Kalender Keuangan' },
+    },
+    {
+      path: '/website/calendar',
+      name: 'WebsiteCalendar',
+      component: () => import('../views/Website/Calendar.vue'),
+      meta: { title: 'Kalender Website' },
+    },
   ],
 })
-
-
 
 export default router
 
 router.beforeEach((to, from, next) => {
   document.title = `${to.meta.title || 'App'} | ERP-System`
-  
+
   const isAuthenticated = !!localStorage.getItem('token')
-  
+
   // 1. Authentication Guard
   if (to.name !== 'Signin' && to.name !== 'Signup' && !isAuthenticated) {
     return next({ name: 'Signin' })
@@ -441,37 +580,47 @@ router.beforeEach((to, from, next) => {
 
   // 2. Authorization / Role Guard
   if (isAuthenticated) {
-    let userRole = '';
+    let userRole = ''
     try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      userRole = user.role ? user.role.toUpperCase() : '';
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      userRole = user.role ? user.role.toUpperCase() : ''
     } catch (e) {}
 
     // If superadmin, allow everything
     if (userRole !== 'SUPERADMIN') {
-      const pathPrefix = to.path.split('/')[1]; // e.g. 'marketing' from '/marketing/calendar'
-      
-      const roleModuleMap: Record<string, string[]> = {
-        'HR': ['hr', 'core'],
-        'SALES': ['sales', 'core'],
-        'MARKETING': ['marketing', 'core'],
-        'FINANCE': ['finance', 'core'],
-        'SERVICES': ['services', 'core'],
-        'SUPPLYCHAIN': ['supply_chain', 'core'],
-        'WEBSITE': ['website', 'core']
-      };
+      const pathPrefix = to.path.split('/')[1] // e.g. 'marketing' from '/marketing/calendar'
 
-      const allowedModules = roleModuleMap[userRole] || ['core'];
-      const knownModules = ['hr', 'sales', 'marketing', 'finance', 'services', 'supply_chain', 'website'];
-      
+      const roleModuleMap: Record<string, string[]> = {
+        HR: ['hr', 'core'],
+        SALES: ['sales', 'core'],
+        MARKETING: ['marketing', 'core'],
+        FINANCE: ['finance', 'core'],
+        SERVICES: ['services', 'core'],
+        SUPPLYCHAIN: ['supply_chain', 'core'],
+        WEBSITE: ['website', 'core'],
+      }
+
+      const allowedModules = roleModuleMap[userRole] || ['core']
+      const knownModules = [
+        'hr',
+        'sales',
+        'marketing',
+        'finance',
+        'services',
+        'supply_chain',
+        'website',
+      ]
+
       // If navigating to a known restricted module that is NOT in the user's allowed list
       if (knownModules.includes(pathPrefix) && !allowedModules.includes(pathPrefix)) {
-        alert(`Access Denied! Your role (${userRole || 'UNKNOWN'}) does not have permission to access the ${pathPrefix.toUpperCase()} module.`);
+        alert(
+          `Access Denied! Your role (${userRole || 'UNKNOWN'}) does not have permission to access the ${pathPrefix.toUpperCase()} module.`,
+        )
         // If they were trying to load it directly, redirect to their own dashboard
         if (from.path === '/') {
-          return next({ path: `/${allowedModules[0]}/dashboard` });
+          return next({ path: `/${allowedModules[0]}/dashboard` })
         }
-        return next(false); // Cancel navigation
+        return next(false) // Cancel navigation
       }
     }
   }

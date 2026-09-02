@@ -71,7 +71,7 @@
         <div v-for="emp in records" :key="emp.id" class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-shadow relative">
           <!-- Edit button that appears on hover -->
           <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex gap-1">
-             <button @click="openModal('edit', emp)" class="p-1.5 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:text-brand-500 rounded-md shadow-sm border border-gray-200 dark:border-gray-600">
+             <button @click="$router.push('/hr/employees/' + emp.id)" class="p-1.5 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:text-brand-500 rounded-md shadow-sm border border-gray-200 dark:border-gray-600">
                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
              </button>
              <button @click="deleteRecord(emp)" class="p-1.5 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:text-error-500 rounded-md shadow-sm border border-gray-200 dark:border-gray-600">
@@ -154,7 +154,7 @@
                 </td>
                 <td class="px-5 py-4 sm:px-6 text-right">
                   <div class="flex items-center justify-end gap-2">
-                    <button @click="openModal('edit', emp)" class="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded transition-colors" title="Edit">
+                    <button @click="$router.push('/hr/employees/' + emp.id)" class="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded transition-colors" title="Edit">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                     </button>
                     <button @click="deleteRecord(emp)" class="p-1.5 text-gray-500 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-900/20 rounded transition-colors" title="Ubah Status Aktif">
