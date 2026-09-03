@@ -185,8 +185,8 @@ const toggleStatus = async (task: any) => {
   }
 }
 
-const openModal = () => {
-  formData.value = { type: 'onboarding', status: 'pending' }
+const openModal = (initialType: string = 'onboarding') => {
+  formData.value = { type: initialType === 'create' ? 'onboarding' : initialType, status: 'pending' }
   isModalOpen.value = true
 }
 

@@ -102,13 +102,13 @@
               </div>
               <div>
                 <label class="block text-sm font-medium mb-1.5 dark:text-gray-300">Tanggal Terbit</label>
-                <input v-model="formData.issue_date" type="date" @click="$event.target.showPicker()" required class="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:border-brand-500" />
+                <input v-model="formData.issue_date" type="date" @click="($event.target as any)?.showPicker()" required class="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:border-brand-500" />
               </div>
             </div>
 
             <div>
               <label class="block text-sm font-medium mb-1.5 dark:text-gray-300">Berlaku Sampai (Kedaluwarsa)</label>
-              <input v-model="formData.expiry_date" type="date" @click="$event.target.showPicker()" class="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:border-brand-500" />
+              <input v-model="formData.expiry_date" type="date" @click="($event.target as any)?.showPicker()" class="w-full rounded-lg border border-gray-300 p-2.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:border-brand-500" />
               <p class="text-xs text-gray-500 mt-1">Kosongkan jika SP ini bersifat permanen.</p>
             </div>
 

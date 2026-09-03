@@ -41,6 +41,8 @@ export interface IEmployeeDto {
   user_id?: number;
   work_email?: string;
   work_phone?: string;
+  ptkp_status?: string;
+  join_date?: string;
 }
 
 export interface IEmployeeSkillDto {

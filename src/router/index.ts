@@ -223,6 +223,18 @@ const router = createRouter({
       meta: { title: 'Payroll' },
     },
     {
+      path: '/hr/thr',
+      name: 'THRCalculator',
+      component: () => import('../views/HR/THRCalculator.vue'),
+      meta: { title: 'Kalkulator THR' },
+    },
+    {
+      path: '/hr/my-portal',
+      name: 'EmployeePortal',
+      component: () => import('../views/HR/EmployeePortal.vue'),
+      meta: { title: 'Portal Karyawan (ESS)' },
+    },
+    {
       path: '/hr/lunch',
       name: 'Lunch',
       component: () => import('../views/HR/Lunch.vue'),

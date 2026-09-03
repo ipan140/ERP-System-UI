@@ -243,6 +243,27 @@
               </div>
             </div>
 
+            <h4 class="font-semibold text-gray-800 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700 pb-2 pt-4">Pajak & Masa Kerja (TER 2024 & THR)</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Status PTKP (PPh 21)</label>
+                <select v-model="formData.ptkp_status" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow">
+                  <option value="TK/0">TK/0 (Lajang - Kat. A)</option>
+                  <option value="TK/1">TK/1 (1 Tanggungan - Kat. A)</option>
+                  <option value="K/0">K/0 (Menikah 0 Tanggungan - Kat. A)</option>
+                  <option value="TK/2">TK/2 (2 Tanggungan - Kat. B)</option>
+                  <option value="TK/3">TK/3 (3 Tanggungan - Kat. B)</option>
+                  <option value="K/1">K/1 (Menikah 1 Tanggungan - Kat. B)</option>
+                  <option value="K/2">K/2 (Menikah 2 Tanggungan - Kat. B)</option>
+                  <option value="K/3">K/3 (Menikah 3 Tanggungan - Kat. C)</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Tanggal Masuk Kerja</label>
+                <input v-model="formData.join_date" type="date" @click="($event.target as any)?.showPicker()" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow" />
+              </div>
+            </div>
+
             <h4 class="font-semibold text-gray-800 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700 pb-2 pt-4">Kontak Darurat</h4>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -354,7 +375,9 @@ const openModal = (mode: 'create' | 'edit', data: any = null) => {
       manager_id: data.manager_id,
       user_id: data.user_id,
       emergency_contact: data.emergency_contact || '',
-      emergency_phone: data.emergency_phone || ''
+      emergency_phone: data.emergency_phone || '',
+      ptkp_status: data.ptkp_status || 'TK/0',
+      join_date: data.join_date ? new Date(data.join_date).toISOString().split('T')[0] : ''
     }
   } else {
     formData.value = { 
@@ -367,7 +390,9 @@ const openModal = (mode: 'create' | 'edit', data: any = null) => {
       manager_id: undefined,
       user_id: undefined,
       emergency_contact: '',
-      emergency_phone: ''
+      emergency_phone: '',
+      ptkp_status: 'TK/0',
+      join_date: new Date().toISOString().split('T')[0]
     }
   }
   isModalOpen.value = true

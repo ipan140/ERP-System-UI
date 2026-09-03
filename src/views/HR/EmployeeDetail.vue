@@ -62,40 +62,40 @@
       </div>
 
       <!-- Tab 1: Informasi Dasar -->
-      <div v-if="activeTab === 'info'" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 max-w-4xl">
+      <div v-if="activeTab === 'info'" class="w-full bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 md:p-8">
         <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Detail Pribadi & Organisasi</h3>
         <form @submit.prevent="saveEmployee" class="space-y-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nama Lengkap</label>
-              <input v-model="employee.name" type="text" required class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow" />
+              <input v-model="employee.name" type="text" required class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700/60 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:text-white transition-all" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Status Akun</label>
-              <select v-model="employee.is_active" class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow">
+              <select v-model="employee.is_active" class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700/60 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:text-white transition-all">
                 <option :value="true">Aktif Bekerja</option>
                 <option :value="false">Tidak Aktif (Resign)</option>
               </select>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email Kerja</label>
-              <input v-model="employee.work_email" type="email" class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow" />
+              <input v-model="employee.work_email" type="email" class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700/60 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:text-white transition-all" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">No. Telepon Kerja</label>
-              <input v-model="employee.work_phone" type="text" class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow" />
+              <input v-model="employee.work_phone" type="text" class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700/60 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:text-white transition-all" />
             </div>
             <div class="md:col-span-2"><hr class="border-gray-200 dark:border-gray-700 my-2"></div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Departemen</label>
-              <select v-model="employee.department_id" class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow">
+              <select v-model="employee.department_id" class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700/60 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:text-white transition-all">
                 <option :value="undefined">Pilih Departemen...</option>
                 <option v-for="dept in departmentsList" :key="dept.id" :value="dept.id">{{ dept.name }}</option>
               </select>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Posisi / Jabatan</label>
-              <select v-model="employee.job_position_id" class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow">
+              <select v-model="employee.job_position_id" class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700/60 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:text-white transition-all">
                 <option :value="undefined">Pilih Posisi...</option>
                 <option v-for="job in jobPositionsList" :key="job.id" :value="job.id">{{ job.name }}</option>
               </select>
@@ -103,11 +103,11 @@
             <div class="md:col-span-2"><hr class="border-gray-200 dark:border-gray-700 my-2"></div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nama Kontak Darurat</label>
-              <input v-model="employee.emergency_contact" type="text" class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow" />
+              <input v-model="employee.emergency_contact" type="text" class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700/60 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:text-white transition-all" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Telepon Kontak Darurat</label>
-              <input v-model="employee.emergency_phone" type="text" class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-shadow" />
+              <input v-model="employee.emergency_phone" type="text" class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700/60 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none dark:border-gray-600 dark:text-white transition-all" />
             </div>
           </div>
           <div class="pt-4 flex justify-end">

@@ -1,7 +1,9 @@
 export interface IReferralPointDto {
   applicant_id?: number;
+  applicant?: any;
   created_at?: string;
   employee_id?: number;
+  employee?: any;
   id?: number;
   points?: number;
   reason?: string;
