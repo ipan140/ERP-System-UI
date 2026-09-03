@@ -56,3 +56,13 @@ export interface IPaymentTransactionDto {
   reference?: string;
   state?: string;
 }
+
+export interface IAccountDto {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  category: string;
+  balance: number;
+  is_active: boolean;
+}

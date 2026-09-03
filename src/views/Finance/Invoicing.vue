@@ -1,202 +1,513 @@
-
 <template>
   <AdminLayout>
     <div class="space-y-6">
-      <div class="flex items-start justify-between mb-6">
-        <PageBreadcrumb pageTitle="Invoicing" />
+      
+      <!-- HEADER -->
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Faktur & Tagihan (Customer Invoicing)</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Manajemen Piutang Usaha (AR), PPN 11%, Status Pembayaran & Cetak Faktur PDF Resmi
+          </p>
+        </div>
         
-        <div class="flex gap-2">
-          <button @click="fetchData" class="inline-flex items-center justify-center rounded-md border border-gray-300 py-2 px-4 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
-            Refresh
+        <div class="flex flex-wrap gap-2">
+          <button @click="triggerDunning" :disabled="isDunningRunning" class="inline-flex items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-4 py-2.5 text-sm font-semibold text-amber-700 dark:text-amber-400 shadow-sm hover:bg-amber-100 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            {{ isDunningRunning ? 'Menyapu Tagihan...' : 'Sapu Tagihan Macet (Dunning)' }}
           </button>
-          <button @click="openModal('create')" class="inline-flex items-center justify-center rounded-md bg-brand-500 py-2 px-6 text-center font-medium text-white hover:bg-brand-600">
-            + Tambah Data
+          <button @click="openInvoiceModal('create')" class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+            Buat Faktur Baru
           </button>
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        
-        <div class="flex flex-col sm:flex-row items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 gap-4">
-          <h3 class="font-bold text-gray-800 dark:text-white/90 text-title-sm">Recent Data</h3>
-          <div class="flex items-center gap-3 w-full sm:w-auto">
-            <div class="relative w-full sm:w-64">
-              <input type="text" placeholder="Search..." class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" />
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M19.7 18.3l-4.8-4.8c1-1.3 1.6-2.9 1.6-4.7 0-4.3-3.5-7.8-7.8-7.8S1 4.5 1 8.8s3.5 7.8 7.8 7.8c1.8 0 3.4-.6 4.7-1.6l4.8 4.8c.2.2.4.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4zM2.5 8.8c0-3.5 2.8-6.3 6.3-6.3s6.3 2.8 6.3 6.3-2.8 6.3-6.3 6.3-6.3-2.8-6.3-6.3z"/></svg>
-              </span>
-            </div>
-            <button class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              Filter
-            </button>
-          </div>
+      <!-- KPI METRICS INVOICING -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-800 shadow-sm">
+          <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Total Nilai Faktur</p>
+          <h3 class="text-2xl font-black text-gray-900 dark:text-white mt-2">{{ formatCurrency(totalInvoiced) }}</h3>
+          <p class="text-xs text-gray-400 mt-1">{{ records.length }} Faktur Terbit</p>
+        </div>
+        <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-800 shadow-sm">
+          <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Menunggu Pembayaran</p>
+          <h3 class="text-2xl font-black text-blue-600 dark:text-blue-400 mt-2">{{ formatCurrency(totalUnpaid) }}</h3>
+          <p class="text-xs text-blue-500 mt-1">{{ unpaidCount }} Faktur Belum Lunas</p>
+        </div>
+        <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-800 shadow-sm">
+          <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Lunas Terbayar</p>
+          <h3 class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">{{ formatCurrency(totalPaid) }}</h3>
+          <p class="text-xs text-emerald-500 mt-1">{{ paidCount }} Faktur Selesai</p>
+        </div>
+        <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-800 shadow-sm">
+          <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Faktur Draf</p>
+          <h3 class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-2">{{ draftCount }} <span class="text-sm font-normal text-gray-400">Faktur</span></h3>
+          <p class="text-xs text-amber-500 mt-1">Belum Diposting ke Jurnal</p>
+        </div>
+      </div>
+
+      <!-- FILTER & PENCARIAN -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-700 pb-4">
+        <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar">
+          <button 
+            v-for="st in statusTabs" 
+            :key="st.value" 
+            @click="selectedStatus = st.value"
+            :class="['px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors', selectedStatus === st.value ? 'bg-brand-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700']"
+          >
+            {{ st.label }}
+          </button>
         </div>
 
+        <div class="relative w-full sm:w-64">
+          <input 
+            v-model="searchQuery" 
+            type="text" 
+            placeholder="Cari no faktur atau pelanggan..." 
+            class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2 pl-10 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white"
+          />
+          <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        </div>
+      </div>
+
+      <!-- TABEL DAFTAR FAKTUR PENJUALAN -->
+      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-800 shadow-sm">
         <div class="max-w-full overflow-x-auto custom-scrollbar">
-          <table class="min-w-full">
+          <table class="min-w-full text-left">
             <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700">
-                <th class="w-12 px-5 py-3 sm:px-6">
-                  <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800" />
-                </th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">ID / Info</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nama / Judul</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Status</p></th>
-                <th class="px-5 py-3 text-right sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Aksi</p></th>
+              <tr class="bg-gray-50/50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+                <th class="px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">No. Faktur</th>
+                <th class="px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Pelanggan</th>
+                <th class="px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Tanggal & Jatuh Tempo</th>
+                <th class="px-6 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Total Tagihan</th>
+                <th class="px-6 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Status</th>
+                <th class="px-6 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Aksi</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
               <tr v-if="isLoading">
-                <td colspan="5" class="py-10 text-center">
+                <td colspan="6" class="py-12 text-center text-gray-500">
                   <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Memuat data...</p>
+                  <p class="mt-2 text-xs">Memuat data faktur...</p>
                 </td>
               </tr>
-              <tr v-else-if="error"><td colspan="5" class="p-4"><Alert variant="error" title="Gagal" :message="error" /></td></tr>
-              <tr v-else-if="records.length === 0"><td colspan="5" class="px-5 py-4 text-center text-gray-500">Data masih kosong.</td></tr>
-              <tr v-for="(record, index) in records" :key="record.id || index" class="border-t border-gray-100 dark:border-gray-800">
-                <td class="px-5 py-4 sm:px-6">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold dark:bg-gray-800">
-                      {{ record.id || (index + 1) }}
-                    </div>
+              <tr v-else-if="filteredInvoices.length === 0">
+                <td colspan="6" class="py-12 text-center text-gray-500 dark:text-gray-400 text-sm">
+                  Tidak ada faktur yang sesuai dengan kriteria.
+                </td>
+              </tr>
+              <tr 
+                v-for="inv in filteredInvoices" 
+                :key="inv.id" 
+                class="hover:bg-gray-50/60 dark:hover:bg-gray-700/30 transition-colors"
+              >
+                <!-- No Faktur -->
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="font-mono text-sm font-bold text-brand-600 dark:text-brand-400">
+                    {{ inv.name || `INV/2026/${inv.id}` }}
+                  </span>
+                  <div v-if="inv.follow_up_level && inv.follow_up_level > 0" class="mt-0.5">
+                    <span class="inline-flex text-[10px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-900/30 px-1.5 py-0.5 rounded">
+                      Dunning Level {{ inv.follow_up_level }}
+                    </span>
                   </div>
                 </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ (record as any).name || 'Data ' + (index+1) }}</span>
-                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ (record as any).description || '-' }}</span>
+
+                <!-- Pelanggan -->
+                <td class="px-6 py-4">
+                  <div class="font-semibold text-gray-900 dark:text-white text-sm">
+                    {{ inv.partner?.name || `Customer #${inv.partner_id || '-'}` }}
+                  </div>
+                  <span class="text-xs text-gray-400">{{ inv.partner?.street || 'Indonesia' }}</span>
                 </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <Badge color="success">
-                    {{ 'Active' }}
-                  </Badge>
+
+                <!-- Tanggal -->
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-xs text-gray-700 dark:text-gray-300">Terbit: {{ formatDate(inv.invoice_date) }}</div>
+                  <div class="text-xs text-rose-600 dark:text-rose-400 font-medium">Jatuh Tempo: {{ formatDate(inv.due_date) }}</div>
                 </td>
-                <td class="px-5 py-4 sm:px-6 text-right">
-                  <div class="flex items-center justify-end gap-3">
-                    <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
-                    <button @click="record.id && deleteRecord(record.id)" class="text-gray-500 hover:text-error-500 transition-colors" title="Hapus">
-                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"></path></svg>
+
+                <!-- Total Tagihan -->
+                <td class="px-6 py-4 text-right whitespace-nowrap">
+                  <div class="font-mono font-bold text-sm text-gray-900 dark:text-white">
+                    {{ formatCurrency(inv.amount_total) }}
+                  </div>
+                  <div class="text-[11px] text-gray-400">
+                    PPN (11%): {{ formatCurrency(inv.amount_tax) }}
+                  </div>
+                </td>
+
+                <!-- Status -->
+                <td class="px-6 py-4 text-center whitespace-nowrap">
+                  <span :class="getStatusBadge(inv.state)" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                    {{ inv.state || 'DRAFT' }}
+                  </span>
+                </td>
+
+                <!-- Aksi -->
+                <td class="px-6 py-4 text-right whitespace-nowrap">
+                  <div class="flex items-center justify-end gap-1.5">
+                    
+                    <!-- Tombol Edit Faktur -->
+                    <button 
+                      @click="openInvoiceModal('edit', inv)" 
+                      class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors" 
+                      title="Edit Faktur"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     </button>
+
+                    <!-- Tombol Post (Jika masih Draft) -->
+                    <button 
+                      v-if="inv.state === 'draft' || !inv.state" 
+                      @click="postInvoice(inv.id)" 
+                      class="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors" 
+                      title="Posting ke Jurnal Akuntansi"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </button>
+
+                    <!-- Tombol Unduh PDF Resmi -->
+                    <a 
+                      :href="`/api/finance/invoicing/${inv.id}/export`" 
+                      target="_blank" 
+                      class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors inline-flex items-center" 
+                      title="Cetak / Unduh PDF Faktur"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                    </a>
+
+                    <!-- Tombol Hapus -->
+                    <button 
+                      @click="deleteInvoice(inv.id)" 
+                      class="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-colors" 
+                      title="Hapus Faktur"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+
                   </div>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-
-        <div class="flex items-center justify-end gap-4 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">&larr; Previous</button>
-          <div class="flex items-center gap-1">
-            <button class="w-8 h-8 flex items-center justify-center text-sm font-medium text-white bg-brand-500 rounded-lg">1</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">2</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">3</button>
-          </div>
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">Next &rarr;</button>
-        </div>
-
       </div>
-    </div>
-  </AdminLayout>
 
-  <!-- Modal CRUD -->
-  <Teleport to="body">
-    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800 my-8">
-      <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
-        {{ modalMode === 'create' ? 'Tambah Data' : 'Edit Data' }}
-      </h3>
-      <form @submit.prevent="saveRecord">
-        
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama / Judul</label>
-          <input v-model="formData.name" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Deskripsi / Keterangan</label>
-          <input v-model="formData.description" type="text" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        
-        <div class="flex justify-end gap-3 mt-6">
-          <button type="button" @click="closeModal" class="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-md bg-brand-500 px-4 py-2 text-white hover:bg-brand-600 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan' }}
-          </button>
-        </div>
-      </form>
     </div>
-  </div>
-  </Teleport>
+
+    <!-- MODAL PEMBUATAN FAKTUR BARU -->
+    <Teleport to="body">
+      <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+        <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl dark:bg-gray-800 p-6 my-8">
+          <div class="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-gray-700">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+              {{ isEditing ? 'Edit Faktur Penjualan' : 'Buat Faktur Penjualan Baru' }}
+            </h3>
+            <button @click="isModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+
+          <form @submit.prevent="saveInvoice" class="space-y-4 mt-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase text-gray-600 dark:text-gray-300 mb-1">Nomor Faktur</label>
+                <input v-model="formData.name" type="text" placeholder="INV/2026/0001" required class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm dark:border-gray-600 dark:text-white outline-none focus:border-brand-500 font-mono font-bold" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase text-gray-600 dark:text-gray-300 mb-1">Pilih Pelanggan (Customer Partner)</label>
+                <select v-model.number="formData.partner_id" required class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm dark:border-gray-600 dark:text-white outline-none focus:border-brand-500">
+                  <option disabled value="0">-- Pilih Pelanggan --</option>
+                  <option v-for="p in partners" :key="p.id" :value="p.id">
+                    {{ p.name }} ({{ p.city || 'Indonesia' }})
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase text-gray-600 dark:text-gray-300 mb-1">Tanggal Faktur</label>
+                <div class="relative">
+                  <input 
+                    v-model="formData.invoice_date" 
+                    type="date" 
+                    required 
+                    @click="($event.target as any)?.showPicker?.()"
+                    class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm dark:border-gray-600 dark:text-white outline-none focus:border-brand-500 cursor-pointer" 
+                  />
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase text-gray-600 dark:text-gray-300 mb-1">Jatuh Tempo (Due Date)</label>
+                <div class="relative">
+                  <input 
+                    v-model="formData.due_date" 
+                    type="date" 
+                    required 
+                    @click="($event.target as any)?.showPicker?.()"
+                    class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm dark:border-gray-600 dark:text-white outline-none focus:border-brand-500 cursor-pointer" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 space-y-3">
+              <h4 class="text-xs font-bold uppercase text-gray-700 dark:text-gray-200">Item Produk / Jasa</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="sm:col-span-2">
+                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1">Deskripsi Item</label>
+                  <input v-model="itemLine.description" type="text" placeholder="Jasa Konsultasi ERP / Lisensi Software" required class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700 px-3 py-2 text-xs dark:border-gray-600 dark:text-white outline-none" />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1">Jumlah (Qty)</label>
+                  <input v-model.number="itemLine.quantity" type="number" min="1" required class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700 px-3 py-2 text-xs dark:border-gray-600 dark:text-white outline-none" />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1">Harga Satuan (Rp)</label>
+                  <input v-model.number="itemLine.unit_price" type="number" min="1000" step="any" required placeholder="0" class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700 px-3 py-2 text-xs dark:border-gray-600 dark:text-white outline-none font-mono font-bold" />
+                </div>
+                <div class="flex items-center pt-5">
+                  <label class="inline-flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300">
+                    <input v-model="includeTax" type="checkbox" class="w-4 h-4 rounded text-brand-500" />
+                    <span>Termasuk PPN 11%</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rangkuman Perhitungan -->
+            <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-xs text-blue-800 dark:text-blue-300 flex justify-between items-center font-mono">
+              <span>Estimasi Total (Dasar + PPN 11%):</span>
+              <span class="font-bold text-sm">{{ formatCurrency(calculatedTotal) }}</span>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button type="button" @click="isModalOpen = false" class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Batal</button>
+              <button type="submit" :disabled="isSaving" class="px-5 py-2 text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 rounded-lg disabled:opacity-50">
+                {{ isSaving ? 'Menerbitkan...' : 'Terbitkan Faktur' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+
+  </AdminLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
-import Alert from '@/components/ui/Alert.vue'
-import Badge from '@/components/ui/Badge.vue'
-import { invoicingService } from '@/services/finance/invoicing.service'
-import type { IInvoiceDto } from '@/types/finance'
+import { http } from '@/services/http'
+import type { IInvoiceDto as IInvoice } from '@/types/finance'
 
-const records = ref<IInvoiceDto[]>([])
+const invoices = ref<IInvoice[]>([])
 const isLoading = ref(false)
-const error = ref<string | null>(null)
-
-const isModalOpen = ref(false)
-const modalMode = ref<'create' | 'edit'>('create')
 const isSaving = ref(false)
-const formData = ref<IInvoiceDto | any>({ name: '', description: '' })
+const isDunningRunning = ref(false)
+const searchQuery = ref('')
+const selectedStatus = ref('all')
 
-const fetchData = async () => {
-  isLoading.value = true; error.value = null
+const statusTabs = [
+  { label: 'Semua Faktur', value: 'all' },
+  { label: 'Draf (Draft)', value: 'draft' },
+  { label: 'Belum Lunas (Posted)', value: 'posted' },
+  { label: 'Lunas (Paid)', value: 'paid' },
+]
+
+// Form Modal
+const isModalOpen = ref(false)
+const isEditing = ref(false)
+const editingId = ref<number | null>(null)
+const includeTax = ref(true)
+const formData = ref<Partial<IInvoice>>({
+  name: '',
+  partner_id: 1,
+  invoice_date: new Date().toISOString().split('T')[0],
+  due_date: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+})
+
+const itemLine = ref({
+  description: 'Jasa Implementasi Sistem ERP & Cloud Server',
+  quantity: 1,
+  unit_price: 25000000
+})
+
+const partners = ref<any[]>([])
+
+onMounted(() => {
+  fetchInvoices()
+  fetchPartners()
+})
+
+const fetchPartners = async () => {
   try {
-    const data = await invoicingService.getAll()
-    records.value = data
-  } catch (err: any) {
-    error.value = 'Gagal: ' + (err.response?.data?.message || err.message)
+    const res = await http.get('/base/partner')
+    partners.value = res.data?.data || res.data || []
+    if (partners.value.length > 0 && !formData.value.partner_id) {
+      formData.value.partner_id = partners.value[0].id
+    }
+  } catch (err) {
+    console.error('Failed to load partners', err)
+  }
+}
+
+const fetchInvoices = async () => {
+  isLoading.value = true
+  try {
+    const res = await http.get('/finance/invoicing')
+    records.value = res.data?.data || res.data || []
+  } catch (err) {
+    console.error('Failed to load invoices', err)
   } finally {
     isLoading.value = false
   }
 }
 
-const openModal = (mode: 'create' | 'edit', data: any = null) => {
-  modalMode.value = mode
-  if (mode === 'edit' && data) {
-    formData.value = { id: data.id, name: data.name || data.title || '', description: data.description || '' }
+// Perhitungan Otomatis
+const calculatedUntaxed = computed(() => {
+  return (itemLine.value.quantity || 1) * (itemLine.value.unit_price || 0)
+})
+
+const calculatedTax = computed(() => {
+  return includeTax.value ? calculatedUntaxed.value * 0.11 : 0
+})
+
+const calculatedTotal = computed(() => {
+  return calculatedUntaxed.value + calculatedTax.value
+})
+
+// Computed KPI
+const totalInvoiced = computed(() => records.value.reduce((acc, c) => acc + (c.amount_total || 0), 0))
+const totalUnpaid = computed(() => records.value.filter(r => r.state === 'posted').reduce((acc, c) => acc + (c.amount_total || 0), 0))
+const totalPaid = computed(() => records.value.filter(r => r.state === 'paid').reduce((acc, c) => acc + (c.amount_total || 0), 0))
+const unpaidCount = computed(() => records.value.filter(r => r.state === 'posted').length)
+const paidCount = computed(() => records.value.filter(r => r.state === 'paid').length)
+const draftCount = computed(() => records.value.filter(r => r.state === 'draft' || !r.state).length)
+
+// Filter List
+const filteredInvoices = computed(() => {
+  return records.value.filter(inv => {
+    const matchStatus = selectedStatus.value === 'all' || inv.state === selectedStatus.value || (!inv.state && selectedStatus.value === 'draft')
+    const matchSearch = (inv.name && inv.name.toLowerCase().includes(searchQuery.value.toLowerCase())) ||
+                        (inv.partner?.name && inv.partner.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
+    return matchStatus && matchSearch
+  })
+})
+
+// Formatters
+const formatCurrency = (val: number) => {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val || 0)
+}
+
+const formatDate = (d: string) => {
+  if (!d) return '-'
+  return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+const getStatusBadge = (state: string) => {
+  const s = (state || 'draft').toLowerCase()
+  if (s === 'paid') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+  if (s === 'posted') return 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
+  return 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+}
+
+// Actions
+const openInvoiceModal = (mode: 'create' | 'edit', inv?: IInvoice) => {
+  isEditing.value = mode === 'edit'
+  if (mode === 'edit' && inv) {
+    editingId.value = inv.id
+    formData.value = {
+      name: inv.name,
+      partner_id: inv.partner_id,
+      invoice_date: inv.invoice_date ? new Date(inv.invoice_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      due_date: inv.due_date ? new Date(inv.due_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      state: inv.state || 'draft',
+    }
+    // Jika untaxed sudah ada
+    if (inv.amount_untaxed > 0) {
+      itemLine.value.unit_price = inv.amount_untaxed
+      itemLine.value.quantity = 1
+    }
   } else {
-    formData.value = { id: null, name: '', description: '' }
+    editingId.value = null
+    const randomNum = Math.floor(1000 + Math.random() * 9000)
+    formData.value = {
+      name: `INV/${new Date().getFullYear()}/${randomNum}`,
+      partner_id: partners.value.length > 0 ? partners.value[0].id : 1,
+      invoice_date: new Date().toISOString().split('T')[0],
+      due_date: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+    }
   }
   isModalOpen.value = true
 }
 
-const closeModal = () => { isModalOpen.value = false }
-
-const saveRecord = async () => {
+const saveInvoice = async () => {
   isSaving.value = true
   try {
-    if (modalMode.value === 'edit' && formData.value.id) {
-      await invoicingService.update(formData.value.id, formData.value)
-    } else {
-      await invoicingService.create(formData.value)
+    const payload = {
+      name: formData.value.name,
+      partner_id: formData.value.partner_id,
+      invoice_date: new Date(formData.value.invoice_date!).toISOString(),
+      due_date: new Date(formData.value.due_date!).toISOString(),
+      state: isEditing.value ? (formData.value.state || 'draft') : 'draft',
+      amount_untaxed: calculatedUntaxed.value,
+      amount_tax: calculatedTax.value,
+      amount_total: calculatedTotal.value,
+      residual_amount: calculatedTotal.value,
     }
-    closeModal()
-    fetchData()
+    if (isEditing.value && editingId.value) {
+      await http.put(`/finance/invoicing/${editingId.value}`, payload)
+      alert('Faktur berhasil diperbarui!')
+    } else {
+      await http.post('/finance/invoicing', payload)
+      alert('Faktur berhasil dibuat dalam status Draf!')
+    }
+    isModalOpen.value = false
+    await fetchInvoices()
   } catch (err: any) {
-    alert(err.response?.data?.message || err.message)
+    alert('Gagal menyimpan faktur: ' + (err.response?.data?.message || err.message))
   } finally {
     isSaving.value = false
   }
 }
 
-const deleteRecord = async (id: number) => {
-  if (!confirm('Hapus data ini?')) return
+const postInvoice = async (id: number) => {
+  if (!confirm('Posting faktur ini ke Jurnal Akuntansi (AR)?')) return
   try {
-    await invoicingService.delete(id)
-    fetchData()
+    await http.post(`/finance/invoicing/${id}/post`)
+    await fetchInvoices()
+    alert('Faktur berhasil diposting dan piutang telah tercatat di Jurnal Akuntansi!')
   } catch (err: any) {
-    alert(err.response?.data?.message || err.message)
+    alert('Gagal posting faktur: ' + (err.response?.data?.message || err.message))
   }
 }
 
-onMounted(() => fetchData())
+const deleteInvoice = async (id: number) => {
+  if (!confirm('Hapus faktur ini?')) return
+  try {
+    await http.delete(`/finance/invoicing/${id}`)
+    await fetchInvoices()
+  } catch (err: any) {
+    alert('Gagal menghapus: ' + (err.response?.data?.message || err.message))
+  }
+}
+
+const triggerDunning = async () => {
+  isDunningRunning.value = true
+  try {
+    await http.post('/finance/invoicing/dunning')
+    await fetchInvoices()
+    alert('Mesin Dunning berhasil memindai semua faktur jatuh tempo!')
+  } catch (err: any) {
+    alert('Gagal: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isDunningRunning.value = false
+  }
+}
 </script>

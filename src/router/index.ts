@@ -395,6 +395,12 @@ const router = createRouter({
     },
     // FASE 6 ROUTES (FINANCE)
     {
+      path: '/finance/partners',
+      name: 'FinancePartners',
+      component: () => import('../views/Finance/Partners.vue'),
+      meta: { title: 'Master Bank & Rekanan' },
+    },
+    {
       path: '/finance/invoicing',
       name: 'FinanceInvoicing',
       component: () => import('../views/Finance/Invoicing.vue'),
@@ -410,7 +416,13 @@ const router = createRouter({
       path: '/finance/accounting',
       name: 'FinanceAccounting',
       component: () => import('../views/Finance/Accounting.vue'),
-      meta: { title: 'Akuntansi & Buku Besar' },
+      meta: { title: 'Bagan Akun (COA) & Kas' },
+    },
+    {
+      path: '/finance/reports',
+      name: 'FinanceReports',
+      component: () => import('../views/Finance/FinancialReports.vue'),
+      meta: { title: 'Laporan Keuangan SAK' },
     },
     {
       path: '/finance/approvals',
@@ -441,6 +453,30 @@ const router = createRouter({
       name: 'FinanceDocuments',
       component: () => import('../views/Finance/Documents.vue'),
       meta: { title: 'Dokumen Keuangan' },
+    },
+    {
+      path: '/finance/reconciliation',
+      name: 'FinanceReconciliation',
+      component: () => import('../views/Finance/BankReconciliation.vue'),
+      meta: { title: 'Rekonsiliasi Bank' },
+    },
+    {
+      path: '/finance/tax',
+      name: 'FinanceTax',
+      component: () => import('../views/Finance/Tax.vue'),
+      meta: { title: 'Pajak Indonesia' },
+    },
+    {
+      path: '/finance/assets',
+      name: 'FinanceAssets',
+      component: () => import('../views/Finance/FixedAssets.vue'),
+      meta: { title: 'Aset Tetap & Depresiasi' },
+    },
+    {
+      path: '/finance/budget',
+      name: 'FinanceBudget',
+      component: () => import('../views/Finance/Budget.vue'),
+      meta: { title: 'Kontrol Anggaran' },
     },
     // FASE 7 ROUTES (WEBSITE)
     {
