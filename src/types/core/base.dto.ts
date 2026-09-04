@@ -1,4 +1,4 @@
-export interface ICountryDto {
+﻿export interface ICountryDto {
   code?: string;
   id?: number;
   name?: string;
@@ -19,26 +19,28 @@ export interface ICurrencyDto {
   symbol?: string;
 }
 
-export interface IDummy1Dto {
-  city?: string;
+export interface IPartnerDto {
+  id: number;
+  name: string;
+  is_company: boolean;
+  type: string;
+  email: string;
+  phone: string;
+  city: string;
+  vat: string;
+  is_customer: boolean;
+  is_vendor: boolean;
+  created_at: string;
   country?: any;
   country_id?: number;
-  created_at?: string;
-  email?: string;
-  id?: number;
-  is_company?: boolean;
-  is_customer?: boolean;
-  is_vendor?: boolean;
   mobile?: string;
-  name?: string;
   parent?: any;
   parent_id?: number;
-  phone?: string;
   state?: any;
   state_id?: number;
   street?: string;
   street2?: string;
-  type?: string;
-  vat?: string;
   zip?: string;
 }
+
+export interface IDummy1Dto extends IPartnerDto {}

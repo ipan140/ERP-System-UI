@@ -248,14 +248,7 @@
 import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { http } from '@/services/http'
-
-interface IConsolidation {
-  id: number
-  name: string
-  period: string
-  branches?: string[]
-  created_at: string
-}
+import type { IConsolidationDto as IConsolidation } from '@/types/finance'
 
 const records = ref<IConsolidation[]>([])
 const isLoading = ref(false)

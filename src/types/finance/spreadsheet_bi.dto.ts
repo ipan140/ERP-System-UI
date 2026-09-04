@@ -1,5 +1,5 @@
-export interface ISpreadsheetDto {
-  created_at?: string;
-  id?: number;
-  name?: string;
+﻿export interface ISpreadsheetDto {
+  id: number;
+  name: string;
+  created_at: string;
 }

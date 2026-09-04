@@ -6,3 +6,4 @@ export * from './invoicing.dto';
 export * from './sign.dto';
 export * from './spreadsheet_bi.dto';
 export * from './enterprise.dto';
+export * from './consolidation.dto';

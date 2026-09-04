@@ -306,7 +306,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { http } from '@/services/http'
 import type { IInvoiceDto as IInvoice } from '@/types/finance'
 
-const invoices = ref<IInvoice[]>([])
+const records = ref<IInvoice[]>([])
 const isLoading = ref(false)
 const isSaving = ref(false)
 const isDunningRunning = ref(false)

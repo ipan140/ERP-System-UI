@@ -99,11 +99,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Alert from '@/components/ui/Alert.vue'
 import { http } from '@/services/http'
-
-interface ISkillDto {
-  id?: number;
-  name: string;
-}
+import type { ISkillDto } from '@/types/hr'
 
 const records = ref<ISkillDto[]>([])
 const isLoading = ref(false)

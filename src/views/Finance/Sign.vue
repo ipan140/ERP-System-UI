@@ -237,19 +237,7 @@
 import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { http } from '@/services/http'
-
-interface ISignRequest {
-  id: number
-  name: string
-  document_title: string
-  signer_name: string
-  signer_role: string
-  status: string
-  signature_hash?: string
-  signed_at?: string
-  created_at: string
-  updated_at?: string
-}
+import type { ISignRequestDto as ISignRequest } from '@/types/finance'
 
 const records = ref<ISignRequest[]>([])
 const isLoading = ref(false)

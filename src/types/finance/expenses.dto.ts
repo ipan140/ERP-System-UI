@@ -1,21 +1,21 @@
-export interface IExpenseDto {
-  created_at?: string;
+﻿export interface IExpenseDto {
+  id: number;
+  name: string;
+  employee_id: number;
   employee?: any;
-  employee_id?: number;
   expenseSheet?: any;
   expense_sheet_id?: number;
-  id?: number;
-  name?: string;
-  state?: string;
-  total_amount?: number;
+  total_amount: number;
+  state: string;
+  created_at: string;
 }
 
 export interface IExpenseSheetDto {
-  created_at?: string;
+  id: number;
+  name: string;
+  employee_id: number;
   employee?: any;
-  employee_id?: number;
-  id?: number;
-  name?: string;
-  state?: string;
-  total?: number;
+  total: number;
+  state: string;
+  created_at: string;
 }

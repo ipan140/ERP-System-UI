@@ -162,7 +162,7 @@
               </div>
             </div>
             <div class="flex items-center gap-2.5">
-              <button @click="alert('Rumus dan data spreadsheet berhasil disinkronkan ke GL!')" class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-all">
+              <button @click="handleSyncFormula" class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 Sinkronkan Formula
               </button>
@@ -266,12 +266,7 @@
 import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { http } from '@/services/http'
-
-interface ISpreadsheet {
-  id: number
-  name: string
-  created_at: string
-}
+import type { ISpreadsheetDto as ISpreadsheet } from '@/types/finance'
 
 const records = ref<ISpreadsheet[]>([])
 const isLoading = ref(false)
@@ -377,5 +372,9 @@ const deleteRecord = async (id: number) => {
   } catch (err: any) {
     alert('Gagal menghapus: ' + (err.response?.data?.message || err.message))
   }
+}
+
+const handleSyncFormula = () => {
+  alert('Rumus dan data spreadsheet berhasil disinkronkan ke GL!')
 }
 </script>

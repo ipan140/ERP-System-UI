@@ -173,19 +173,7 @@
 import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { http } from '@/services/http'
-
-interface IApproval {
-  id: number
-  name: string
-  type: string
-  amount: number
-  requester_name: string
-  stage: string
-  status: string
-  approver_name?: string
-  notes?: string
-  created_at: string
-}
+import type { IApprovalDto as IApproval } from '@/types/finance'
 
 const records = ref<IApproval[]>([])
 const isLoading = ref(false)

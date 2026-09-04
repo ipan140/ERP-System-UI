@@ -1,13 +1,13 @@
-export interface IFinanceDocumentDto {
-  created_at?: string;
-  id?: number;
-  name?: string;
+﻿export interface IFinanceDocumentDto {
+  id: number;
+  name: string;
+  partner_id: number;
   partner?: any;
-  partner_id?: number;
+  created_at: string;
 }
 
 export interface IWorkspaceDto {
+  id: number;
+  name: string;
   created_at?: string;
-  id?: number;
-  name?: string;
 }

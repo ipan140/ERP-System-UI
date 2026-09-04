@@ -107,15 +107,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Alert from '@/components/ui/Alert.vue'
 import { http } from '@/services/http'
 import { departmentsService } from '@/services/hr/departments.service'
-import type { IDepartmentDto } from '@/types/hr/employees.dto'
-
-export interface IJobPositionDto {
-  id?: number;
-  name: string;
-  department_id?: number;
-  department?: IDepartmentDto;
-  state?: string;
-}
+import type { IDepartmentDto, IJobPositionDto } from '@/types/hr'
 
 const records = ref<IJobPositionDto[]>([])
 const departmentsList = ref<IDepartmentDto[]>([])
