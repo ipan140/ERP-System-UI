@@ -25,4 +25,23 @@ export const marketingAutomationService = {
   async delete(id: number | string): Promise<void> {
     await http.delete(`/marketing/marketing_automation/${id}`);
   },
+
+  async getAllActivities(): Promise<any[]> {
+    const response = await http.get<IResponse<any[]>>("/marketing/marketing_automation/workflowactivity");
+    return response.data.data ?? response.data;
+  },
+
+  async createActivity(payload: any): Promise<any> {
+    const response = await http.post<IResponse<any>>("/marketing/marketing_automation/workflowactivity", payload);
+    return response.data.data ?? response.data;
+  },
+
+  async updateActivity(id: number | string, payload: any): Promise<any> {
+    const response = await http.put<IResponse<any>>(`/marketing/marketing_automation/workflowactivity/${id}`, payload);
+    return response.data.data ?? response.data;
+  },
+
+  async deleteActivity(id: number | string): Promise<void> {
+    await http.delete(`/marketing/marketing_automation/workflowactivity/${id}`);
+  },
 };

@@ -25,4 +25,23 @@ export const massMailingService = {
   async delete(id: number | string): Promise<void> {
     await http.delete(`/marketing/mass_mailing/${id}`);
   },
+
+  async getAllUtm(): Promise<any[]> {
+    const response = await http.get<IResponse<any[]>>("/marketing/mass_mailing/utmtracker");
+    return response.data.data ?? response.data;
+  },
+
+  async createUtm(payload: any): Promise<any> {
+    const response = await http.post<IResponse<any>>("/marketing/mass_mailing/utmtracker", payload);
+    return response.data.data ?? response.data;
+  },
+
+  async updateUtm(id: number | string, payload: any): Promise<any> {
+    const response = await http.put<IResponse<any>>(`/marketing/mass_mailing/utmtracker/${id}`, payload);
+    return response.data.data ?? response.data;
+  },
+
+  async deleteUtm(id: number | string): Promise<void> {
+    await http.delete(`/marketing/mass_mailing/utmtracker/${id}`);
+  },
 };

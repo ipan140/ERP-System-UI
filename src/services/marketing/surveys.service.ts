@@ -25,4 +25,17 @@ export const surveysService = {
   async delete(id: number | string): Promise<void> {
     await http.delete(`/marketing/surveys/${id}`);
   },
+
+  async getPublicSurvey(id: number | string): Promise<any> {
+    const response = await http.get<IResponse<any>>(`/public/surveys/${id}`);
+    return response.data.data ?? response.data;
+  },
+
+  async submitPublicResponse(id: number | string, rating: number, feedback?: string): Promise<any> {
+    const response = await http.post<IResponse<any>>(`/public/surveys/${id}/respond`, {
+      rating,
+      feedback,
+    });
+    return response.data.data ?? response.data;
+  },
 };

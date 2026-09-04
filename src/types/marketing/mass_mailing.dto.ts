@@ -1,9 +1,14 @@
 export interface IMailingCampaignDto {
-  clicked_count?: number;
   id?: number;
   name?: string;
-  opened_count?: number;
+  subject?: string;
+  target_audience?: string;
+  status?: 'Draft' | 'Scheduled' | 'In-Queue' | 'Sent';
   sent_count?: number;
+  opened_count?: number;
+  clicked_count?: number;
+  bounced_count?: number;
+  scheduled_at?: string | null;
 }
 
 export interface IUtmTrackerDto {

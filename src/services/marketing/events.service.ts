@@ -25,4 +25,37 @@ export const eventsService = {
   async delete(id: number | string): Promise<void> {
     await http.delete(`/marketing/events/${id}`);
   },
+
+  async getAllTickets(): Promise<any[]> {
+    const response = await http.get<IResponse<any[]>>("/marketing/events/eventticket");
+    return response.data.data ?? response.data;
+  },
+
+  async createTicket(payload: any): Promise<any> {
+    const response = await http.post<IResponse<any>>("/marketing/events/eventticket", payload);
+    return response.data.data ?? response.data;
+  },
+
+  async updateTicket(id: number | string, payload: any): Promise<any> {
+    const response = await http.put<IResponse<any>>(`/marketing/events/eventticket/${id}`, payload);
+    return response.data.data ?? response.data;
+  },
+
+  async deleteTicket(id: number | string): Promise<void> {
+    await http.delete(`/marketing/events/eventticket/${id}`);
+  },
+
+  async scanTicket(barcode: string): Promise<any> {
+    const response = await http.post<IResponse<any>>("/marketing/events/eventticket/scan", { barcode });
+    return response.data.data ?? response.data;
+  },
+
+  async getPartners(): Promise<any[]> {
+    try {
+      const response = await http.get<IResponse<any[]>>("/base/partner");
+      return response.data.data ?? response.data ?? [];
+    } catch {
+      return [];
+    }
+  },
 };

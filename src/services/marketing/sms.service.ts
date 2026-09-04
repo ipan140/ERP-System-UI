@@ -25,4 +25,14 @@ export const smsMarketingService = {
   async delete(id: number | string): Promise<void> {
     await http.delete(`/marketing/sms_marketing/${id}`);
   },
+
+  async broadcast(id: number | string): Promise<any> {
+    const response = await http.post<IResponse<any>>(`/marketing/sms_marketing/${id}/broadcast`);
+    return response.data.data ?? response.data;
+  },
+
+  async sendTest(id: number | string, payload: { target_phone: string; channel?: string }): Promise<any> {
+    const response = await http.post<IResponse<any>>(`/marketing/sms_marketing/${id}/send-test`, payload);
+    return response.data.data ?? response.data;
+  },
 };

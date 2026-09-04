@@ -307,6 +307,12 @@ const router = createRouter({
       component: () => import('../views/Marketing/Surveys.vue'),
       meta: { title: 'Survei' },
     },
+    {
+      path: '/survey/:id',
+      name: 'PublicSurvey',
+      component: () => import('../views/Marketing/PublicSurveyForm.vue'),
+      meta: { title: 'Kuesioner Survei Kepuasan', public: true },
+    },
     // FASE 4 ROUTES (SERVICES)
     {
       path: '/services/appointments',
@@ -618,6 +624,11 @@ router.beforeEach((to, from, next) => {
   document.title = `${to.meta.title || 'App'} | ERP-System`
 
   const isAuthenticated = !!localStorage.getItem('token')
+
+  // Bypass public routes (seperti pengisian kuesioner /survey/:id)
+  if (to.meta.public || to.name === 'PublicSurvey') {
+    return next()
+  }
 
   // 1. Authentication Guard
   if (to.name !== 'Signin' && to.name !== 'Signup' && !isAuthenticated) {
