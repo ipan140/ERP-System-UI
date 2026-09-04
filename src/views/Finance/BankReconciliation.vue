@@ -9,10 +9,26 @@
             Pencocokan Mutasi Rekening Koran (BCA, Mandiri) dengan Faktur Penjualan (Invoicing) secara Real-Time
           </p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
+          <input 
+            type="file" 
+            ref="fileInputRef" 
+            accept=".csv" 
+            class="hidden" 
+            @change="handleFileUpload" 
+          />
+          <button 
+            @click="triggerFileInput" 
+            :disabled="isUploadingCsv"
+            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            title="Import Rekening Koran CSV KlikBCA Bisnis / Mandiri MCM"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+            <span>{{ isUploadingCsv ? 'Mengunggah CSV...' : 'Import CSV Bank' }}</span>
+          </button>
           <button @click="openModal" class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-            <span>Unggah / Input Mutasi</span>
+            <span>Input Mutasi Manual</span>
           </button>
           <button @click="triggerAutoMatch" :disabled="isMatching" class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition-colors disabled:opacity-50">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
@@ -267,6 +283,38 @@ const isMatching = ref(false)
 const isSaving = ref(false)
 const isModalOpen = ref(false)
 const editId = ref<number | null>(null)
+const isUploadingCsv = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+const triggerFileInput = () => {
+  fileInputRef.value?.click()
+}
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (!target.files || target.files.length === 0) return
+
+  const file = target.files[0]
+  const formDataObj = new FormData()
+  formDataObj.append('file', file)
+
+  isUploadingCsv.value = true
+  try {
+    const res = await http.post('/finance/reconciliation/upload-csv', formDataObj, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    const importedCount = res.data?.data?.length || 0
+    alert(`Sukses mengimpor rekening koran! ${importedCount} baris mutasi bank berhasil dimuat.`)
+    await fetchStatements()
+  } catch (err: any) {
+    alert('Gagal mengimpor file CSV rekening koran: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isUploadingCsv.value = false
+    if (target) target.value = ''
+  }
+}
 
 // State Modal Pencocokan
 const isMatchModalOpen = ref(false)

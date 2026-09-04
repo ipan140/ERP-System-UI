@@ -11,10 +11,27 @@
           </p>
         </div>
         
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
+          <button 
+            @click="exportToExcel" 
+            :disabled="isExporting"
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition-colors disabled:opacity-50"
+            title="Download Spreadsheet Excel Resmi (.xlsx)"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            <span>{{ isExporting ? 'Mengunduh...' : 'Download Excel (.xlsx)' }}</span>
+          </button>
+          <button 
+            @click="printReportPdf" 
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 transition-colors"
+            title="Cetak PDF Laporan Resmi"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+            <span>Cetak PDF Resmi</span>
+          </button>
           <button @click="fetchReports" class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-700 px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-            Perbarui Laporan
+            <span>Perbarui</span>
           </button>
         </div>
       </div>
@@ -262,5 +279,37 @@ const fetchReports = async () => {
 
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val || 0)
+}
+
+const isExporting = ref(false)
+
+const exportToExcel = async () => {
+  isExporting.value = true
+  try {
+    const endpoint = activeTab.value === 'pl' 
+      ? '/finance/accounting/reports/profit-loss/export-excel'
+      : '/finance/accounting/reports/balance-sheet/export-excel'
+    
+    const res = await http.get(endpoint, { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    const filename = activeTab.value === 'pl'
+      ? `Laporan_Laba_Rugi_${new Date().toISOString().slice(0,10)}.xlsx`
+      : `Laporan_Neraca_${new Date().toISOString().slice(0,10)}.xlsx`
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (err: any) {
+    alert('Gagal mengunduh Excel: ' + err.message)
+  } finally {
+    isExporting.value = false
+  }
+}
+
+const printReportPdf = () => {
+  window.print()
 }
 </script>

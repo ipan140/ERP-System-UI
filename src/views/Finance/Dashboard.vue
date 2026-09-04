@@ -20,57 +20,79 @@
         </div>
       </div>
 
-      <!-- 4 UTAMA KPI CARD -->
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <!-- 6 UTAMA KPI ENTERPRISE FINANCE CARD -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         
         <!-- Total Likuiditas Kas & Bank -->
-        <div class="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 p-5 dark:border-gray-700 shadow-sm">
+        <div class="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 p-4 dark:border-gray-700 shadow-sm">
           <div class="flex items-center justify-between">
-            <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Kas & Setara Kas (Liquidity)</p>
-            <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Kas & Bank</p>
+            <div class="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
           </div>
-          <h4 class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">{{ formatCompact(totalCash) }}</h4>
-          <p class="text-xs text-gray-400 mt-1">{{ cashAccountsCount }} Rekening Bank & Kas Kecil</p>
+          <h4 class="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-2">{{ formatCompact(totalCash) }}</h4>
+          <p class="text-[11px] text-gray-400 mt-0.5">{{ cashAccountsCount }} Rekening Bank</p>
         </div>
 
         <!-- Piutang Usaha (AR) -->
-        <div class="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 p-5 dark:border-gray-700 shadow-sm">
+        <div class="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 p-4 dark:border-gray-700 shadow-sm">
           <div class="flex items-center justify-between">
-            <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Piutang Pelanggan (AR)</p>
-            <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Piutang (AR)</p>
+            <div class="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             </div>
           </div>
-          <h4 class="text-2xl font-black text-blue-600 dark:text-blue-400 mt-2">{{ formatCompact(totalAR) }}</h4>
-          <p class="text-xs text-blue-500 mt-1">{{ unpaidInvoiceCount }} Faktur Belum Lunas</p>
+          <h4 class="text-xl font-black text-blue-600 dark:text-blue-400 mt-2">{{ formatCompact(totalAR) }}</h4>
+          <p class="text-[11px] text-blue-500 mt-0.5">{{ unpaidInvoiceCount }} Faktur Belum Lunas</p>
         </div>
 
         <!-- Hutang Lancar & Pajak (AP) -->
-        <div class="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 p-5 dark:border-gray-700 shadow-sm">
+        <div class="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 p-4 dark:border-gray-700 shadow-sm">
           <div class="flex items-center justify-between">
-            <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Kewajiban & Hutang (AP)</p>
-            <div class="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Hutang & Pajak</p>
+            <div class="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
             </div>
           </div>
-          <h4 class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-2">{{ formatCompact(totalAP) }}</h4>
-          <p class="text-xs text-amber-500 mt-1">Hutang Usaha, Gaji & Pajak PPh/PPN</p>
+          <h4 class="text-xl font-black text-amber-600 dark:text-amber-400 mt-2">{{ formatCompact(totalAP) }}</h4>
+          <p class="text-[11px] text-amber-500 mt-0.5">Hutang Usaha & Pajak</p>
         </div>
 
-        <!-- Laba Bersih Tahun Berjalan -->
-        <div class="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 p-5 dark:border-gray-700 shadow-sm">
+        <!-- Nilai Buku Aset Tetap (NBV) -->
+        <div class="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 p-4 dark:border-gray-700 shadow-sm">
           <div class="flex items-center justify-between">
-            <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Laba Bersih (Net Profit)</p>
-            <div class="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Aktiva Tetap (NBV)</p>
+            <div class="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
             </div>
           </div>
-          <h4 :class="['text-2xl font-black mt-2', netProfit >= 0 ? 'text-purple-600 dark:text-purple-400' : 'text-rose-600 dark:text-rose-400']">
-            {{ formatCompact(netProfit) }}
-          </h4>
-          <p class="text-xs text-gray-400 mt-1">Margin: {{ netMarginPercent.toFixed(1) }}% dari Omzet</p>
+          <h4 class="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-2">{{ formatCompact(totalAssetNBV) }}</h4>
+          <p class="text-[11px] text-indigo-500 mt-0.5">{{ assetCount }} Unit Aktiva Tercatat</p>
+        </div>
+
+        <!-- Pagu Anggaran Tersedia -->
+        <div class="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 p-4 dark:border-gray-700 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Pagu Anggaran Divisi</p>
+            <div class="w-7 h-7 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            </div>
+          </div>
+          <h4 class="text-xl font-black text-teal-600 dark:text-teal-400 mt-2">{{ formatCompact(budgetRemaining) }}</h4>
+          <p class="text-[11px] text-teal-500 mt-0.5">Penyerapan: {{ budgetUsagePct.toFixed(1) }}%</p>
+        </div>
+
+        <!-- Kas Kecil (Petty Cash Fisik) -->
+        <div class="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 p-4 dark:border-gray-700 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Kas Kecil (Imprest)</p>
+            <div class="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+            </div>
+          </div>
+          <h4 class="text-xl font-black text-rose-600 dark:text-rose-400 mt-2">{{ formatCompact(pettyCashBalance) }}</h4>
+          <p class="text-[11px] text-gray-400 mt-0.5">Plafon: {{ formatCompact(pettyCashPlafond) }}</p>
         </div>
 
       </div>
@@ -94,27 +116,57 @@
 
       </div>
 
-      <!-- RECENT FINANCE OVERVIEW TABLE -->
+      <!-- STATUS INTEGRASI MODUL KEUANGAN -->
       <div class="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 shadow-sm p-6">
-        <h3 class="font-bold text-gray-900 dark:text-white mb-4">Status Integrasi Modul Keuangan</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <h3 class="font-bold text-gray-900 dark:text-white mb-4">Status Integrasi Modul Keuangan Enterprise</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
           
-          <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700">
-            <div class="font-bold text-gray-900 dark:text-white">Chart of Accounts (COA)</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">24 Akun Standar SAK Indonesia Aktif</div>
-            <router-link to="/finance/accounting" class="inline-block mt-3 text-xs font-bold text-brand-600 hover:underline">Kelola Akun &rarr;</router-link>
+          <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-gray-900 dark:text-white">Chart of Accounts (COA)</div>
+              <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">24 Akun Standar SAK Aktif</div>
+            </div>
+            <router-link to="/finance/accounting" class="mt-2.5 font-bold text-brand-600 dark:text-brand-400 hover:underline">Kelola &rarr;</router-link>
           </div>
 
-          <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700">
-            <div class="font-bold text-gray-900 dark:text-white">Faktur & Piutang (Invoicing)</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Kalkulasi PPN 11% & Cetak PDF Resmi</div>
-            <router-link to="/finance/invoicing" class="inline-block mt-3 text-xs font-bold text-brand-600 hover:underline">Kelola Faktur &rarr;</router-link>
+          <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-gray-900 dark:text-white">Rekonsiliasi Bank</div>
+              <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Import CSV & Auto Match</div>
+            </div>
+            <router-link to="/finance/reconciliation" class="mt-2.5 font-bold text-brand-600 dark:text-brand-400 hover:underline">Rekonsiliasi &rarr;</router-link>
           </div>
 
-          <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700">
-            <div class="font-bold text-gray-900 dark:text-white">Laporan Keuangan SAK</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Laba Rugi & Neraca Seimbang Terverifikasi</div>
-            <router-link to="/finance/reports" class="inline-block mt-3 text-xs font-bold text-brand-600 hover:underline">Lihat Laporan &rarr;</router-link>
+          <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-gray-900 dark:text-white">Laporan Keuangan SAK</div>
+              <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Export Excel & Cetak PDF</div>
+            </div>
+            <router-link to="/finance/reports" class="mt-2.5 font-bold text-brand-600 dark:text-brand-400 hover:underline">Download &rarr;</router-link>
+          </div>
+
+          <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-gray-900 dark:text-white">Aset Tetap (Fixed Assets)</div>
+              <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Depresiasi Terkoneksi GL</div>
+            </div>
+            <router-link to="/finance/assets" class="mt-2.5 font-bold text-brand-600 dark:text-brand-400 hover:underline">Penyusutan &rarr;</router-link>
+          </div>
+
+          <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-gray-900 dark:text-white">Kontrol Anggaran</div>
+              <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Overbudget Warning Guard</div>
+            </div>
+            <router-link to="/finance/budget" class="mt-2.5 font-bold text-brand-600 dark:text-brand-400 hover:underline">Monitor &rarr;</router-link>
+          </div>
+
+          <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-gray-900 dark:text-white">Kas Kecil (Petty Cash)</div>
+              <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Sistem Imprest Plafon</div>
+            </div>
+            <router-link to="/finance/expenses" class="mt-2.5 font-bold text-brand-600 dark:text-brand-400 hover:underline">Kas Kecil &rarr;</router-link>
           </div>
 
         </div>
@@ -143,6 +195,14 @@ const totalRevenue = ref(0)
 const totalExpense = ref(0)
 const totalHPP = ref(0)
 
+// New Feature KPIs
+const totalAssetNBV = ref(0)
+const assetCount = ref(0)
+const budgetRemaining = ref(0)
+const budgetUsagePct = ref(0)
+const pettyCashBalance = ref(0)
+const pettyCashPlafond = ref(5000000)
+
 const isDark = ref(document.documentElement.classList.contains('dark'))
 
 onMounted(() => {
@@ -156,11 +216,14 @@ onMounted(() => {
 const fetchDashboardData = async () => {
   isLoading.value = true
   try {
-    const [accRes, invRes, plRes, bsRes] = await Promise.all([
+    const [accRes, invRes, plRes, bsRes, assetRes, budgetRes, pettyRes] = await Promise.all([
       http.get('/finance/accounting/accounts').then(r => r.data?.data || r.data || []).catch(()=>[]),
       http.get('/finance/invoicing').then(r => r.data?.data || r.data || []).catch(()=>[]),
       http.get('/finance/accounting/reports/profit-loss').then(r => r.data?.data || r.data || {}).catch(()=>({})),
-      http.get('/finance/accounting/reports/balance-sheet').then(r => r.data?.data || r.data || {}).catch(()=>({}))
+      http.get('/finance/accounting/reports/balance-sheet').then(r => r.data?.data || r.data || {}).catch(()=>({})),
+      http.get('/finance/assets').then(r => r.data?.data || r.data || {}).catch(()=>({})),
+      http.get('/finance/budget').then(r => r.data?.data || r.data || {}).catch(()=>({})),
+      http.get('/finance/expenses/petty-cash').then(r => r.data?.data || r.data || {}).catch(()=>({}))
     ])
 
     // 1. Kas & Bank
@@ -180,6 +243,20 @@ const fetchDashboardData = async () => {
     totalRevenue.value = plRes.total_income || 0
     totalExpense.value = plRes.total_expense || 0
     totalHPP.value = plRes.total_hpp || 0
+
+    // 5. Fixed Assets NBV
+    totalAssetNBV.value = assetRes.total_net_book_val || 0
+    assetCount.value = (assetRes.items || []).length
+
+    // 6. Kontrol Anggaran (Budgeting)
+    budgetRemaining.value = budgetRes.total_remaining || 0
+    budgetUsagePct.value = budgetRes.overall_usage_pct || 0
+
+    // 7. Kas Kecil (Petty Cash)
+    if (pettyRes.fund) {
+      pettyCashBalance.value = pettyRes.fund.current_balance || 0
+      pettyCashPlafond.value = pettyRes.fund.plafond_limit || 5000000
+    }
 
   } catch (err) {
     console.error('Failed to load finance dashboard', err)
@@ -203,7 +280,16 @@ const formatCompact = (val: number) => {
 // Charts
 const barChartSeries = computed(() => [{
   name: 'Nominal (Rp)',
-  data: [totalCash.value, totalAR.value, totalAP.value, totalRevenue.value, totalExpense.value, netProfit.value]
+  data: [
+    totalCash.value, 
+    totalAR.value, 
+    totalAP.value, 
+    totalRevenue.value, 
+    totalExpense.value, 
+    netProfit.value,
+    totalAssetNBV.value,
+    budgetRemaining.value
+  ]
 }])
 
 const barChartOptions = computed(() => ({
@@ -213,8 +299,8 @@ const barChartOptions = computed(() => ({
   dataLabels: { enabled: false },
   colors: ['#10b981'],
   xaxis: {
-    categories: ['Kas/Bank', 'Piutang (AR)', 'Hutang (AP)', 'Pendapatan', 'Beban Usaha', 'Laba Bersih'],
-    labels: { style: { colors: isDark.value ? '#9ca3af' : '#4b5563', fontSize: '11px' } }
+    categories: ['Kas/Bank', 'Piutang (AR)', 'Hutang (AP)', 'Pendapatan', 'Beban Usaha', 'Laba Bersih', 'Aset Tetap (NBV)', 'Sisa Pagu Budget'],
+    labels: { style: { colors: isDark.value ? '#9ca3af' : '#4b5563', fontSize: '10px' } }
   },
   yaxis: { labels: { style: { colors: isDark.value ? '#9ca3af' : '#4b5563' } } },
   grid: { borderColor: isDark.value ? '#374151' : '#e5e7eb' },
