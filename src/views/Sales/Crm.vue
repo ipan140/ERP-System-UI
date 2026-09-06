@@ -8,13 +8,31 @@
             <span class="p-2 rounded-lg bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400">
               🎯
             </span>
-            CRM Pipeline & Lead Scoring Engine
+            CRM Pipeline & Kanban Deals Board
           </h2>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Standar Enterprise: Skor kelayakan prospek otomatis (Hot/Warm/Cold), atribusi sumber kampanye UTM, dan tracking mitra afiliasi.
+            Standar Odoo Enterprise & HubSpot: Pipeline Kanban multi-tahap (Drag & Drop), Skor AI (Hot/Warm/Cold), dan Atribusi Referral Mitra Afiliasi.
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
+          <!-- View Toggle: List vs Kanban -->
+          <div class="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-800 text-xs font-semibold">
+            <button
+              @click="activeView = 'kanban'"
+              :class="activeView === 'kanban' ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+              class="rounded-md px-3 py-1.5 transition flex items-center gap-1.5"
+            >
+              📊 Kanban Board
+            </button>
+            <button
+              @click="activeView = 'table'"
+              :class="activeView === 'table' ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+              class="rounded-md px-3 py-1.5 transition flex items-center gap-1.5"
+            >
+              📋 Tabel Prospek
+            </button>
+          </div>
+
           <button @click="fetchData" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             Refresh
@@ -50,8 +68,122 @@
         </div>
       </div>
 
-      <!-- Data Table -->
-      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+      <!-- ========================================================================= -->
+      <!-- VIEW 1: KANBAN BOARD (ODODO PIPELINE VIEW)                               -->
+      <!-- ========================================================================= -->
+      <div v-if="activeView === 'kanban'" class="space-y-4">
+        <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 px-1">
+          <span>💡 Tarik & letakkan (Drag & Drop) atau klik panah untuk memindahkan prospek antar tahapan penjualan.</span>
+          <span class="font-medium text-emerald-600 dark:text-emerald-400">Weighted Pipeline Terhitung Realtime</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-start">
+          <div
+            v-for="stage in stages"
+            :key="stage.id"
+            class="rounded-xl border border-gray-200 bg-gray-50/70 dark:border-gray-800 dark:bg-gray-800/40 p-3.5 flex flex-col min-h-[500px]"
+            @dragover.prevent
+            @drop="onDropStage(stage.id)"
+          >
+            <!-- Stage Header -->
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-gray-200 dark:border-gray-700">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full" :class="stage.dotColor"></span>
+                <h4 class="font-bold text-xs uppercase tracking-wider text-gray-800 dark:text-gray-200">{{ stage.name }}</h4>
+              </div>
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
+                {{ getLeadsByStage(stage.id).length }}
+              </span>
+            </div>
+
+            <!-- Stage Revenue Total -->
+            <div class="mb-3 px-2.5 py-1.5 rounded-lg bg-white/80 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600/50 text-[11px] flex justify-between">
+              <span class="text-gray-500 dark:text-gray-400">Total Nilai:</span>
+              <span class="font-bold font-mono text-gray-900 dark:text-white">
+                Rp {{ getStageRevenue(stage.id).toLocaleString('id-ID') }}
+              </span>
+            </div>
+
+            <!-- Lead Cards Container -->
+            <div class="space-y-3 flex-1">
+              <div
+                v-for="lead in getLeadsByStage(stage.id)"
+                :key="lead.id"
+                draggable="true"
+                @dragstart="onDragStart(lead)"
+                class="rounded-xl border border-gray-200 bg-white p-3.5 shadow-sm hover:shadow-md transition cursor-grab active:cursor-grabbing dark:border-gray-700 dark:bg-gray-800 relative group"
+              >
+                <!-- Card Header -->
+                <div class="flex items-start justify-between gap-2">
+                  <h5 class="font-bold text-xs text-gray-900 dark:text-white line-clamp-2">{{ lead.name || (lead as any).lead_name || 'Tanpa Judul' }}</h5>
+                  <span
+                    :class="[
+                      (lead.lead_score || 0) >= 75 ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300' :
+                      (lead.lead_score || 0) >= 40 ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300' :
+                      'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300',
+                      'text-[10px] px-1.5 py-0.5 rounded font-bold border shrink-0'
+                    ]"
+                  >
+                    {{ lead.score_grade || ((lead.lead_score || 0) >= 75 ? 'Hot 🔥' : (lead.lead_score || 0) >= 40 ? 'Warm ⚡' : 'Cold ❄️') }}
+                  </span>
+                </div>
+
+                <!-- Contact Info -->
+                <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 truncate">
+                  {{ lead.email || '-' }} <span v-if="lead.phone">• {{ lead.phone }}</span>
+                </p>
+
+                <!-- Value & Attribution -->
+                <div class="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+                  <div class="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    Rp {{ (Number(lead.expected_revenue) || 0).toLocaleString('id-ID') }}
+                  </div>
+                  <span v-if="lead.referral_code || lead.affiliate_name" class="text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-1.5 py-0.2 rounded truncate max-w-[90px]">
+                    🤝 {{ lead.affiliate_name || lead.referral_code }}
+                  </span>
+                </div>
+
+                <!-- Quick Stage Advance / Actions Buttons on hover -->
+                <div class="mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between gap-1">
+                  <button
+                    @click="openModal('edit', lead)"
+                    class="text-[11px] text-gray-500 hover:text-brand-500 dark:hover:text-brand-400"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <div class="flex items-center gap-1">
+                    <button
+                      v-if="stage.id > 1"
+                      @click="moveStage(lead, stage.id - 1)"
+                      title="Pindahkan ke tahapan sebelumnya"
+                      class="px-1.5 py-0.5 text-[10px] rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
+                    >
+                      ◀
+                    </button>
+                    <button
+                      v-if="stage.id < 5"
+                      @click="moveStage(lead, stage.id + 1)"
+                      title="Majukan ke tahapan berikutnya"
+                      class="px-1.5 py-0.5 text-[10px] rounded bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/30 dark:hover:bg-brand-900/50 text-brand-600 dark:text-brand-400 font-bold"
+                    >
+                      ▶
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="getLeadsByStage(stage.id).length === 0" class="h-28 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center text-xs text-gray-400">
+                Kosong
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- VIEW 2: TRADITIONAL DATA TABLE                                            -->
+      <!-- ========================================================================= -->
+      <div v-else class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
         <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex justify-between items-center">
           <h3 class="font-bold text-gray-900 dark:text-white text-sm">Daftar Prospek Penjualan & Kualifikasi</h3>
           <span class="text-xs text-gray-500 dark:text-gray-400">Skor dihitung otomatis dari firmografis & sumber</span>
@@ -64,7 +196,7 @@
                 <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Skor AI (Lead Score)</th>
                 <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Sumber / Afiliasi</th>
                 <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Ekspektasi Revenue</th>
-                <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tahapan</th>
+                <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tahapan Pipeline</th>
                 <th class="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Aksi</th>
               </tr>
             </thead>
@@ -99,32 +231,23 @@
                     <span class="inline-flex items-center gap-1 rounded bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-0.5 font-bold">
                       🤝 {{ record.affiliate_name || record.referral_code }}
                     </span>
-                    <p class="text-[10px] text-gray-400 mt-0.5">Kode: {{ record.referral_code }}</p>
                   </div>
-                  <div v-else-if="record.utm_source" class="text-xs">
-                    <span class="inline-flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 font-medium">
-                      🌐 {{ record.utm_source }}
-                    </span>
+                  <div v-else class="text-xs text-gray-500 capitalize">
+                    {{ record.utm_source || 'Organik' }}
                   </div>
-                  <span v-else class="text-xs text-gray-400">Organik / Manual</span>
                 </td>
-                <td class="px-5 py-4 whitespace-nowrap text-xs font-bold text-gray-900 dark:text-white">
+                <td class="px-5 py-4 whitespace-nowrap font-mono font-bold text-sm text-gray-900 dark:text-white">
                   Rp {{ (Number(record.expected_revenue) || 0).toLocaleString('id-ID') }}
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap">
-                  <span class="rounded-md bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    {{ (record as any).stage?.name || (record as any).stage || 'New' }}
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                    <span class="w-1.5 h-1.5 rounded-full" :class="getStageById(record.stage_id)?.dotColor || 'bg-gray-400'"></span>
+                    {{ getStageById(record.stage_id)?.name || 'Prospek Baru' }}
                   </span>
                 </td>
-                <td class="px-5 py-4 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <button @click="openModal('edit', record)" class="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-400 dark:hover:bg-gray-800 transition" title="Edit Data">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                    </button>
-                    <button @click="record.id && deleteRecord(record.id)" class="p-1.5 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-900/20 transition" title="Hapus Data">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    </button>
-                  </div>
+                <td class="px-5 py-4 whitespace-nowrap text-right text-xs">
+                  <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-600 font-semibold mr-3">Edit</button>
+                  <button @click="deleteRecord(record.id)" class="text-red-500 hover:text-red-600 font-semibold">Hapus</button>
                 </td>
               </tr>
             </tbody>
@@ -134,18 +257,15 @@
     </div>
   </AdminLayout>
 
-  <!-- Modal CRUD Prospek Enterprise -->
+  <!-- Modal Form -->
   <Teleport to="body">
-    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
-        <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
-          <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <span>🎯</span> {{ modalMode === 'create' ? 'Tambah Prospek Penjualan Baru' : 'Edit Prospek Penjualan' }}
-          </h3>
-          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
-        </div>
+    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 dark:border dark:border-gray-700">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
+          {{ modalMode === 'create' ? 'Tambah Prospek Pipeline Baru' : 'Ubah Data Prospek' }}
+        </h3>
 
-        <form @submit.prevent="saveRecord" class="mt-4 space-y-4">
+        <form @submit.prevent="saveRecord" class="space-y-4">
           <div>
             <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Nama Peluang / Perusahaan</label>
             <input v-model="formData.name" type="text" placeholder="Misal: Pengadaan Server Cloud PT ABC" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
@@ -168,15 +288,22 @@
               <input v-model.number="formData.expected_revenue" type="number" min="0" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
             </div>
             <div>
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Sumber Saluran (UTM)</label>
-              <select v-model="formData.utm_source" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                <option value="organik">Organik / Langsung</option>
-                <option value="wa_blast">WhatsApp Broadcast</option>
-                <option value="meta">Meta Ads (FB/IG)</option>
-                <option value="google">Google Ads</option>
-                <option value="affiliate">Mitra Afiliasi</option>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Tahapan Pipeline</label>
+              <select v-model.number="formData.stage_id" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <option v-for="stg in stages" :key="stg.id" :value="stg.id">{{ stg.name }}</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Sumber Saluran (UTM)</label>
+            <select v-model="formData.utm_source" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+              <option value="organik">Organik / Langsung</option>
+              <option value="wa_blast">WhatsApp Broadcast</option>
+              <option value="meta">Meta Ads (FB/IG)</option>
+              <option value="google">Google Ads</option>
+              <option value="affiliate">Mitra Afiliasi</option>
+            </select>
           </div>
 
           <div class="p-3.5 bg-purple-50/70 border border-purple-200 dark:bg-purple-950/30 dark:border-purple-800 rounded-xl space-y-3">
@@ -212,9 +339,21 @@ import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { crmService } from '@/services/sales/crm.service'
 
+const activeView = ref<'kanban' | 'table'>('kanban')
 const records = ref<any[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+
+// Pipeline Stages Standard Odoo Enterprise
+const stages = [
+  { id: 1, name: 'Prospek Baru', dotColor: 'bg-blue-500' },
+  { id: 2, name: 'Kualifikasi', dotColor: 'bg-indigo-500' },
+  { id: 3, name: 'Proposal / SPH', dotColor: 'bg-amber-500' },
+  { id: 4, name: 'Negosiasi', dotColor: 'bg-purple-500' },
+  { id: 5, name: 'Menang (Won)', dotColor: 'bg-emerald-500' },
+]
+
+const draggedLead = ref<any>(null)
 
 const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
@@ -225,6 +364,7 @@ const formData = ref({
   email: '',
   phone: '',
   expected_revenue: 0,
+  stage_id: 1,
   utm_source: 'organik',
   referral_code: '',
   affiliate_name: ''
@@ -234,12 +374,53 @@ const hotLeadsCount = computed(() => records.value.filter(r => (r.lead_score || 
 const affiliateCount = computed(() => records.value.filter(r => r.referral_code || r.affiliate_name).length)
 const totalRevenue = computed(() => records.value.reduce((acc, curr) => acc + (Number(curr.expected_revenue) || 0), 0))
 
+const getStageById = (id?: number) => {
+  return stages.find(s => s.id === (id || 1)) || stages[0]
+}
+
+const getLeadsByStage = (stageId: number) => {
+  return records.value.filter(r => (r.stage_id || 1) === stageId)
+}
+
+const getStageRevenue = (stageId: number) => {
+  return getLeadsByStage(stageId).reduce((sum, item) => sum + (Number(item.expected_revenue) || 0), 0)
+}
+
+// Drag and drop handlers
+const onDragStart = (lead: any) => {
+  draggedLead.value = lead
+}
+
+const onDropStage = async (newStageId: number) => {
+  if (!draggedLead.value || (draggedLead.value.stage_id || 1) === newStageId) return
+  const lead = draggedLead.value
+  draggedLead.value = null
+  await moveStage(lead, newStageId)
+}
+
+const moveStage = async (lead: any, newStageId: number) => {
+  const prevStage = lead.stage_id || 1
+  lead.stage_id = newStageId
+  try {
+    await crmService.update(lead.id, {
+      ...lead,
+      stage_id: newStageId
+    })
+  } catch (err: any) {
+    lead.stage_id = prevStage
+    alert('Gagal memindahkan tahapan pipeline: ' + (err.response?.data?.message || err.message))
+  }
+}
+
 const fetchData = async () => {
   isLoading.value = true
   error.value = null
   try {
     const data = await crmService.getAll()
-    records.value = data || []
+    records.value = (data || []).map((r: any) => ({
+      ...r,
+      stage_id: r.stage_id || 1
+    }))
   } catch (err: any) {
     error.value = 'Gagal memuat pipeline: ' + (err.response?.data?.message || err.message)
   } finally {
@@ -256,6 +437,7 @@ const openModal = (mode: 'create' | 'edit', data: any = null) => {
       email: data.email || '',
       phone: data.phone || '',
       expected_revenue: data.expected_revenue || 0,
+      stage_id: data.stage_id || 1,
       utm_source: data.utm_source || 'organik',
       referral_code: data.referral_code || '',
       affiliate_name: data.affiliate_name || ''
@@ -267,6 +449,7 @@ const openModal = (mode: 'create' | 'edit', data: any = null) => {
       email: '',
       phone: '',
       expected_revenue: 0,
+      stage_id: 1,
       utm_source: 'organik',
       referral_code: '',
       affiliate_name: ''

@@ -248,6 +248,12 @@ const router = createRouter({
     },
     // FASE 3 ROUTES (SALES & MARKETING)
     {
+      path: '/sales/crm',
+      name: 'SalesCRM',
+      component: () => import('../views/Sales/CRM.vue'),
+      meta: { title: 'CRM & Pipeline Leads' },
+    },
+    {
       path: '/sales/core',
       name: 'SalesCore',
       component: () => import('../views/Sales/SalesCore.vue'),
