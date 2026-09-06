@@ -15,6 +15,10 @@
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
+          <button @click="openWaConfigModal" class="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 shadow-theme-xs hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50 transition">
+            <span>⚙️</span>
+            Pengaturan WABA
+          </button>
           <button @click="fetchData" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             Refresh
@@ -300,198 +304,277 @@
   </AdminLayout>
 
   <!-- Modal Tes Pengiriman ke Nomor Pengguna Langsung -->
-  <div v-if="isTestModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
-      <div class="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-700">
-        <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <span>📲</span> Tes Kirim Pesan Siaran Langsung
-        </h3>
-        <button @click="isTestModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
-      </div>
-
-      <div class="mt-4 space-y-4">
-        <div class="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl text-xs text-blue-900 dark:text-blue-200">
-          <p class="font-bold mb-1">Pesan yang akan dikirim:</p>
-          <p class="italic text-gray-700 dark:text-gray-300">"{{ activeTestCampaign?.content }}"</p>
+  <Teleport to="body">
+    <div v-if="isTestModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+      <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-700">
+          <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span>📲</span> Tes Kirim Pesan Siaran Langsung
+          </h3>
+          <button @click="isTestModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
         </div>
-
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-            Nomor WhatsApp / HP Tujuan Tes
-          </label>
-          <div class="relative">
-            <span class="absolute left-3 top-2 text-sm text-gray-400 font-bold">+62</span>
-            <input
-              v-model="testPhone"
-              type="text"
-              placeholder="81234567890"
-              class="w-full rounded-lg border border-gray-300 pl-12 pr-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            />
+  
+        <div class="mt-4 space-y-4">
+          <div class="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl text-xs text-blue-900 dark:text-blue-200">
+            <p class="font-bold mb-1">Pesan yang akan dikirim:</p>
+            <p class="italic text-gray-700 dark:text-gray-300">"{{ activeTestCampaign?.content }}"</p>
           </div>
-          <p class="text-[11px] text-gray-400 mt-1">Masukkan nomor WhatsApp aktif Anda untuk menerima simulasi pesan ini.</p>
-        </div>
-
-        <!-- Tombol Aksi Tes -->
-        <div class="space-y-2 pt-2">
-          <button
-            type="button"
-            @click="submitSendTest"
-            :disabled="isSendingTest"
-            class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center justify-center gap-2"
-          >
-            <span>💬</span> Buka Chat WhatsApp Langsung (Direct Link)
-          </button>
-          <button
-            type="button"
-            @click="isTestModalOpen = false"
-            class="w-full py-2 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-750 transition"
-          >
-            Tutup
-          </button>
+  
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+              Nomor WhatsApp / HP Tujuan Tes
+            </label>
+            <div class="relative">
+              <span class="absolute left-3 top-2 text-sm text-gray-400 font-bold">+62</span>
+              <input
+                v-model="testPhone"
+                type="text"
+                placeholder="81234567890"
+                class="w-full rounded-lg border border-gray-300 pl-12 pr-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <p class="text-[11px] text-gray-400 mt-1">Masukkan nomor WhatsApp aktif Anda untuk menerima simulasi pesan ini.</p>
+          </div>
+  
+          <!-- Tombol Aksi Tes -->
+          <div class="space-y-2 pt-2">
+            <button
+              type="button"
+              @click="submitSendTest"
+              :disabled="isSendingTest"
+              class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center justify-center gap-2"
+            >
+              <span>💬</span> Buka Chat WhatsApp Langsung (Direct Link)
+            </button>
+            <button
+              type="button"
+              @click="isTestModalOpen = false"
+              class="w-full py-2 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-750 transition"
+            >
+              Tutup
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 
   <!-- Modal Konfirmasi Eksekusi Siar Broadcast Massal -->
-  <div v-if="isBroadcastResultModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
-      <div class="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-700">
-        <h3 class="text-base font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-          <span>✅</span> Laporan Eksekusi Siaran Berhasil
-        </h3>
-        <button @click="isBroadcastResultModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+  <Teleport to="body">
+    <div v-if="isBroadcastResultModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+      <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-700">
+          <h3 class="text-base font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+            <span>✅</span> Laporan Eksekusi Siaran Berhasil
+          </h3>
+          <button @click="isBroadcastResultModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+        </div>
+  
+        <div class="mt-4 space-y-3" v-if="broadcastResultData">
+          <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800/50 space-y-1.5 text-xs text-emerald-900 dark:text-emerald-200">
+            <p><strong class="font-bold">Kampanye:</strong> {{ broadcastResultData.campaign_name }}</p>
+            <p><strong class="font-bold">Kanal Siaran:</strong> {{ broadcastResultData.channel }}</p>
+            <p><strong class="font-bold">Total Target Kontak:</strong> {{ broadcastResultData.total_target }} Nomor Pelanggan</p>
+            <p><strong class="font-bold">Terkirim (Sent):</strong> {{ broadcastResultData.sent_count }} Pesan (Delivery: {{ broadcastResultData.delivered_count }})</p>
+            <p><strong class="font-bold">Waktu Eksekusi:</strong> {{ broadcastResultData.execution_time }}</p>
+          </div>
+  
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
+              Daftar Kontak Penerima Siaran:
+            </label>
+            <div class="max-h-36 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 p-2 bg-gray-50 dark:bg-gray-900/50 text-xs space-y-1">
+              <div
+                v-for="(rec, idx) in broadcastResultData.recipients"
+                :key="idx"
+                class="flex items-center justify-between py-0.5 text-gray-700 dark:text-gray-300 border-b border-gray-200/50 dark:border-gray-800 last:border-none"
+              >
+                <span>{{ rec }}</span>
+                <span class="text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">Terkirim ✓</span>
+              </div>
+            </div>
+          </div>
+  
+          <div class="pt-2 flex justify-end">
+            <button
+              type="button"
+              @click="isBroadcastResultModalOpen = false"
+              class="px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-bold shadow-xs transition"
+            >
+              Selesai & Tutup
+            </button>
+          </div>
+        </div>
       </div>
+    </div>
+  </Teleport>
 
-      <div class="mt-4 space-y-3" v-if="broadcastResultData">
-        <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800/50 space-y-1.5 text-xs text-emerald-900 dark:text-emerald-200">
-          <p><strong class="font-bold">Kampanye:</strong> {{ broadcastResultData.campaign_name }}</p>
-          <p><strong class="font-bold">Kanal Siaran:</strong> {{ broadcastResultData.channel }}</p>
-          <p><strong class="font-bold">Total Target Kontak:</strong> {{ broadcastResultData.total_target }} Nomor Pelanggan</p>
-          <p><strong class="font-bold">Terkirim (Sent):</strong> {{ broadcastResultData.sent_count }} Pesan (Delivery: {{ broadcastResultData.delivered_count }})</p>
-          <p><strong class="font-bold">Waktu Eksekusi:</strong> {{ broadcastResultData.execution_time }}</p>
+  <!-- Modal Tambah/Edit Siaran Broadcast -->
+  <Teleport to="body">
+    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+      <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span>📢</span> {{ modalMode === 'create' ? 'Buat Siaran Broadcast Baru' : 'Edit Siaran Broadcast' }}
+          </h3>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+        </div>
+  
+        <form @submit.prevent="saveRecord" class="mt-4 space-y-4">
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Nama Kampanye Siaran</label>
+            <input v-model="formData.name" type="text" placeholder="Misal: Flash Sale Gajian Broadcast" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+          </div>
+  
+          <!-- Pemilihan Kanal Siaran -->
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Kanal Distribusi Pesan</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                @click="formData.channel = 'SMS'"
+                :class="formData.channel === 'SMS' ? 'bg-blue-600 text-white font-bold' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'"
+                class="px-3 py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5"
+              >
+                <span>📱</span> SMS GSM
+              </button>
+              <button
+                type="button"
+                @click="formData.channel = 'WhatsApp'"
+                :class="formData.channel === 'WhatsApp' ? 'bg-emerald-600 text-white font-bold' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'"
+                class="px-3 py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5"
+              >
+                <span>💬</span> WhatsApp
+              </button>
+              <button
+                type="button"
+                @click="formData.channel = 'SMS & WhatsApp'"
+                :class="formData.channel === 'SMS & WhatsApp' ? 'bg-purple-600 text-white font-bold' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'"
+                class="px-3 py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5"
+              >
+                <span>⚡</span> Keduanya
+              </button>
+            </div>
+          </div>
+  
+          <div v-if="formData.channel === 'SMS' || formData.channel === 'SMS & WhatsApp'">
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Isi Konten Pesan (SMS)</label>
+              <span class="text-xs" :class="charCount > 160 ? 'text-amber-600 font-bold' : 'text-gray-400'">
+                {{ charCount }} karakter ({{ smsCount }} SMS)
+              </span>
+            </div>
+            <textarea v-model="formData.content" rows="4" placeholder="Ketik pesan promosi siaran Anda..." :required="formData.channel === 'SMS' || formData.channel === 'SMS & WhatsApp'" class="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"></textarea>
+          </div>
+
+          <div v-if="formData.channel === 'WhatsApp' || formData.channel === 'SMS & WhatsApp'">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">Pilih Template WhatsApp (WABA)</label>
+            <select v-model="selectedWaTemplateId" @change="onWaTemplateChange" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" :required="formData.channel === 'WhatsApp' || formData.channel === 'SMS & WhatsApp'">
+              <option value="" disabled>-- Pilih Template Meta --</option>
+              <option v-for="tpl in waTemplates" :key="tpl.id" :value="tpl.id">{{ tpl.name }} ({{ tpl.status }})</option>
+            </select>
+            <div v-if="selectedWaTemplateContent" class="mt-2 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg text-xs text-gray-700 dark:text-gray-300 whitespace-pre-line border border-gray-200 dark:border-gray-700">
+              {{ selectedWaTemplateContent }}
+            </div>
+            <div v-if="waTemplates.length === 0" class="mt-1 text-[11px] text-amber-600">Belum ada template WABA. Silakan sinkronkan di Pengaturan WABA.</div>
+          </div>
+  
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Target Segmentasi Audiens</label>
+              <select v-model="formData.target_audience" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <option value="Semua Pelanggan Terdaftar">Semua Pelanggan Terdaftar</option>
+                <option value="Pelanggan Loyal VIP">Pelanggan Loyal VIP</option>
+                <option value="Leads CRM Baru">Leads CRM Baru</option>
+                <option value="Pelanggan Belum Bayar Invoice">Pelanggan Belum Bayar Invoice</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Status</label>
+              <select v-model="formData.status" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <option value="Draft">Draft</option>
+                <option value="In-Queue">In-Queue (Antrean Siar)</option>
+                <option value="Sent">Sent (Sudah Terkirim)</option>
+              </select>
+            </div>
+          </div>
+  
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Jumlah Penerima / Kuota</label>
+            <input v-model.number="formData.sent_count" type="number" min="0" placeholder="0" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+          </div>
+  
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" @click="closeModal" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
+            <button type="submit" :disabled="isSaving" class="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
+              {{ isSaving ? 'Menyimpan...' : 'Simpan Siaran' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- Modal Pengaturan WABA -->
+  <Teleport to="body">
+    <div v-if="isWaConfigModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+      <div class="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span>⚙️</span> Pengaturan WhatsApp Business API (WABA)
+          </h3>
+          <button @click="isWaConfigModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
-            Daftar Kontak Penerima Siaran:
-          </label>
-          <div class="max-h-36 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 p-2 bg-gray-50 dark:bg-gray-900/50 text-xs space-y-1">
-            <div
-              v-for="(rec, idx) in broadcastResultData.recipients"
-              :key="idx"
-              class="flex items-center justify-between py-0.5 text-gray-700 dark:text-gray-300 border-b border-gray-200/50 dark:border-gray-800 last:border-none"
-            >
-              <span>{{ rec }}</span>
-              <span class="text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">Terkirim ✓</span>
+        <form @submit.prevent="saveWaConfig" class="mt-4 space-y-4">
+          <div class="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-xs rounded-xl">
+            <p>Konfigurasi ini diperlukan untuk menghubungkan modul marketing dengan API Resmi Meta Cloud.</p>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">WABA ID</label>
+            <input v-model="waConfig.waba_id" type="text" placeholder="Masukkan WhatsApp Business Account ID" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Phone Number ID</label>
+            <input v-model="waConfig.phone_number_id" type="text" placeholder="Masukkan Phone Number ID" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Permanent Access Token</label>
+            <textarea v-model="waConfig.access_token" rows="3" placeholder="Masukkan token akses Meta..." required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"></textarea>
+          </div>
+
+          <div class="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" @click="fetchWaTemplates" class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+              <span>🔄</span> Sinkronkan Template
+            </button>
+            <div class="flex gap-2">
+              <button type="button" @click="isWaConfigModalOpen = false" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
+              <button type="submit" :disabled="isSavingWaConfig" class="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
+                {{ isSavingWaConfig ? 'Menyimpan...' : 'Simpan Konfigurasi' }}
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div v-if="waTemplates.length > 0" class="mt-6">
+          <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-2">Template Tersinkronisasi ({{ waTemplates.length }})</h4>
+          <div class="max-h-40 overflow-y-auto custom-scrollbar border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div v-for="tpl in waTemplates" :key="tpl.id" class="p-2 border-b border-gray-200 dark:border-gray-700 last:border-0 text-xs">
+              <div class="flex justify-between">
+                <span class="font-bold">{{ tpl.name }}</span>
+                <span class="text-emerald-600">{{ tpl.status }}</span>
+              </div>
+              <p class="text-gray-500 mt-1 truncate">{{ tpl.content }}</p>
             </div>
           </div>
         </div>
 
-        <div class="pt-2 flex justify-end">
-          <button
-            type="button"
-            @click="isBroadcastResultModalOpen = false"
-            class="px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-bold shadow-xs transition"
-          >
-            Selesai & Tutup
-          </button>
-        </div>
       </div>
     </div>
-  </div>
-
-  <!-- Modal Tambah/Edit Siaran Broadcast -->
-  <div v-if="isModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
-      <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <span>📢</span> {{ modalMode === 'create' ? 'Buat Siaran Broadcast Baru' : 'Edit Siaran Broadcast' }}
-        </h3>
-        <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
-      </div>
-
-      <form @submit.prevent="saveRecord" class="mt-4 space-y-4">
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Nama Kampanye Siaran</label>
-          <input v-model="formData.name" type="text" placeholder="Misal: Flash Sale Gajian Broadcast" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-
-        <!-- Pemilihan Kanal Siaran -->
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Kanal Distribusi Pesan</label>
-          <div class="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              @click="formData.channel = 'SMS'"
-              :class="formData.channel === 'SMS' ? 'bg-blue-600 text-white font-bold' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'"
-              class="px-3 py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5"
-            >
-              <span>📱</span> SMS GSM
-            </button>
-            <button
-              type="button"
-              @click="formData.channel = 'WhatsApp'"
-              :class="formData.channel === 'WhatsApp' ? 'bg-emerald-600 text-white font-bold' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'"
-              class="px-3 py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5"
-            >
-              <span>💬</span> WhatsApp
-            </button>
-            <button
-              type="button"
-              @click="formData.channel = 'SMS & WhatsApp'"
-              :class="formData.channel === 'SMS & WhatsApp' ? 'bg-purple-600 text-white font-bold' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'"
-              class="px-3 py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5"
-            >
-              <span>⚡</span> Keduanya
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <div class="flex justify-between items-center mb-1">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Isi Konten Pesan</label>
-            <span class="text-xs" :class="charCount > 160 ? 'text-amber-600 font-bold' : 'text-gray-400'">
-              {{ charCount }} karakter <span v-if="formData.channel === 'SMS' || formData.channel === 'SMS & WhatsApp'">({{ smsCount }} SMS)</span>
-            </span>
-          </div>
-          <textarea v-model="formData.content" rows="4" placeholder="Ketik pesan promosi siaran Anda..." required class="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"></textarea>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Target Segmentasi Audiens</label>
-            <select v-model="formData.target_audience" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-              <option value="Semua Pelanggan Terdaftar">Semua Pelanggan Terdaftar</option>
-              <option value="Pelanggan Loyal VIP">Pelanggan Loyal VIP</option>
-              <option value="Leads CRM Baru">Leads CRM Baru</option>
-              <option value="Pelanggan Belum Bayar Invoice">Pelanggan Belum Bayar Invoice</option>
-            </select>
-          </div>
-          <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Status</label>
-            <select v-model="formData.status" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-              <option value="Draft">Draft</option>
-              <option value="In-Queue">In-Queue (Antrean Siar)</option>
-              <option value="Sent">Sent (Sudah Terkirim)</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Jumlah Penerima / Kuota</label>
-          <input v-model.number="formData.sent_count" type="number" min="0" placeholder="0" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-
-        <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <button type="button" @click="closeModal" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan Siaran' }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -509,6 +592,66 @@ const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
 const isSaving = ref(false)
 const activeSimulatorMode = ref<'sms' | 'wa'>('sms')
+
+// --- WABA Properties ---
+const isWaConfigModalOpen = ref(false)
+const isSavingWaConfig = ref(false)
+const waConfig = ref({
+  waba_id: '',
+  phone_number_id: '',
+  access_token: ''
+})
+const waTemplates = ref<any[]>([])
+const selectedWaTemplateId = ref('')
+const selectedWaTemplateContent = computed(() => {
+  const tpl = waTemplates.value.find(t => t.id === selectedWaTemplateId.value)
+  return tpl ? tpl.content : ''
+})
+
+const onWaTemplateChange = () => {
+  if (formData.value.channel === 'WhatsApp' || formData.value.channel === 'SMS & WhatsApp') {
+    formData.value.content = selectedWaTemplateContent.value;
+  }
+}
+
+const openWaConfigModal = async () => {
+  isWaConfigModalOpen.value = true
+  try {
+    const data = await smsMarketingService.getConfig()
+    if (data) {
+      waConfig.value = {
+        waba_id: data.waba_id || '',
+        phone_number_id: data.phone_number_id || '',
+        access_token: data.access_token || ''
+      }
+    }
+  } catch (e) {
+    console.error("No WA Config found")
+  }
+}
+
+const saveWaConfig = async () => {
+  isSavingWaConfig.value = true
+  try {
+    await smsMarketingService.saveConfig(waConfig.value)
+    alert('Konfigurasi WABA berhasil disimpan!')
+    isWaConfigModalOpen.value = false
+  } catch (err: any) {
+    alert('Gagal menyimpan: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isSavingWaConfig.value = false
+  }
+}
+
+const fetchWaTemplates = async () => {
+  try {
+    const data = await smsMarketingService.getTemplates()
+    waTemplates.value = data || []
+  } catch (err: any) {
+    console.error("Gagal load template:", err)
+  }
+}
+
 
 const formData = ref<{
   id: number | null
@@ -558,6 +701,7 @@ const fetchData = async () => {
     if (records.value.length > 0 && !selectedPreviewSms.value) {
       selectPreviewRecord(records.value[0])
     }
+    await fetchWaTemplates()
   } catch (err: any) {
     error.value = 'Gagal memuat data: ' + (err.response?.data?.message || err.message)
   } finally {

@@ -232,207 +232,209 @@
   </AdminLayout>
 
   <!-- Modal Tambah/Edit Postingan -->
-  <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
-      <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <span>📢</span> {{ modalMode === 'create' ? 'Buat Postingan Sosial Baru' : 'Edit Postingan Sosial' }}
-        </h3>
-        <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
-      </div>
-
-      <form @submit.prevent="saveRecord" class="mt-4 space-y-4">
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Konten Pesan / Caption</label>
-          <textarea v-model="formData.message" rows="4" placeholder="Tuliskan isi postingan promosi Anda..." required class="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"></textarea>
+  <Teleport to="body">
+    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+      <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span>📢</span> {{ modalMode === 'create' ? 'Buat Postingan Sosial Baru' : 'Edit Postingan Sosial' }}
+          </h3>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
         </div>
-
-        <!-- Input Banner Promosi: Opsi Upload File Lokal atau URL -->
-        <div class="space-y-2">
-          <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-            Foto / Banner Konten Promosi
-          </label>
-
-          <!-- Tab Pilihan: Upload File vs Tautan URL -->
-          <div class="flex items-center gap-2 mb-1">
-            <button
-              type="button"
-              @click="imageInputMode = 'upload'"
-              :class="imageInputMode === 'upload' ? 'bg-brand-500 text-white font-bold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'"
-              class="px-3 py-1 text-xs rounded-lg transition"
-            >
-              📁 Upload dari Komputer
-            </button>
-            <button
-              type="button"
-              @click="imageInputMode = 'url'"
-              :class="imageInputMode === 'url' ? 'bg-brand-500 text-white font-bold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'"
-              class="px-3 py-1 text-xs rounded-lg transition"
-            >
-              🔗 Tautan URL Gambar
-            </button>
+  
+        <form @submit.prevent="saveRecord" class="mt-4 space-y-4">
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Konten Pesan / Caption</label>
+            <textarea v-model="formData.message" rows="4" placeholder="Tuliskan isi postingan promosi Anda..." required class="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"></textarea>
           </div>
-
-          <!-- Mode 1: Upload File Langsung (Instant DataURL / Local Storage) -->
-          <div v-if="imageInputMode === 'upload'" class="space-y-2">
-            <div
-              @click="triggerFileInput"
-              class="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-brand-500 dark:hover:border-brand-400 rounded-xl p-4 text-center cursor-pointer bg-gray-50/60 dark:bg-gray-800/60 transition group"
-            >
-              <input
-                ref="fileInputRef"
-                type="file"
-                accept="image/*"
-                class="hidden"
-                @change="handleFileUpload"
-              />
-              <div v-if="!formData.image_url" class="py-2 space-y-1">
-                <span class="text-3xl block group-hover:scale-110 transition">📤</span>
-                <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">Klik untuk memilih foto / banner dari laptop/HP Anda</p>
-                <p class="text-[11px] text-gray-400">Mendukung JPG, PNG, WEBP (Otomatis tampil di feed)</p>
-              </div>
-              <div v-else class="flex items-center justify-between gap-3 bg-white dark:bg-gray-700/70 p-2 rounded-lg border border-gray-200 dark:border-gray-600">
-                <img :src="formData.image_url" alt="Preview Thumbnail" class="h-12 w-12 object-cover rounded-lg shrink-0 border" />
-                <div class="text-left overflow-hidden grow">
-                  <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 block">✓ Gambar Siap Digunakan</span>
-                  <span class="text-[11px] text-gray-400 block truncate">Klik untuk mengganti gambar</span>
+  
+          <!-- Input Banner Promosi: Opsi Upload File Lokal atau URL -->
+          <div class="space-y-2">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+              Foto / Banner Konten Promosi
+            </label>
+  
+            <!-- Tab Pilihan: Upload File vs Tautan URL -->
+            <div class="flex items-center gap-2 mb-1">
+              <button
+                type="button"
+                @click="imageInputMode = 'upload'"
+                :class="imageInputMode === 'upload' ? 'bg-brand-500 text-white font-bold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'"
+                class="px-3 py-1 text-xs rounded-lg transition"
+              >
+                📁 Upload dari Komputer
+              </button>
+              <button
+                type="button"
+                @click="imageInputMode = 'url'"
+                :class="imageInputMode === 'url' ? 'bg-brand-500 text-white font-bold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'"
+                class="px-3 py-1 text-xs rounded-lg transition"
+              >
+                🔗 Tautan URL Gambar
+              </button>
+            </div>
+  
+            <!-- Mode 1: Upload File Langsung (Instant DataURL / Local Storage) -->
+            <div v-if="imageInputMode === 'upload'" class="space-y-2">
+              <div
+                @click="triggerFileInput"
+                class="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-brand-500 dark:hover:border-brand-400 rounded-xl p-4 text-center cursor-pointer bg-gray-50/60 dark:bg-gray-800/60 transition group"
+              >
+                <input
+                  ref="fileInputRef"
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="handleFileUpload"
+                />
+                <div v-if="!formData.image_url" class="py-2 space-y-1">
+                  <span class="text-3xl block group-hover:scale-110 transition">📤</span>
+                  <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">Klik untuk memilih foto / banner dari laptop/HP Anda</p>
+                  <p class="text-[11px] text-gray-400">Mendukung JPG, PNG, WEBP (Otomatis tampil di feed)</p>
                 </div>
+                <div v-else class="flex items-center justify-between gap-3 bg-white dark:bg-gray-700/70 p-2 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <img :src="formData.image_url" alt="Preview Thumbnail" class="h-12 w-12 object-cover rounded-lg shrink-0 border" />
+                  <div class="text-left overflow-hidden grow">
+                    <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 block">✓ Gambar Siap Digunakan</span>
+                    <span class="text-[11px] text-gray-400 block truncate">Klik untuk mengganti gambar</span>
+                  </div>
+                  <button
+                    type="button"
+                    @click.stop="formData.image_url = ''"
+                    class="text-rose-500 hover:text-rose-700 p-1 text-xs font-bold"
+                    title="Hapus gambar"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+  
+            <!-- Mode 2: Tautan URL Gambar Langsung -->
+            <div v-else class="space-y-1">
+              <div class="relative flex items-center">
+                <input
+                  v-model="formData.image_url"
+                  type="url"
+                  placeholder="https://images.unsplash.com/... atau link gambar langsung"
+                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white pr-8"
+                />
+                <button
+                  v-if="formData.image_url"
+                  type="button"
+                  @click="formData.image_url = ''"
+                  class="absolute right-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+              <p class="text-[11px] text-gray-400">
+                💡 <strong>Tips:</strong> Untuk Pinterest/Google, klik kanan gambar &rarr; pilih <em>"Salin Alamat Gambar" (Copy Image Address)</em>, bukan link halaman pin.
+              </p>
+            </div>
+          </div>
+  
+          <!-- Pemilih Kanal Dinamis (Multi-Platform Enterprise) -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                Pilih Kanal Distribusi Media Sosial
+              </label>
+              <span class="text-[11px] text-brand-600 dark:text-brand-400 font-medium">
+                {{ formData.selected_channels.length }} Terpilih
+              </span>
+            </div>
+  
+            <!-- Pilihan Platform Populer & Custom -->
+            <div class="flex flex-wrap gap-2">
+              <div
+                v-for="preset in availablePresetChannels"
+                :key="preset"
+                class="relative inline-flex items-center group"
+              >
                 <button
                   type="button"
-                  @click.stop="formData.image_url = ''"
-                  class="text-rose-500 hover:text-rose-700 p-1 text-xs font-bold"
-                  title="Hapus gambar"
+                  @click="toggleChannel(preset)"
+                  :class="formData.selected_channels.includes(preset) ? 'bg-brand-500 text-white border-brand-500 font-bold shadow-xs' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-gray-700/60 dark:text-gray-300 dark:border-gray-600'"
+                  class="px-3 py-1.5 rounded-lg border text-xs flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <span>{{ getChannelIcon(preset) }}</span>
+                  <span>{{ preset }}</span>
+                  <span v-if="formData.selected_channels.includes(preset)" class="text-[10px] ml-0.5">✓</span>
+                </button>
+  
+                <!-- Tombol Hapus Silang (✕) Khusus Kanal Custom Tambahan -->
+                <button
+                  v-if="!defaultChannels.includes(preset)"
+                  type="button"
+                  @click.stop="removeCustomChannel(preset)"
+                  class="ml-1 -mr-0.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1 rounded-full text-xs font-bold transition"
+                  title="Hapus kanal custom ini"
                 >
                   ✕
                 </button>
               </div>
             </div>
-          </div>
-
-          <!-- Mode 2: Tautan URL Gambar Langsung -->
-          <div v-else class="space-y-1">
-            <div class="relative flex items-center">
+  
+            <!-- Tambah Kanal Custom Tambahan -->
+            <div class="mt-2 flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
               <input
-                v-model="formData.image_url"
-                type="url"
-                placeholder="https://images.unsplash.com/... atau link gambar langsung"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white pr-8"
+                v-model="customChannelInput"
+                type="text"
+                placeholder="+ Ketik nama kanal baru (contoh: TikTok Shop, Threads, Telegram)..."
+                @keydown.enter.prevent="addCustomChannel"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-750 dark:text-white"
               />
               <button
-                v-if="formData.image_url"
                 type="button"
-                @click="formData.image_url = ''"
-                class="absolute right-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs"
+                @click.prevent="addCustomChannel"
+                class="shrink-0 px-4 py-2 bg-brand-500 hover:bg-brand-600 active:scale-95 text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer flex items-center gap-1"
               >
-                ✕
+                <span>+</span>
+                <span>Tambah</span>
               </button>
             </div>
-            <p class="text-[11px] text-gray-400">
-              💡 <strong>Tips:</strong> Untuk Pinterest/Google, klik kanan gambar &rarr; pilih <em>"Salin Alamat Gambar" (Copy Image Address)</em>, bukan link halaman pin.
-            </p>
           </div>
-        </div>
-
-        <!-- Pemilih Kanal Dinamis (Multi-Platform Enterprise) -->
-        <div class="space-y-2">
-          <div class="flex items-center justify-between">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-              Pilih Kanal Distribusi Media Sosial
+  
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Status Postingan</label>
+              <select v-model="formData.status" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <option value="Draft">Draft (Ide Awal)</option>
+                <option value="In-Review">In-Review (Review Tim)</option>
+                <option value="Scheduled">Scheduled (Terjadwal)</option>
+                <option value="Published">Published (Sudah Terbit)</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Estimasi Reach</label>
+              <input v-model.number="formData.reach_count" type="number" min="0" placeholder="0" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+            </div>
+          </div>
+  
+          <!-- Input Waktu Penjadwalan jika status Scheduled -->
+          <div v-if="formData.status === 'Scheduled'" class="p-3.5 bg-blue-50/70 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800 rounded-xl space-y-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-blue-900 dark:text-blue-300">
+              ⏰ Waktu Tayang Otomatis (Publish Date & Time)
             </label>
-            <span class="text-[11px] text-brand-600 dark:text-brand-400 font-medium">
-              {{ formData.selected_channels.length }} Terpilih
-            </span>
-          </div>
-
-          <!-- Pilihan Platform Populer & Custom -->
-          <div class="flex flex-wrap gap-2">
-            <div
-              v-for="preset in availablePresetChannels"
-              :key="preset"
-              class="relative inline-flex items-center group"
-            >
-              <button
-                type="button"
-                @click="toggleChannel(preset)"
-                :class="formData.selected_channels.includes(preset) ? 'bg-brand-500 text-white border-brand-500 font-bold shadow-xs' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-gray-700/60 dark:text-gray-300 dark:border-gray-600'"
-                class="px-3 py-1.5 rounded-lg border text-xs flex items-center gap-1.5 transition cursor-pointer"
-              >
-                <span>{{ getChannelIcon(preset) }}</span>
-                <span>{{ preset }}</span>
-                <span v-if="formData.selected_channels.includes(preset)" class="text-[10px] ml-0.5">✓</span>
-              </button>
-
-              <!-- Tombol Hapus Silang (✕) Khusus Kanal Custom Tambahan -->
-              <button
-                v-if="!defaultChannels.includes(preset)"
-                type="button"
-                @click.stop="removeCustomChannel(preset)"
-                class="ml-1 -mr-0.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1 rounded-full text-xs font-bold transition"
-                title="Hapus kanal custom ini"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-
-          <!-- Tambah Kanal Custom Tambahan -->
-          <div class="mt-2 flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
             <input
-              v-model="customChannelInput"
-              type="text"
-              placeholder="+ Ketik nama kanal baru (contoh: TikTok Shop, Threads, Telegram)..."
-              @keydown.enter.prevent="addCustomChannel"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-750 dark:text-white"
+              v-model="formData.scheduled_at"
+              type="datetime-local"
+              required
+              class="w-full rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none dark:border-blue-700 dark:bg-gray-800 dark:text-white"
             />
-            <button
-              type="button"
-              @click.prevent="addCustomChannel"
-              class="shrink-0 px-4 py-2 bg-brand-500 hover:bg-brand-600 active:scale-95 text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer flex items-center gap-1"
-            >
-              <span>+</span>
-              <span>Tambah</span>
+          </div>
+  
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" @click="closeModal" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
+            <button type="submit" :disabled="isSaving" class="rounded-lg bg-brand-500 px-5 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50">
+              {{ isSaving ? 'Menyimpan...' : 'Simpan Postingan' }}
             </button>
           </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Status Postingan</label>
-            <select v-model="formData.status" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-              <option value="Draft">Draft (Ide Awal)</option>
-              <option value="In-Review">In-Review (Review Tim)</option>
-              <option value="Scheduled">Scheduled (Terjadwal)</option>
-              <option value="Published">Published (Sudah Terbit)</option>
-            </select>
-          </div>
-          <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Estimasi Reach</label>
-            <input v-model.number="formData.reach_count" type="number" min="0" placeholder="0" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-          </div>
-        </div>
-
-        <!-- Input Waktu Penjadwalan jika status Scheduled -->
-        <div v-if="formData.status === 'Scheduled'" class="p-3.5 bg-blue-50/70 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800 rounded-xl space-y-1">
-          <label class="block text-xs font-bold uppercase tracking-wider text-blue-900 dark:text-blue-300">
-            ⏰ Waktu Tayang Otomatis (Publish Date & Time)
-          </label>
-          <input
-            v-model="formData.scheduled_at"
-            type="datetime-local"
-            required
-            class="w-full rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none dark:border-blue-700 dark:bg-gray-800 dark:text-white"
-          />
-        </div>
-
-        <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <button type="button" @click="closeModal" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-lg bg-brand-500 px-5 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan Postingan' }}
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">

@@ -138,6 +138,7 @@
           </table>
         </div>
       </div>
+      </div>
 
       <!-- TAB 2: KAS KECIL (PETTY CASH - SISTEM IMPREST) -->
       <div v-if="activeTab === 'petty_cash'" class="space-y-6">

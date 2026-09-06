@@ -9,6 +9,19 @@ export interface IMailingCampaignDto {
   clicked_count?: number;
   bounced_count?: number;
   scheduled_at?: string | null;
+  budget_allocated?: number;
+  actual_spend?: number;
+  approval_status?: 'Draft' | 'Waiting Approval' | 'Approved' | 'Rejected';
+  approved_by_id?: number | null;
+  approved_at?: string | null;
+  reject_reason?: string | null;
+  is_ab_testing?: boolean;
+  subject_b?: string;
+  sample_size_pct?: number;
+  winner_metric?: string;
+  winner_variant?: string;
+  variant_a_opened?: number;
+  variant_b_opened?: number;
 }
 
 export interface IUtmTrackerDto {

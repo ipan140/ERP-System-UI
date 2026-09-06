@@ -35,17 +35,17 @@
             <span class="text-lg group-hover:scale-110 transition">✉️</span>
           </div>
           <h4 class="mt-3 text-xl font-bold text-gray-900 dark:text-white">{{ stats.totalEmailsSent.toLocaleString('id-ID') }}</h4>
-          <p class="mt-1 text-xs text-emerald-600 font-medium">99.1% Delivery Rate</p>
+          <p class="mt-1 text-xs text-purple-600 font-medium">A/B Split Test Aktif</p>
         </router-link>
 
-        <!-- 2. SMS Broadcast -->
+        <!-- 2. WhatsApp Business API -->
         <router-link to="/marketing/sms-marketing" class="group rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-emerald-500 dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">SMS Broadcast</span>
-            <span class="text-lg group-hover:scale-110 transition">📱</span>
+            <span class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">WhatsApp & SMS</span>
+            <span class="text-lg group-hover:scale-110 transition">💬</span>
           </div>
-          <h4 class="mt-3 text-xl font-bold text-gray-900 dark:text-white">{{ stats.totalSmsSent.toLocaleString('id-ID') }}</h4>
-          <p class="mt-1 text-xs text-blue-600 font-medium">{{ stats.smsCampaignsCount }} Kampanye</p>
+          <h4 class="mt-3 text-xl font-bold text-emerald-600 dark:text-emerald-400">{{ stats.totalSmsSent.toLocaleString('id-ID') }}</h4>
+          <p class="mt-1 text-xs text-emerald-600 font-medium">WABA Meta Cloud API</p>
         </router-link>
 
         <!-- 3. Social Marketing -->
@@ -55,27 +55,27 @@
             <span class="text-lg group-hover:scale-110 transition">🌐</span>
           </div>
           <h4 class="mt-3 text-xl font-bold text-gray-900 dark:text-white">{{ stats.totalSocialReach.toLocaleString('id-ID') }}</h4>
-          <p class="mt-1 text-xs text-pink-600 font-medium">4 Kanal Aktif</p>
+          <p class="mt-1 text-xs text-pink-600 font-medium">4 Kanal Terhubung</p>
         </router-link>
 
         <!-- 4. Automation -->
         <router-link to="/marketing/automation" class="group rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-indigo-500 dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Drip Automation</span>
+            <span class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Omnichannel Drip</span>
             <span class="text-lg group-hover:scale-110 transition">⚡</span>
           </div>
-          <h4 class="mt-3 text-xl font-bold text-gray-900 dark:text-white">{{ stats.activeWorkflowsCount }} Alur</h4>
-          <p class="mt-1 text-xs text-emerald-600 font-medium">RabbitMQ Ready</p>
+          <h4 class="mt-3 text-xl font-bold text-gray-900 dark:text-white">{{ stats.activeWorkflowsCount }} Skenario</h4>
+          <p class="mt-1 text-xs text-indigo-600 font-medium">Journey Auto-Pilot</p>
         </router-link>
 
-        <!-- 5. Events -->
-        <router-link to="/marketing/events" class="group rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-amber-500 dark:border-gray-800 dark:bg-white/[0.03]">
+        <!-- 5. Hot Leads CRM -->
+        <router-link to="/sales/crm" class="group rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-rose-500 dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Tiket Acara</span>
-            <span class="text-lg group-hover:scale-110 transition">🎟</span>
+            <span class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Hot Leads (CRM)</span>
+            <span class="text-lg group-hover:scale-110 transition">🎯</span>
           </div>
-          <h4 class="mt-3 text-xl font-bold text-gray-900 dark:text-white">{{ stats.totalTicketsCount }} Tiket</h4>
-          <p class="mt-1 text-xs text-amber-600 font-medium">{{ stats.scannedTicketsCount }} Check-In</p>
+          <h4 class="mt-3 text-xl font-bold text-rose-600 dark:text-rose-400">{{ stats.hotLeadsCount }} Prospek</h4>
+          <p class="mt-1 text-xs text-rose-600 font-medium">Skor >= 75 Poin</p>
         </router-link>
 
         <!-- 6. Surveys NPS -->
@@ -85,7 +85,7 @@
             <span class="text-lg group-hover:scale-110 transition">📊</span>
           </div>
           <h4 class="mt-3 text-xl font-bold text-teal-600 dark:text-teal-400">+{{ stats.avgNps }}</h4>
-          <p class="mt-1 text-xs text-teal-600 font-medium">Kepuasan Tinggi</p>
+          <p class="mt-1 text-xs text-teal-600 font-medium">Kepuasan Pelanggan</p>
         </router-link>
       </div>
 
@@ -226,6 +226,7 @@ import { socialMarketingService } from '@/services/marketing/social.service'
 import { marketingAutomationService } from '@/services/marketing/automation.service'
 import { eventsService } from '@/services/marketing/events.service'
 import { surveysService } from '@/services/marketing/surveys.service'
+import { crmService } from '@/services/sales/crm.service'
 
 const stats = ref({
   totalEmailsSent: 0,
@@ -235,19 +236,23 @@ const stats = ref({
   activeWorkflowsCount: 0,
   totalTicketsCount: 0,
   scannedTicketsCount: 0,
+  hotLeadsCount: 0,
   avgNps: 76
 })
 
 const fetchAll = async () => {
   try {
-    const [camps, sms, social, auto, evTickets, surveys] = await Promise.all([
+    const [camps, sms, social, auto, evTickets, surveys, leads] = await Promise.all([
       massMailingService.getAll().catch(() => []),
       smsMarketingService.getAll().catch(() => []),
       socialMarketingService.getAll().catch(() => []),
       marketingAutomationService.getAll().catch(() => []),
       eventsService.getAllTickets().catch(() => []),
-      surveysService.getAll().catch(() => [])
+      surveysService.getAll().catch(() => []),
+      crmService.getAll().catch(() => [])
     ])
+
+    stats.value.hotLeadsCount = (leads || []).filter((l: any) => (l.lead_score || 0) >= 75).length
 
     // Compute metrics
     stats.value.totalEmailsSent = (camps || []).reduce((acc: number, c: any) => acc + (c.sent_count || 0), 0)

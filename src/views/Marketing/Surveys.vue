@@ -198,181 +198,185 @@
   </AdminLayout>
 
   <!-- Modal Tambah/Edit Survei -->
-  <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
-      <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <span>📋</span> {{ modalMode === 'create' ? 'Buat Survei Baru' : 'Edit Survei' }}
-        </h3>
-        <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+  <Teleport to="body">
+    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+      <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span>📋</span> {{ modalMode === 'create' ? 'Buat Survei Baru' : 'Edit Survei' }}
+          </h3>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+        </div>
+  
+        <form @submit.prevent="saveRecord" class="mt-4 space-y-4">
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Judul Survei</label>
+            <input v-model="formData.title" type="text" placeholder="Misal: Survei Kepuasan Pengiriman Layanan B2B Q4" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+          </div>
+  
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Deskripsi / Pengantar</label>
+            <textarea v-model="formData.description" rows="3" placeholder="Jelaskan tujuan survei kepada responden..." class="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"></textarea>
+          </div>
+  
+          <!-- Integrasi Google Form & Webhook Sync -->
+          <div class="rounded-xl border border-dashed border-teal-300 bg-teal-50/50 p-4 dark:border-teal-800 dark:bg-teal-950/20">
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-bold uppercase tracking-wider text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
+                <span>🔗</span> Link Google Form (Opsional)
+              </label>
+              <span class="text-[11px] font-semibold text-teal-600 dark:text-teal-400 bg-teal-100 dark:bg-teal-900/50 px-2 py-0.5 rounded-full">
+                Auto-Sync Ready
+              </span>
+            </div>
+            <input
+              v-model="formData.gform_url"
+              type="url"
+              placeholder="https://docs.google.com/forms/d/e/.../viewform"
+              class="w-full rounded-lg border border-teal-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:outline-none dark:border-teal-800 dark:bg-gray-900 dark:text-white"
+            />
+            <p class="mt-2 text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
+              💡 <strong>Auto-Sync Google Form:</strong> Tempelkan link form di sini. Responden dapat mengisi lewat Google Forms Anda atau via Form Internal Publik kami. Setiap respon akan otomatis terhitung ke Skor NPS.
+            </p>
+          </div>
+  
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Status Survei</label>
+              <select v-model="formData.state" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <option value="draft">Draft (Konsep)</option>
+                <option value="open">Open (Menerima Jawaban)</option>
+                <option value="closed">Closed (Ditutup)</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Target / Initial Skor NPS</label>
+              <input v-model.number="formData.nps_score" type="number" min="-100" max="100" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+            </div>
+          </div>
+  
+          <!-- Opsional: Edit jumlah responden jika edit mode -->
+          <div v-if="modalMode === 'edit'" class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-3">
+            <p class="text-xs font-semibold uppercase text-gray-600 dark:text-gray-300">Input Respon Responden</p>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="text-[11px] text-emerald-600 font-medium">Promoters (9-10)</label>
+                <input v-model.number="formData.promoters_count" type="number" min="0" class="w-full mt-0.5 rounded border border-gray-300 px-2 py-1 text-xs dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+              </div>
+              <div>
+                <label class="text-[11px] text-amber-600 font-medium">Passives (7-8)</label>
+                <input v-model.number="formData.passives_count" type="number" min="0" class="w-full mt-0.5 rounded border border-gray-300 px-2 py-1 text-xs dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+              </div>
+              <div>
+                <label class="text-[11px] text-rose-600 font-medium">Detractors (0-6)</label>
+                <input v-model.number="formData.detractors_count" type="number" min="0" class="w-full mt-0.5 rounded border border-gray-300 px-2 py-1 text-xs dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+              </div>
+            </div>
+          </div>
+  
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" @click="closeModal" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300">Batal</button>
+            <button type="submit" :disabled="isSaving" class="rounded-lg bg-teal-600 px-5 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50">
+              {{ isSaving ? 'Menyimpan...' : 'Simpan Survei' }}
+            </button>
+          </div>
+        </form>
       </div>
-
-      <form @submit.prevent="saveRecord" class="mt-4 space-y-4">
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Judul Survei</label>
-          <input v-model="formData.title" type="text" placeholder="Misal: Survei Kepuasan Pengiriman Layanan B2B Q4" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Deskripsi / Pengantar</label>
-          <textarea v-model="formData.description" rows="3" placeholder="Jelaskan tujuan survei kepada responden..." class="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"></textarea>
-        </div>
-
-        <!-- Integrasi Google Form & Webhook Sync -->
-        <div class="rounded-xl border border-dashed border-teal-300 bg-teal-50/50 p-4 dark:border-teal-800 dark:bg-teal-950/20">
-          <div class="flex items-center justify-between mb-2">
-            <label class="text-xs font-bold uppercase tracking-wider text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
-              <span>🔗</span> Link Google Form (Opsional)
-            </label>
-            <span class="text-[11px] font-semibold text-teal-600 dark:text-teal-400 bg-teal-100 dark:bg-teal-900/50 px-2 py-0.5 rounded-full">
-              Auto-Sync Ready
-            </span>
-          </div>
-          <input
-            v-model="formData.gform_url"
-            type="url"
-            placeholder="https://docs.google.com/forms/d/e/.../viewform"
-            class="w-full rounded-lg border border-teal-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:outline-none dark:border-teal-800 dark:bg-gray-900 dark:text-white"
-          />
-          <p class="mt-2 text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
-            💡 <strong>Auto-Sync Google Form:</strong> Tempelkan link form di sini. Responden dapat mengisi lewat Google Forms Anda atau via Form Internal Publik kami. Setiap respon akan otomatis terhitung ke Skor NPS.
-          </p>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Status Survei</label>
-            <select v-model="formData.state" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-              <option value="draft">Draft (Konsep)</option>
-              <option value="open">Open (Menerima Jawaban)</option>
-              <option value="closed">Closed (Ditutup)</option>
-            </select>
-          </div>
-          <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Target / Initial Skor NPS</label>
-            <input v-model.number="formData.nps_score" type="number" min="-100" max="100" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-          </div>
-        </div>
-
-        <!-- Opsional: Edit jumlah responden jika edit mode -->
-        <div v-if="modalMode === 'edit'" class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-3">
-          <p class="text-xs font-semibold uppercase text-gray-600 dark:text-gray-300">Input Respon Responden</p>
-          <div class="grid grid-cols-3 gap-2">
-            <div>
-              <label class="text-[11px] text-emerald-600 font-medium">Promoters (9-10)</label>
-              <input v-model.number="formData.promoters_count" type="number" min="0" class="w-full mt-0.5 rounded border border-gray-300 px-2 py-1 text-xs dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-            </div>
-            <div>
-              <label class="text-[11px] text-amber-600 font-medium">Passives (7-8)</label>
-              <input v-model.number="formData.passives_count" type="number" min="0" class="w-full mt-0.5 rounded border border-gray-300 px-2 py-1 text-xs dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-            </div>
-            <div>
-              <label class="text-[11px] text-rose-600 font-medium">Detractors (0-6)</label>
-              <input v-model.number="formData.detractors_count" type="number" min="0" class="w-full mt-0.5 rounded border border-gray-300 px-2 py-1 text-xs dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <button type="button" @click="closeModal" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-lg bg-teal-600 px-5 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan Survei' }}
-          </button>
-        </div>
-      </form>
     </div>
-  </div>
+  </Teleport>
 
   <!-- MODAL PANDUAN WEBHOOK AUTO-SYNC GOOGLE FORM -->
-  <div v-if="isWebhookModalOpen && selectedWebhookSurvey" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto backdrop-blur-sm">
-    <div class="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
-      <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <span>⚡</span> Panduan Auto-Sync Google Form & Webhook
-        </h3>
-        <button @click="isWebhookModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
-      </div>
-
-      <div class="mt-4 space-y-4 text-sm text-gray-600 dark:text-gray-300">
-        <div class="p-3 bg-teal-50 dark:bg-teal-950/40 rounded-xl border border-teal-200 dark:border-teal-800">
-          <p class="font-bold text-teal-800 dark:text-teal-300">Survei: {{ selectedWebhookSurvey.title }}</p>
-          <p class="text-xs text-teal-600 dark:text-teal-400 mt-0.5">ID Survei: #{{ selectedWebhookSurvey.id }}</p>
+  <Teleport to="body">
+    <div v-if="isWebhookModalOpen && selectedWebhookSurvey" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 overflow-y-auto backdrop-blur-sm">
+      <div class="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span>⚡</span> Panduan Auto-Sync Google Form & Webhook
+          </h3>
+          <button @click="isWebhookModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
         </div>
-
-        <!-- URL Webhook Endpoint -->
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
-            Endpoint Webhook Auto-Sync (POST):
-          </label>
-          <div class="flex items-center gap-2">
-            <input
-              type="text"
-              readonly
-              :value="webhookUrl"
-              class="w-full font-mono text-xs rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-teal-400"
-            />
+  
+        <div class="mt-4 space-y-4 text-sm text-gray-600 dark:text-gray-300">
+          <div class="p-3 bg-teal-50 dark:bg-teal-950/40 rounded-xl border border-teal-200 dark:border-teal-800">
+            <p class="font-bold text-teal-800 dark:text-teal-300">Survei: {{ selectedWebhookSurvey.title }}</p>
+            <p class="text-xs text-teal-600 dark:text-teal-400 mt-0.5">ID Survei: #{{ selectedWebhookSurvey.id }}</p>
+          </div>
+  
+          <!-- URL Webhook Endpoint -->
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
+              Endpoint Webhook Auto-Sync (POST):
+            </label>
+            <div class="flex items-center gap-2">
+              <input
+                type="text"
+                readonly
+                :value="webhookUrl"
+                class="w-full font-mono text-xs rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-teal-400"
+              />
+              <button
+                @click="copyToClipboard(webhookUrl)"
+                class="px-3 py-2 rounded-lg bg-teal-600 text-white font-semibold text-xs hover:bg-teal-700 transition whitespace-nowrap"
+              >
+                Salin URL
+              </button>
+            </div>
+          </div>
+  
+          <!-- URL Form Publik -->
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
+              Link Form Kuesioner Publik (Siap sebar ke pelanggan):
+            </label>
+            <div class="flex items-center gap-2">
+              <input
+                type="text"
+                readonly
+                :value="publicFormUrl"
+                class="w-full font-mono text-xs rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-teal-400"
+              />
+              <button
+                @click="copyToClipboard(publicFormUrl)"
+                class="px-3 py-2 rounded-lg bg-brand-500 text-white font-semibold text-xs hover:bg-brand-600 transition whitespace-nowrap"
+              >
+                Salin Link
+              </button>
+            </div>
+          </div>
+  
+          <!-- Petunjuk 3 Langkah Google Form / Sheets -->
+          <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 space-y-2 text-xs">
+            <p class="font-bold text-gray-900 dark:text-white">🚀 Cara Menghubungkan Google Form otomatis:</p>
+            <ol class="list-decimal list-inside space-y-1 text-gray-600 dark:text-gray-300">
+              <li>Buka <strong>Google Form</strong> Anda &rarr; Klik tab <strong>Tanggapan / Responses</strong> &rarr; Klik <strong>Tautkan ke Spreadsheet (Google Sheets)</strong>.</li>
+              <li>Di Google Sheets, klik menu <strong>Ekstensi (Extensions)</strong> &rarr; <strong>Apps Script</strong>.</li>
+              <li>Paste script otomatis berikut, lalu pasang trigger <em>"On form submit"</em>:</li>
+            </ol>
+            <pre class="bg-gray-900 text-teal-300 p-3 rounded-lg font-mono text-[11px] overflow-x-auto">function onFormSubmit(e) {
+    // Ambil skor NPS (kolom jawaban 0-10)
+    var rating = parseInt(e.values[1]); // Sesuaikan index kolom nilai
+    var url = "{{ webhookUrl }}";
+    UrlFetchApp.fetch(url, {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify({ rating: rating })
+    });
+  }</pre>
+          </div>
+  
+          <div class="flex justify-end pt-2">
             <button
-              @click="copyToClipboard(webhookUrl)"
-              class="px-3 py-2 rounded-lg bg-teal-600 text-white font-semibold text-xs hover:bg-teal-700 transition whitespace-nowrap"
+              type="button"
+              @click="isWebhookModalOpen = false"
+              class="px-5 py-2 rounded-lg bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white text-xs font-semibold hover:bg-gray-300 dark:hover:bg-gray-600"
             >
-              Salin URL
+              Tutup
             </button>
           </div>
-        </div>
-
-        <!-- URL Form Publik -->
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">
-            Link Form Kuesioner Publik (Siap sebar ke pelanggan):
-          </label>
-          <div class="flex items-center gap-2">
-            <input
-              type="text"
-              readonly
-              :value="publicFormUrl"
-              class="w-full font-mono text-xs rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-teal-400"
-            />
-            <button
-              @click="copyToClipboard(publicFormUrl)"
-              class="px-3 py-2 rounded-lg bg-brand-500 text-white font-semibold text-xs hover:bg-brand-600 transition whitespace-nowrap"
-            >
-              Salin Link
-            </button>
-          </div>
-        </div>
-
-        <!-- Petunjuk 3 Langkah Google Form / Sheets -->
-        <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 space-y-2 text-xs">
-          <p class="font-bold text-gray-900 dark:text-white">🚀 Cara Menghubungkan Google Form otomatis:</p>
-          <ol class="list-decimal list-inside space-y-1 text-gray-600 dark:text-gray-300">
-            <li>Buka <strong>Google Form</strong> Anda &rarr; Klik tab <strong>Tanggapan / Responses</strong> &rarr; Klik <strong>Tautkan ke Spreadsheet (Google Sheets)</strong>.</li>
-            <li>Di Google Sheets, klik menu <strong>Ekstensi (Extensions)</strong> &rarr; <strong>Apps Script</strong>.</li>
-            <li>Paste script otomatis berikut, lalu pasang trigger <em>"On form submit"</em>:</li>
-          </ol>
-          <pre class="bg-gray-900 text-teal-300 p-3 rounded-lg font-mono text-[11px] overflow-x-auto">function onFormSubmit(e) {
-  // Ambil skor NPS (kolom jawaban 0-10)
-  var rating = parseInt(e.values[1]); // Sesuaikan index kolom nilai
-  var url = "{{ webhookUrl }}";
-  UrlFetchApp.fetch(url, {
-    method: "post",
-    contentType: "application/json",
-    payload: JSON.stringify({ rating: rating })
-  });
-}</pre>
-        </div>
-
-        <div class="flex justify-end pt-2">
-          <button
-            type="button"
-            @click="isWebhookModalOpen = false"
-            class="px-5 py-2 rounded-lg bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white text-xs font-semibold hover:bg-gray-300 dark:hover:bg-gray-600"
-          >
-            Tutup
-          </button>
         </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">

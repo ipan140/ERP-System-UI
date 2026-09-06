@@ -143,21 +143,33 @@
         <!-- Visual Drip Workflow Flowchart (5 Cols) -->
         <div class="lg:col-span-5 space-y-4">
           <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
               <div>
                 <h4 class="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1.5">
-                  <span>🗺️</span> Visualisasi Alur Kerja (Drip Journey)
+                  <span>🗺️</span> Visualisasi Alur Kerja (Omnichannel Journey)
                 </h4>
                 <p class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">{{ selectedCampaign?.name || 'Pilih Skenario' }}</p>
               </div>
-              <button
-                type="button"
-                @click="openActivityModal('create')"
-                class="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Tambah Aksi
-              </button>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  @click="runSimulation"
+                  :disabled="isSimulating || !selectedCampaign?.id"
+                  class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-300 transition"
+                  title="Simulasikan pergerakan kontak lead menembus alur ini"
+                >
+                  <span>🚀</span>
+                  <span>{{ isSimulating ? 'Memproses...' : 'Uji Simulasi Alur' }}</span>
+                </button>
+                <button
+                  type="button"
+                  @click="openActivityModal('create')"
+                  class="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                  Tambah Aksi
+                </button>
+              </div>
             </div>
 
             <!-- Flow Visualizer -->
@@ -201,17 +213,28 @@
                   <!-- Action Card Node with Edit & Delete -->
                   <div class="rounded-xl border border-indigo-200 bg-indigo-50/70 p-3.5 dark:border-indigo-800/40 dark:bg-indigo-900/20 flex justify-between items-center shadow-xs hover:border-indigo-300 transition">
                     <div class="flex items-center gap-3">
-                      <div class="h-9 w-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow">
-                        {{ act.action_type === 'Email' ? '✉️' : act.action_type === 'SMS' ? '💬' : act.action_type === 'Notification' ? '🔔' : '🌐' }}
+                      <div
+                        :class="[
+                          act.action_type === 'WhatsApp' ? 'bg-emerald-600' :
+                          act.action_type === 'SMS' ? 'bg-blue-600' :
+                          act.action_type === 'CRM_Task' ? 'bg-amber-600' :
+                          act.action_type === 'Notification' ? 'bg-purple-600' : 'bg-indigo-600',
+                          'h-9 w-9 rounded-lg text-white flex items-center justify-center font-bold text-sm shadow'
+                        ]"
+                      >
+                        {{ act.action_type === 'Email' ? '✉️' : act.action_type === 'WhatsApp' ? '💬' : act.action_type === 'SMS' ? '📱' : act.action_type === 'CRM_Task' ? '📋' : act.action_type === 'Notification' ? '🔔' : '🌐' }}
                       </div>
                       <div>
                         <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                          Aksi #{{ idx + 1 }} • {{ act.action_type || 'Email' }}
+                          Aksi #{{ idx + 1 }} • {{ act.action_type === 'CRM_Task' ? 'Tugas Sales CRM' : act.action_type || 'Email' }}
                         </span>
                         <p class="text-xs font-bold text-gray-900 dark:text-white">
                           {{ act.activity_name || `Kirim ${act.action_type} Penawaran` }}
                         </p>
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Kondisi: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ act.condition === 'Always' ? 'Selalu Dijalankan' : act.condition === 'Opened' ? 'Hanya Jika Dibuka' : 'Hanya Jika Diklik' }}</span></p>
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                          Kondisi: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ act.condition === 'Always' ? 'Selalu Dijalankan' : act.condition === 'Opened' ? 'Hanya Jika Dibuka' : act.condition === 'Clicked' ? 'Hanya Jika Diklik' : 'Jika Tidak Ada Respon' }}</span>
+                          <span v-if="act.action_payload" class="block italic text-gray-400 mt-0.5 truncate max-w-xs">"{{ act.action_payload }}"</span>
+                        </p>
                       </div>
                     </div>
                     <div class="flex items-center gap-1">
@@ -255,6 +278,41 @@
                 </div>
               </template>
             </div>
+
+            <!-- Real-time Journey Execution Log (Enterprise Multi-Channel Tracker) -->
+            <div class="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800">
+              <div class="flex justify-between items-center mb-3">
+                <h5 class="font-bold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <span>📊</span> Log Perjalanan Kontak (Omnichannel Trail)
+                </h5>
+                <span class="text-[11px] text-gray-400">{{ journeyLogs.length }} Aktivitas Terekam</span>
+              </div>
+
+              <div v-if="journeyLogs.length > 0" class="max-h-48 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30 p-2 space-y-2 custom-scrollbar">
+                <div
+                  v-for="log in journeyLogs"
+                  :key="log.id"
+                  class="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-xs shadow-2xs"
+                >
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-sm">{{ log.channel === 'WhatsApp' ? '💬' : log.channel === 'SMS' ? '📱' : log.channel === 'CRM_Task' ? '📋' : '✉️' }}</span>
+                    <div>
+                      <p class="font-semibold text-gray-900 dark:text-white">{{ log.lead_name }}</p>
+                      <p class="text-[10px] text-gray-500 dark:text-gray-400">{{ log.action_name }} • {{ log.lead_contact }}</p>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <span class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-900/40">
+                      ✓ {{ log.status || 'Terkirim' }}
+                    </span>
+                    <p class="text-[9px] text-gray-400 mt-0.5">{{ log.executed_at || 'Baru saja' }}</p>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-4 text-center text-xs text-gray-400">
+                Klik "Uji Simulasi Alur" di atas untuk melihat pelacakan interaksi lead secara langsung.
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -262,110 +320,126 @@
   </AdminLayout>
 
   <!-- Modal Tambah/Edit Kampanye Otomasi -->
-  <div v-if="isModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
-      <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <span>⚡</span> {{ modalMode === 'create' ? 'Buat Skenario Alur Otomasi' : 'Edit Skenario Alur Otomasi' }}
-        </h3>
-        <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+  <Teleport to="body">
+    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+      <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span>⚡</span> {{ modalMode === 'create' ? 'Buat Skenario Alur Otomasi' : 'Edit Skenario Alur Otomasi' }}
+          </h3>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+        </div>
+  
+        <form @submit.prevent="saveRecord" class="mt-4 space-y-4">
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Nama Skenario Alur</label>
+            <input v-model="formData.name" type="text" placeholder="Misal: Onboarding Prospek Baru Website" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+          </div>
+  
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Pemicu Awal (Trigger)</label>
+            <select v-model="formData.trigger_type" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+              <option value="Ketika Lead Baru Masuk dari Form Web">Ketika Lead Baru Masuk dari Form Web</option>
+              <option value="Ketika Faktur Invoice Lunas (Won Deal)">Ketika Faktur Invoice Lunas (Won Deal)</option>
+              <option value="Ketika Tiket Acara Terdaftar">Ketika Tiket Acara Terdaftar</option>
+              <option value="Ketika Responden Mengisi Survei">Ketika Responden Mengisi Survei</option>
+            </select>
+          </div>
+  
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Status Alur</label>
+              <select v-model="formData.status" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <option value="Active">Active (Aktif)</option>
+                <option value="Paused">Paused (Ditunda)</option>
+                <option value="Draft">Draft (Konsep)</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Entitas Target</label>
+              <select v-model="formData.target_model" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <option value="Sales Leads">Sales Leads (CRM)</option>
+                <option value="Pelanggan VIP">Pelanggan VIP</option>
+                <option value="Peserta Acara">Peserta Acara</option>
+              </select>
+            </div>
+          </div>
+  
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" @click="closeModal" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
+            <button type="submit" :disabled="isSaving" class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
+              {{ isSaving ? 'Menyimpan...' : 'Simpan Alur Otomasi' }}
+            </button>
+          </div>
+        </form>
       </div>
-
-      <form @submit.prevent="saveRecord" class="mt-4 space-y-4">
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Nama Skenario Alur</label>
-          <input v-model="formData.name" type="text" placeholder="Misal: Onboarding Prospek Baru Website" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Pemicu Awal (Trigger)</label>
-          <select v-model="formData.trigger_type" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-            <option value="Ketika Lead Baru Masuk dari Form Web">Ketika Lead Baru Masuk dari Form Web</option>
-            <option value="Ketika Faktur Invoice Lunas (Won Deal)">Ketika Faktur Invoice Lunas (Won Deal)</option>
-            <option value="Ketika Tiket Acara Terdaftar">Ketika Tiket Acara Terdaftar</option>
-            <option value="Ketika Responden Mengisi Survei">Ketika Responden Mengisi Survei</option>
-          </select>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Status Alur</label>
-            <select v-model="formData.status" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-              <option value="Active">Active (Aktif)</option>
-              <option value="Paused">Paused (Ditunda)</option>
-              <option value="Draft">Draft (Konsep)</option>
-            </select>
-          </div>
-          <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Entitas Target</label>
-            <select v-model="formData.target_model" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-              <option value="Sales Leads">Sales Leads (CRM)</option>
-              <option value="Pelanggan VIP">Pelanggan VIP</option>
-              <option value="Peserta Acara">Peserta Acara</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <button type="button" @click="closeModal" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan Alur Otomasi' }}
-          </button>
-        </div>
-      </form>
     </div>
-  </div>
+  </Teleport>
 
   <!-- Modal Tambah/Edit Aktivitas Aksi Workflow -->
-  <div v-if="isActivityModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
-      <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <span>⚙️</span> {{ activityModalMode === 'create' ? 'Tambah Langkah Aksi Workflow' : 'Edit Langkah Aksi Workflow' }}
-        </h3>
-        <button @click="isActivityModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
-      </div>
-
-      <form @submit.prevent="saveActivity" class="mt-4 space-y-4">
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Nama Aktivitas Aksi</label>
-          <input v-model="activityFormData.activity_name" type="text" placeholder="Misal: Kirim Email Penawaran Diskon 20%" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+  <Teleport to="body">
+    <div v-if="isActivityModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+      <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span>⚙️</span> {{ activityModalMode === 'create' ? 'Tambah Langkah Aksi Workflow' : 'Edit Langkah Aksi Workflow' }}
+          </h3>
+          <button @click="isActivityModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
         </div>
-
-        <div class="grid grid-cols-2 gap-4">
+  
+        <form @submit.prevent="saveActivity" class="mt-4 space-y-4">
           <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Tipe Aksi</label>
-            <select v-model="activityFormData.action_type" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-              <option value="Email">Email Otomatis</option>
-              <option value="SMS">SMS / WhatsApp</option>
-              <option value="Notification">Notifikasi Internal</option>
-              <option value="Webhook">Webhook Trigger</option>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Nama Aktivitas Aksi</label>
+            <input v-model="activityFormData.activity_name" type="text" placeholder="Misal: Kirim Email Penawaran Diskon 20%" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+          </div>
+  
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Kanal & Tipe Aksi</label>
+              <select v-model="activityFormData.action_type" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <option value="Email">✉️ Email Otomatis</option>
+                <option value="WhatsApp">💬 WhatsApp Bisnis (WABA)</option>
+                <option value="SMS">📱 SMS GSM Langsung</option>
+                <option value="CRM_Task">📋 Buat Tugas Sales (CRM Task)</option>
+                <option value="Notification">🔔 Notifikasi Internal ERP</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Jeda Waktu (Jam)</label>
+              <input v-model.number="activityFormData.delay_hours" type="number" min="0" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+            </div>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Instruksi / Pesan Aksi</label>
+            <textarea
+              v-model="activityFormData.action_payload"
+              rows="2"
+              :placeholder="activityFormData.action_type === 'CRM_Task' ? 'Misal: Telepon prospek untuk konfirmasi kebutuhan demo' : 'Misal: Halo {{name}}, terima kasih telah mendaftar...'"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            ></textarea>
+          </div>
+  
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Kondisi Eksekusi</label>
+            <select v-model="activityFormData.condition" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+              <option value="Always">Selalu Dijalankan (Unconditional)</option>
+              <option value="Opened">Hanya Jika Email/Pesan Dibuka</option>
+              <option value="Clicked">Hanya Jika Tautan Diklik</option>
+              <option value="Not_Replied">Jika Belum Merespon (Follow-up)</option>
             </select>
           </div>
-          <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Jeda Waktu (Jam)</label>
-            <input v-model.number="activityFormData.delay_hours" type="number" min="0" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+  
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" @click="isActivityModalOpen = false" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300">Batal</button>
+            <button type="submit" :disabled="isSaving" class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
+              {{ isSaving ? 'Menyimpan...' : (activityModalMode === 'create' ? 'Simpan Langkah Aksi' : 'Perbarui Langkah Aksi') }}
+            </button>
           </div>
-        </div>
-
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Kondisi Eksekusi</label>
-          <select v-model="activityFormData.condition" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-            <option value="Always">Selalu Dijalankan (Unconditional)</option>
-            <option value="Opened">Hanya Jika Email Sebelumnya Dibuka</option>
-            <option value="Clicked">Hanya Jika Tautan Diklik</option>
-          </select>
-        </div>
-
-        <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <button type="button" @click="isActivityModalOpen = false" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : (activityModalMode === 'create' ? 'Simpan Langkah Aksi' : 'Perbarui Langkah Aksi') }}
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -401,21 +475,51 @@ const formData = ref<{
 // Modal Aktivitas
 const isActivityModalOpen = ref(false)
 const activityModalMode = ref<'create' | 'edit'>('create')
+const journeyLogs = ref<any[]>([])
+const isSimulating = ref(false)
+
 const activityFormData = ref<{
   id: number | null
   campaign_id: number | null
   activity_name: string
-  action_type: 'Email' | 'SMS' | 'Notification' | 'Webhook'
+  action_type: any
+  channel: string
+  action_payload: string
   delay_hours: number
-  condition: 'Opened' | 'Clicked' | 'Always'
+  condition: any
 }>({
   id: null,
   campaign_id: null,
   activity_name: '',
   action_type: 'Email',
+  channel: 'Email',
+  action_payload: '',
   delay_hours: 24,
   condition: 'Always'
 })
+
+const fetchJourneyLogs = async () => {
+  if (!selectedCampaign.value?.id) return
+  try {
+    const data = await marketingAutomationService.getJourneyLogs(selectedCampaign.value.id)
+    journeyLogs.value = data || []
+  } catch (e) {
+    journeyLogs.value = []
+  }
+}
+
+const runSimulation = async () => {
+  if (!selectedCampaign.value?.id) return
+  isSimulating.value = true
+  try {
+    const res = await marketingAutomationService.simulateJourney(selectedCampaign.value.id)
+    journeyLogs.value = res || []
+  } catch (err: any) {
+    alert('Gagal menjalankan simulasi: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isSimulating.value = false
+  }
+}
 
 // Computations
 const activeCount = computed(() => records.value.filter(r => r.status === 'Active').length)
@@ -426,6 +530,7 @@ const filteredActivities = computed(() => {
 
 const selectCampaign = (campaign: IAutomationCampaignDto) => {
   selectedCampaign.value = campaign
+  fetchJourneyLogs()
 }
 
 const toggleStatus = async (record: IAutomationCampaignDto) => {
@@ -456,8 +561,10 @@ const fetchData = async () => {
       if (!selectedCampaign.value || !records.value.some(r => r.id === selectedCampaign.value?.id)) {
         selectedCampaign.value = records.value[0]
       }
+      await fetchJourneyLogs()
     } else {
       selectedCampaign.value = null
+      journeyLogs.value = []
     }
   } catch (err: any) {
     error.value = 'Gagal memuat alur: ' + (err.response?.data?.message || err.message)
@@ -535,6 +642,8 @@ const openActivityModal = (mode: 'create' | 'edit' = 'create', data: IWorkflowAc
       campaign_id: data.campaign_id || selectedCampaign.value?.id || null,
       activity_name: data.activity_name || '',
       action_type: data.action_type || 'Email',
+      channel: (data.channel as any) || 'Email',
+      action_payload: data.action_payload || '',
       delay_hours: data.delay_hours || 1,
       condition: data.condition || 'Always'
     }
@@ -544,6 +653,8 @@ const openActivityModal = (mode: 'create' | 'edit' = 'create', data: IWorkflowAc
       campaign_id: selectedCampaign.value?.id || null,
       activity_name: '',
       action_type: 'Email',
+      channel: 'Email',
+      action_payload: '',
       delay_hours: 24,
       condition: 'Always'
     }
@@ -552,6 +663,7 @@ const openActivityModal = (mode: 'create' | 'edit' = 'create', data: IWorkflowAc
 }
 
 const saveActivity = async () => {
+  activityFormData.value.channel = activityFormData.value.action_type
   if (!activityFormData.value.campaign_id) {
     alert('Silakan pilih skenario alur otomasi terlebih dahulu.')
     return

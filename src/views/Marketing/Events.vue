@@ -337,429 +337,437 @@
   </AdminLayout>
 
   <!-- Modal Tambah/Edit Acara -->
-  <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
-      <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <span>📅</span> {{ modalMode === 'create' ? 'Buat Acara Baru' : 'Edit Acara' }}
-        </h3>
-        <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
-      </div>
-
-      <form @submit.prevent="saveRecord" class="mt-4 space-y-4">
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Nama Acara</label>
-          <input v-model="formData.event_name" type="text" placeholder="Misal: Annual Enterprise ERP Summit 2026" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+  <Teleport to="body">
+    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+      <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span>📅</span> {{ modalMode === 'create' ? 'Buat Acara Baru' : 'Edit Acara' }}
+          </h3>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
         </div>
-
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Lokasi Pelaksanaan</label>
-          <input v-model="formData.location" type="text" placeholder="Misal: Grand Ballroom Hotel Indonesia / Zoom Webinar" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
+  
+        <form @submit.prevent="saveRecord" class="mt-4 space-y-4">
           <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Kapasitas Maksimal Kursi</label>
-            <input v-model.number="formData.max_capacity" type="number" min="1" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Nama Acara</label>
+            <input v-model="formData.event_name" type="text" placeholder="Misal: Annual Enterprise ERP Summit 2026" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
           </div>
+  
           <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Status Acara</label>
-            <select v-model="formData.status" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-              <option value="Open">Open (Pendaftaran Buka)</option>
-              <option value="Ongoing">Ongoing (Sedang Berlangsung)</option>
-              <option value="Completed">Completed (Selesai)</option>
-            </select>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Lokasi Pelaksanaan</label>
+            <input v-model="formData.location" type="text" placeholder="Misal: Grand Ballroom Hotel Indonesia / Zoom Webinar" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
           </div>
-        </div>
-
-        <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <button type="button" @click="closeModal" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-lg bg-brand-500 px-5 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan Acara' }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal Terbitkan Tiket -->
-  <div v-if="isTicketModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-gray-100 dark:border-gray-700/80 dark:bg-gray-900 my-8 transition-all">
-      <!-- Header Modal -->
-      <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
-        <div class="flex items-center gap-3">
-          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20">
-            🎟
-          </span>
-          <div>
-            <h3 class="text-base font-bold text-gray-900 dark:text-white">
-              Terbitkan E-Tiket Baru
-            </h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              Registrasikan tiket peserta dan generate barcode check-in
-            </p>
-          </div>
-        </div>
-        <button
-          @click="isTicketModalOpen = false"
-          class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition"
-        >
-          ✕
-        </button>
-      </div>
-
-      <!-- Overcapacity Warning Banner -->
-      <div v-if="isEventFull" class="mt-4 rounded-xl bg-rose-500/10 border border-rose-500/20 p-3.5 text-sm text-rose-500 dark:text-rose-400 flex items-start gap-2.5">
-        <span class="text-base leading-none">⚠️</span>
-        <div>
-          <span class="font-bold">Kapasitas Penuh!</span> Kuota kursi acara ini telah mencapai batas maksimal ({{ selectedEventQuota?.max }} kursi). Pendaftaran ditutup.
-        </div>
-      </div>
-
-      <form @submit.prevent="saveTicket" class="mt-5 space-y-4">
-        <!-- Pilihan Acara -->
-        <div>
-          <div class="flex justify-between items-center mb-1.5">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Pilih Acara</label>
-            <span
-              v-if="selectedEventQuota"
-              :class="[
-                isEventFull
-                  ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20'
-                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
-                'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border'
-              ]"
-            >
-              <span class="h-1.5 w-1.5 rounded-full" :class="isEventFull ? 'bg-rose-500' : 'bg-emerald-500'"></span>
-              Terisi: {{ selectedEventQuota.registered }}/{{ selectedEventQuota.max }} (Sisa: {{ selectedEventQuota.remaining }})
-            </span>
-          </div>
-          <div class="relative">
-            <select
-              v-model="ticketFormData.event_id"
-              required
-              class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-            >
-              <option v-for="ev in records" :key="ev.id" :value="ev.id">
-                {{ ev.event_name }} (Kapasitas: {{ ev.max_capacity }} | Terisi: {{ getRegisteredCount(ev.id) }})
-              </option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Box Data Peserta -->
-        <div class="rounded-xl border border-gray-200/80 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-800/40 space-y-3.5">
-          <!-- Segmented Tab / Radio Toggle -->
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">Data Peserta</span>
-            <div class="inline-flex rounded-lg bg-gray-200/70 p-0.5 dark:bg-gray-700/60">
-              <button
-                type="button"
-                @click="attendeeType = 'partner'"
-                :class="[
-                  attendeeType === 'partner'
-                    ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white'
-                    : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
-                  'rounded-md px-2.5 py-1 text-xs font-semibold transition'
-                ]"
-              >
-                🏢 Partner CRM
-              </button>
-              <button
-                type="button"
-                @click="attendeeType = 'walkin'"
-                :class="[
-                  attendeeType === 'walkin'
-                    ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white'
-                    : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
-                  'rounded-md px-2.5 py-1 text-xs font-semibold transition'
-                ]"
-              >
-                🚶 Umum / Walk-in
-              </button>
-            </div>
-          </div>
-
-          <!-- Dropdown Partner CRM -->
-          <div v-if="attendeeType === 'partner'" class="space-y-1">
-            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">Pilih Partner / Client Terdaftar</label>
-            <select
-              v-model="ticketFormData.customer_id"
-              @change="onSelectPartner"
-              class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-            >
-              <option :value="null">-- Pilih Partner / Customer --</option>
-              <option v-for="p in partners" :key="p.id" :value="p.id">
-                {{ p.name }} {{ p.email ? `(${p.email})` : '' }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Input Nama & Email -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+  
+          <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Nama Lengkap</label>
-              <input
-                v-model="ticketFormData.attendee_name"
-                type="text"
-                placeholder="Contoh: Budi Santoso"
-                required
-                class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
-              />
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Kapasitas Maksimal Kursi</label>
+              <input v-model.number="formData.max_capacity" type="number" min="1" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
             </div>
             <div>
-              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Email Peserta</label>
-              <input
-                v-model="ticketFormData.attendee_email"
-                type="email"
-                placeholder="budi@example.com"
-                class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
-              />
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Status Acara</label>
+              <select v-model="formData.status" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <option value="Open">Open (Pendaftaran Buka)</option>
+                <option value="Ongoing">Ongoing (Sedang Berlangsung)</option>
+                <option value="Completed">Completed (Selesai)</option>
+              </select>
             </div>
           </div>
-        </div>
-
-        <!-- Barcode Unik & Generator -->
-        <div>
-          <div class="flex justify-between items-center mb-1.5">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Kode Barcode Unik</label>
-            <button
-              type="button"
-              @click="regenerateBarcode"
-              class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition"
-            >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-              Generate Barcode Baru
+  
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" @click="closeModal" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300">Batal</button>
+            <button type="submit" :disabled="isSaving" class="rounded-lg bg-brand-500 px-5 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50">
+              {{ isSaving ? 'Menyimpan...' : 'Simpan Acara' }}
             </button>
           </div>
-          <div class="relative flex items-center">
-            <input
-              v-model="ticketFormData.barcode"
-              type="text"
-              required
-              placeholder="Contoh: PASS-89X4K2"
-              class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 font-mono text-sm font-bold tracking-wider text-gray-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-amber-400"
-            />
-            <span class="absolute right-3 text-xs font-semibold text-gray-400">Acak / Custom</span>
+        </form>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- Modal Terbitkan Tiket -->
+  <Teleport to="body">
+    <div v-if="isTicketModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+      <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-gray-100 dark:border-gray-700/80 dark:bg-gray-900 my-8 transition-all">
+        <!-- Header Modal -->
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
+          <div class="flex items-center gap-3">
+            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20">
+              🎟
+            </span>
+            <div>
+              <h3 class="text-base font-bold text-gray-900 dark:text-white">
+                Terbitkan E-Tiket Baru
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Registrasikan tiket peserta dan generate barcode check-in
+              </p>
+            </div>
+          </div>
+          <button
+            @click="isTicketModalOpen = false"
+            class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition"
+          >
+            ✕
+          </button>
+        </div>
+  
+        <!-- Overcapacity Warning Banner -->
+        <div v-if="isEventFull" class="mt-4 rounded-xl bg-rose-500/10 border border-rose-500/20 p-3.5 text-sm text-rose-500 dark:text-rose-400 flex items-start gap-2.5">
+          <span class="text-base leading-none">⚠️</span>
+          <div>
+            <span class="font-bold">Kapasitas Penuh!</span> Kuota kursi acara ini telah mencapai batas maksimal ({{ selectedEventQuota?.max }} kursi). Pendaftaran ditutup.
           </div>
         </div>
-
-        <!-- Modal Actions Footer -->
-        <div class="flex justify-end items-center gap-2.5 pt-4 border-t border-gray-100 dark:border-gray-800">
-          <button
-            type="button"
-            @click="isTicketModalOpen = false"
-            class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition"
-          >
-            Batal
-          </button>
-          <button
-            type="submit"
-            :disabled="isSaving || isEventFull"
-            class="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            <span v-if="!isSaving">🎟 Terbitkan Tiket</span>
-            <span v-else class="flex items-center gap-2">
-              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-              Menerbitkan...
-            </span>
-          </button>
-        </div>
-      </form>
+  
+        <form @submit.prevent="saveTicket" class="mt-5 space-y-4">
+          <!-- Pilihan Acara -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Pilih Acara</label>
+              <span
+                v-if="selectedEventQuota"
+                :class="[
+                  isEventFull
+                    ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
+                  'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border'
+                ]"
+              >
+                <span class="h-1.5 w-1.5 rounded-full" :class="isEventFull ? 'bg-rose-500' : 'bg-emerald-500'"></span>
+                Terisi: {{ selectedEventQuota.registered }}/{{ selectedEventQuota.max }} (Sisa: {{ selectedEventQuota.remaining }})
+              </span>
+            </div>
+            <div class="relative">
+              <select
+                v-model="ticketFormData.event_id"
+                required
+                class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              >
+                <option v-for="ev in records" :key="ev.id" :value="ev.id">
+                  {{ ev.event_name }} (Kapasitas: {{ ev.max_capacity }} | Terisi: {{ getRegisteredCount(ev.id) }})
+                </option>
+              </select>
+            </div>
+          </div>
+  
+          <!-- Box Data Peserta -->
+          <div class="rounded-xl border border-gray-200/80 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-800/40 space-y-3.5">
+            <!-- Segmented Tab / Radio Toggle -->
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">Data Peserta</span>
+              <div class="inline-flex rounded-lg bg-gray-200/70 p-0.5 dark:bg-gray-700/60">
+                <button
+                  type="button"
+                  @click="attendeeType = 'partner'"
+                  :class="[
+                    attendeeType === 'partner'
+                      ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white'
+                      : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
+                    'rounded-md px-2.5 py-1 text-xs font-semibold transition'
+                  ]"
+                >
+                  🏢 Partner CRM
+                </button>
+                <button
+                  type="button"
+                  @click="attendeeType = 'walkin'"
+                  :class="[
+                    attendeeType === 'walkin'
+                      ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white'
+                      : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
+                    'rounded-md px-2.5 py-1 text-xs font-semibold transition'
+                  ]"
+                >
+                  🚶 Umum / Walk-in
+                </button>
+              </div>
+            </div>
+  
+            <!-- Dropdown Partner CRM -->
+            <div v-if="attendeeType === 'partner'" class="space-y-1">
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">Pilih Partner / Client Terdaftar</label>
+              <select
+                v-model="ticketFormData.customer_id"
+                @change="onSelectPartner"
+                class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              >
+                <option :value="null">-- Pilih Partner / Customer --</option>
+                <option v-for="p in partners" :key="p.id" :value="p.id">
+                  {{ p.name }} {{ p.email ? `(${p.email})` : '' }}
+                </option>
+              </select>
+            </div>
+  
+            <!-- Input Nama & Email -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Nama Lengkap</label>
+                <input
+                  v-model="ticketFormData.attendee_name"
+                  type="text"
+                  placeholder="Contoh: Budi Santoso"
+                  required
+                  class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+                />
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Email Peserta</label>
+                <input
+                  v-model="ticketFormData.attendee_email"
+                  type="email"
+                  placeholder="budi@example.com"
+                  class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+                />
+              </div>
+            </div>
+          </div>
+  
+          <!-- Barcode Unik & Generator -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Kode Barcode Unik</label>
+              <button
+                type="button"
+                @click="regenerateBarcode"
+                class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Generate Barcode Baru
+              </button>
+            </div>
+            <div class="relative flex items-center">
+              <input
+                v-model="ticketFormData.barcode"
+                type="text"
+                required
+                placeholder="Contoh: PASS-89X4K2"
+                class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 font-mono text-sm font-bold tracking-wider text-gray-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-amber-400"
+              />
+              <span class="absolute right-3 text-xs font-semibold text-gray-400">Acak / Custom</span>
+            </div>
+          </div>
+  
+          <!-- Modal Actions Footer -->
+          <div class="flex justify-end items-center gap-2.5 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <button
+              type="button"
+              @click="isTicketModalOpen = false"
+              class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              :disabled="isSaving || isEventFull"
+              class="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              <span v-if="!isSaving">🎟 Terbitkan Tiket</span>
+              <span v-else class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                Menerbitkan...
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
+  </Teleport>
 
   <!-- MODAL 1: VIEW E-TIKET & VISUAL BARCODE -->
-  <div v-if="isPreviewTicketModalOpen && selectedPreviewTicket" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 overflow-y-auto">
-    <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-gray-100 dark:border-gray-700/70 dark:bg-gray-900 my-8 overflow-hidden transition-all">
-      <!-- Header E-Ticket Card -->
-      <div class="bg-gradient-to-r from-amber-500 to-orange-600 p-6 text-white text-center relative">
-        <button
-          @click="isPreviewTicketModalOpen = false"
-          class="absolute top-4 right-4 text-white/80 hover:text-white rounded-full bg-black/20 p-1.5 transition"
-        >
-          ✕
-        </button>
-        <span class="inline-block px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold uppercase tracking-wider mb-2">
-          Official Event Pass
-        </span>
-        <h3 class="text-xl font-extrabold tracking-tight">
-          {{ selectedPreviewTicket.event?.event_name || getEventName(selectedPreviewTicket.event_id) }}
-        </h3>
-        <p class="text-xs text-white/80 mt-1 flex items-center justify-center gap-1">
-          📍 {{ selectedPreviewTicket.event?.location || getEventLocation(selectedPreviewTicket.event_id) }}
-        </p>
-      </div>
-
-      <!-- Ticket Body -->
-      <div class="p-6 space-y-5">
-        <!-- Status Presensi Pill -->
-        <div class="flex items-center justify-between pb-3 border-b border-dashed border-gray-200 dark:border-gray-800">
-          <div>
-            <span class="text-[11px] uppercase tracking-wider text-gray-400 font-semibold block">Nama Peserta</span>
-            <span class="text-base font-bold text-gray-900 dark:text-white">
-              {{ getAttendeeName(selectedPreviewTicket) }}
-            </span>
-            <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
-              {{ getAttendeeEmail(selectedPreviewTicket) }}
-            </span>
-          </div>
-          <div class="text-right">
-            <span
-              :class="[
-                selectedPreviewTicket.is_scanned
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30'
-                  : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30',
-                'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border'
-              ]"
-            >
-              <span class="h-2 w-2 rounded-full" :class="selectedPreviewTicket.is_scanned ? 'bg-emerald-500' : 'bg-amber-500'"></span>
-              {{ selectedPreviewTicket.is_scanned ? 'SUDAH HADIR' : 'BELUM SCAN' }}
-            </span>
-          </div>
+  <Teleport to="body">
+    <div v-if="isPreviewTicketModalOpen && selectedPreviewTicket" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 backdrop-blur-md p-4 overflow-y-auto">
+      <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-gray-100 dark:border-gray-700/70 dark:bg-gray-900 my-8 overflow-hidden transition-all">
+        <!-- Header E-Ticket Card -->
+        <div class="bg-gradient-to-r from-amber-500 to-orange-600 p-6 text-white text-center relative">
+          <button
+            @click="isPreviewTicketModalOpen = false"
+            class="absolute top-4 right-4 text-white/80 hover:text-white rounded-full bg-black/20 p-1.5 transition"
+          >
+            ✕
+          </button>
+          <span class="inline-block px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold uppercase tracking-wider mb-2">
+            Official Event Pass
+          </span>
+          <h3 class="text-xl font-extrabold tracking-tight">
+            {{ selectedPreviewTicket.event?.event_name || getEventName(selectedPreviewTicket.event_id) }}
+          </h3>
+          <p class="text-xs text-white/80 mt-1 flex items-center justify-center gap-1">
+            📍 {{ selectedPreviewTicket.event?.location || getEventLocation(selectedPreviewTicket.event_id) }}
+          </p>
         </div>
-
-        <!-- Visual QR Code Container (Bukan Garis-Garis) -->
-        <div class="rounded-2xl bg-gray-50 dark:bg-gray-800/80 p-5 border border-gray-200/70 dark:border-gray-700/60 text-center">
-          <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Tunjukkan QR Code ini di Meja Registrasi</p>
-          
-          <!-- Authentic 2D QR Code Container -->
-          <div class="bg-white p-4 rounded-2xl inline-flex flex-col items-center justify-center border border-gray-200 shadow-md mx-auto">
-            <!-- QR Code Render (High Quality 2D Matrix API with Fallback Matrix) -->
-            <div class="relative w-48 h-48 flex items-center justify-center bg-white rounded-lg p-1 overflow-hidden">
-              <img
-                :src="`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedPreviewTicket.barcode || '')}&margin=0`"
-                :alt="selectedPreviewTicket.barcode"
-                class="w-full h-full object-contain"
-                loading="eager"
-              />
+  
+        <!-- Ticket Body -->
+        <div class="p-6 space-y-5">
+          <!-- Status Presensi Pill -->
+          <div class="flex items-center justify-between pb-3 border-b border-dashed border-gray-200 dark:border-gray-800">
+            <div>
+              <span class="text-[11px] uppercase tracking-wider text-gray-400 font-semibold block">Nama Peserta</span>
+              <span class="text-base font-bold text-gray-900 dark:text-white">
+                {{ getAttendeeName(selectedPreviewTicket) }}
+              </span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
+                {{ getAttendeeEmail(selectedPreviewTicket) }}
+              </span>
             </div>
-            
-            <div class="mt-2.5 flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full">
-              <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Kode Tiket:</span>
-              <span class="font-mono text-xs font-extrabold tracking-widest text-gray-900">
-                {{ selectedPreviewTicket.barcode }}
+            <div class="text-right">
+              <span
+                :class="[
+                  selectedPreviewTicket.is_scanned
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30'
+                    : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30',
+                  'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border'
+                ]"
+              >
+                <span class="h-2 w-2 rounded-full" :class="selectedPreviewTicket.is_scanned ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+                {{ selectedPreviewTicket.is_scanned ? 'SUDAH HADIR' : 'BELUM SCAN' }}
               </span>
             </div>
           </div>
-        </div>
-
-        <!-- Tombol Aksi di Modal Preview -->
-        <div class="flex items-center justify-between gap-3 pt-2">
-          <button
-            type="button"
-            @click="isPreviewTicketModalOpen = false"
-            class="w-1/2 rounded-xl border border-gray-300 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition"
-          >
-            Tutup
-          </button>
-          <button
-            v-if="!selectedPreviewTicket.is_scanned"
-            type="button"
-            @click="performCheckIn(selectedPreviewTicket.barcode || '')"
-            class="w-1/2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition flex items-center justify-center gap-1.5"
-          >
-            <span>📷</span> Scan Masuk Sekarang
-          </button>
-          <button
-            v-else
-            disabled
-            type="button"
-            class="w-1/2 rounded-xl bg-gray-200 py-2.5 text-sm font-semibold text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed"
-          >
-            ✓ Sudah Digunakan
-          </button>
+  
+          <!-- Visual QR Code Container (Bukan Garis-Garis) -->
+          <div class="rounded-2xl bg-gray-50 dark:bg-gray-800/80 p-5 border border-gray-200/70 dark:border-gray-700/60 text-center">
+            <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Tunjukkan QR Code ini di Meja Registrasi</p>
+            
+            <!-- Authentic 2D QR Code Container -->
+            <div class="bg-white p-4 rounded-2xl inline-flex flex-col items-center justify-center border border-gray-200 shadow-md mx-auto">
+              <!-- QR Code Render (High Quality 2D Matrix API with Fallback Matrix) -->
+              <div class="relative w-48 h-48 flex items-center justify-center bg-white rounded-lg p-1 overflow-hidden">
+                <img
+                  :src="`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedPreviewTicket.barcode || '')}&margin=0`"
+                  :alt="selectedPreviewTicket.barcode"
+                  class="w-full h-full object-contain"
+                  loading="eager"
+                />
+              </div>
+              
+              <div class="mt-2.5 flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full">
+                <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Kode Tiket:</span>
+                <span class="font-mono text-xs font-extrabold tracking-widest text-gray-900">
+                  {{ selectedPreviewTicket.barcode }}
+                </span>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Tombol Aksi di Modal Preview -->
+          <div class="flex items-center justify-between gap-3 pt-2">
+            <button
+              type="button"
+              @click="isPreviewTicketModalOpen = false"
+              class="w-1/2 rounded-xl border border-gray-300 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition"
+            >
+              Tutup
+            </button>
+            <button
+              v-if="!selectedPreviewTicket.is_scanned"
+              type="button"
+              @click="performCheckIn(selectedPreviewTicket.barcode || '')"
+              class="w-1/2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition flex items-center justify-center gap-1.5"
+            >
+              <span>📷</span> Scan Masuk Sekarang
+            </button>
+            <button
+              v-else
+              disabled
+              type="button"
+              class="w-1/2 rounded-xl bg-gray-200 py-2.5 text-sm font-semibold text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed"
+            >
+              ✓ Sudah Digunakan
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 
   <!-- MODAL 2: PEMINDAI BARCODE (BARCODE SCANNER SIMULATOR) -->
-  <div v-if="isScannerModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 overflow-y-auto">
-    <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-gray-100 dark:border-gray-700/80 dark:bg-gray-900 my-8 p-6 transition-all">
-      <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
-        <div class="flex items-center gap-3">
-          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20">
-            📷
-          </span>
+  <Teleport to="body">
+    <div v-if="isScannerModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 backdrop-blur-md p-4 overflow-y-auto">
+      <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-gray-100 dark:border-gray-700/80 dark:bg-gray-900 my-8 p-6 transition-all">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
+          <div class="flex items-center gap-3">
+            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20">
+              📷
+            </span>
+            <div>
+              <h3 class="text-base font-bold text-gray-900 dark:text-white">
+                Pemindai Tiket Acara
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Scan barcode tiket untuk check-in otomatis
+              </p>
+            </div>
+          </div>
+          <button
+            @click="isScannerModalOpen = false"
+            class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition"
+          >
+            ✕
+          </button>
+        </div>
+  
+        <!-- Live Scanner Mockup Box with Laser animation -->
+        <div class="mt-4 relative rounded-2xl bg-gray-950 p-6 flex flex-col items-center justify-center border border-gray-800 overflow-hidden min-h-[160px]">
+          <!-- Laser Scanner Bar Animation -->
+          <div class="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_12px_#34d399] animate-pulse"></div>
+          
+          <div class="border-2 border-dashed border-emerald-500/50 rounded-xl p-6 w-full max-w-[240px] flex flex-col items-center text-center">
+            <span class="text-3xl">📷</span>
+            <span class="mt-2 text-xs font-mono text-emerald-400">Arahkan Alat Scan / Ketik Kode</span>
+          </div>
+        </div>
+  
+        <!-- Feedback Alert Banner -->
+        <div v-if="scanFeedback" class="mt-4 rounded-xl p-3.5 text-sm flex items-start gap-2.5 transition-all" :class="scanFeedback.success ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400'">
+          <span class="text-base leading-none">{{ scanFeedback.success ? '✅' : '❌' }}</span>
           <div>
-            <h3 class="text-base font-bold text-gray-900 dark:text-white">
-              Pemindai Tiket Acara
-            </h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              Scan barcode tiket untuk check-in otomatis
+            <p class="font-bold">{{ scanFeedback.title }}</p>
+            <p class="text-xs mt-0.5 opacity-90">{{ scanFeedback.message }}</p>
+          </div>
+        </div>
+  
+        <!-- Input Manual / Scanner Gun Input -->
+        <form @submit.prevent="submitBarcodeScan" class="mt-4 space-y-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 mb-1.5">
+              Input Kode Barcode
+            </label>
+            <div class="relative flex items-center">
+              <input
+                ref="scannerInputRef"
+                v-model="scannedBarcodeInput"
+                type="text"
+                placeholder="Misal: TCK-549769"
+                required
+                autofocus
+                class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 font-mono text-sm font-bold tracking-wider text-gray-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+            <p class="mt-1 text-[11px] text-gray-400">
+              Dapat menerima input otomatis dari Barcode Scanner USB / Gun Scanner
             </p>
           </div>
-        </div>
-        <button
-          @click="isScannerModalOpen = false"
-          class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition"
-        >
-          ✕
-        </button>
-      </div>
-
-      <!-- Live Scanner Mockup Box with Laser animation -->
-      <div class="mt-4 relative rounded-2xl bg-gray-950 p-6 flex flex-col items-center justify-center border border-gray-800 overflow-hidden min-h-[160px]">
-        <!-- Laser Scanner Bar Animation -->
-        <div class="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_12px_#34d399] animate-pulse"></div>
-        
-        <div class="border-2 border-dashed border-emerald-500/50 rounded-xl p-6 w-full max-w-[240px] flex flex-col items-center text-center">
-          <span class="text-3xl">📷</span>
-          <span class="mt-2 text-xs font-mono text-emerald-400">Arahkan Alat Scan / Ketik Kode</span>
-        </div>
-      </div>
-
-      <!-- Feedback Alert Banner -->
-      <div v-if="scanFeedback" class="mt-4 rounded-xl p-3.5 text-sm flex items-start gap-2.5 transition-all" :class="scanFeedback.success ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400'">
-        <span class="text-base leading-none">{{ scanFeedback.success ? '✅' : '❌' }}</span>
-        <div>
-          <p class="font-bold">{{ scanFeedback.title }}</p>
-          <p class="text-xs mt-0.5 opacity-90">{{ scanFeedback.message }}</p>
-        </div>
-      </div>
-
-      <!-- Input Manual / Scanner Gun Input -->
-      <form @submit.prevent="submitBarcodeScan" class="mt-4 space-y-4">
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 mb-1.5">
-            Input Kode Barcode
-          </label>
-          <div class="relative flex items-center">
-            <input
-              ref="scannerInputRef"
-              v-model="scannedBarcodeInput"
-              type="text"
-              placeholder="Misal: TCK-549769"
-              required
-              autofocus
-              class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 font-mono text-sm font-bold tracking-wider text-gray-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-            />
+  
+          <div class="flex justify-end items-center gap-2 pt-2">
+            <button
+              type="button"
+              @click="isScannerModalOpen = false"
+              class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition"
+            >
+              Selesai
+            </button>
+            <button
+              type="submit"
+              :disabled="isScanning"
+              class="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 transition flex items-center gap-2"
+            >
+              <span>⚡ Verifikasi & Check-In</span>
+            </button>
           </div>
-          <p class="mt-1 text-[11px] text-gray-400">
-            Dapat menerima input otomatis dari Barcode Scanner USB / Gun Scanner
-          </p>
-        </div>
-
-        <div class="flex justify-end items-center gap-2 pt-2">
-          <button
-            type="button"
-            @click="isScannerModalOpen = false"
-            class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition"
-          >
-            Selesai
-          </button>
-          <button
-            type="submit"
-            :disabled="isScanning"
-            class="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 transition flex items-center gap-2"
-          >
-            <span>⚡ Verifikasi & Check-In</span>
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">

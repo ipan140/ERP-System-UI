@@ -26,6 +26,21 @@ export const massMailingService = {
     await http.delete(`/marketing/mass_mailing/${id}`);
   },
 
+  async requestApproval(id: number | string): Promise<any> {
+    const response = await http.put<IResponse<any>>(`/marketing/mass_mailing/${id}/request-approval`);
+    return response.data.data ?? response.data;
+  },
+
+  async approve(id: number | string): Promise<any> {
+    const response = await http.put<IResponse<any>>(`/marketing/mass_mailing/${id}/approve`);
+    return response.data.data ?? response.data;
+  },
+
+  async reject(id: number | string, reason: string): Promise<any> {
+    const response = await http.put<IResponse<any>>(`/marketing/mass_mailing/${id}/reject`, { reason });
+    return response.data.data ?? response.data;
+  },
+
   async getAllUtm(): Promise<any[]> {
     const response = await http.get<IResponse<any[]>>("/marketing/mass_mailing/utmtracker");
     return response.data.data ?? response.data;
@@ -43,5 +58,10 @@ export const massMailingService = {
 
   async deleteUtm(id: number | string): Promise<void> {
     await http.delete(`/marketing/mass_mailing/utmtracker/${id}`);
+  },
+
+  async runABTest(id: number | string): Promise<any> {
+    const response = await http.post<IResponse<any>>(`/marketing/mass_mailing/${id}/ab-test`);
+    return response.data.data ?? response.data;
   },
 };

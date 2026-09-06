@@ -44,4 +44,14 @@ export const marketingAutomationService = {
   async deleteActivity(id: number | string): Promise<void> {
     await http.delete(`/marketing/marketing_automation/workflowactivity/${id}`);
   },
+
+  async getJourneyLogs(campaignId: number | string): Promise<any[]> {
+    const response = await http.get<IResponse<any[]>>(`/marketing/marketing_automation/${campaignId}/journey-logs`);
+    return response.data.data ?? response.data;
+  },
+
+  async simulateJourney(campaignId: number | string): Promise<any[]> {
+    const response = await http.post<IResponse<any[]>>(`/marketing/marketing_automation/${campaignId}/simulate-journey`);
+    return response.data.data ?? response.data;
+  },
 };

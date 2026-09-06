@@ -47,36 +47,38 @@
   </AdminLayout>
 
   <!-- Modal CRUD -->
-  <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800 my-8">
-      <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
-        {{ modalMode === 'create' ? 'Tambah Data' : 'Edit Data' }}
-      </h3>
-      <form @submit.prevent="saveRecord">
-        
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Kampanye</label>
-          <input v-model="formData.campaign_name" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Pemicu (Trigger)</label>
-          <input v-model="formData.trigger" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-          <select v-model="formData.status" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-            <option value="Active">Active</option><option value="Paused">Paused</option><option value="Completed">Completed</option>
-          </select>
-        </div>
-        <div class="flex justify-end gap-3 mt-6">
-          <button type="button" @click="closeModal" class="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-md bg-brand-500 px-4 py-2 text-white hover:bg-brand-600 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan' }}
-          </button>
-        </div>
-      </form>
+  <Teleport to="body">
+    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+      <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800 my-8">
+        <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+          {{ modalMode === 'create' ? 'Tambah Data' : 'Edit Data' }}
+        </h3>
+        <form @submit.prevent="saveRecord">
+          
+          <div class="mb-4">
+            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Kampanye</label>
+            <input v-model="formData.campaign_name" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+          </div>
+          <div class="mb-4">
+            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Pemicu (Trigger)</label>
+            <input v-model="formData.trigger" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+          </div>
+          <div class="mb-4">
+            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+            <select v-model="formData.status" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+              <option value="Active">Active</option><option value="Paused">Paused</option><option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div class="flex justify-end gap-3 mt-6">
+            <button type="button" @click="closeModal" class="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
+            <button type="submit" :disabled="isSaving" class="rounded-md bg-brand-500 px-4 py-2 text-white hover:bg-brand-600 disabled:opacity-50">
+              {{ isSaving ? 'Menyimpan...' : 'Simpan' }}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
