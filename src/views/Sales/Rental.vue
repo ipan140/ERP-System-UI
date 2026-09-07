@@ -316,77 +316,81 @@
     <!-- ========================================================================= -->
     <Teleport to="body">
       <div v-if="isBastModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm">
-        <div class="w-full max-w-3xl rounded-2xl bg-white text-gray-900 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-          <div class="flex items-center justify-between border-b border-gray-200 px-6 py-3 bg-gray-50 print:hidden">
-            <span class="font-bold text-sm text-gray-800">📄 Berita Acara Serah Terima (BAST) Penyewaan</span>
+        <div class="w-full max-w-3xl rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col max-h-[92vh]">
+          <!-- Modal Topbar (Hidden when printing) -->
+          <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3.5 bg-gray-50/80 dark:bg-gray-800/80 print:hidden">
+            <span class="font-bold text-sm text-gray-800 dark:text-gray-100 flex items-center gap-2">
+              <span>📄</span> Berita Acara Serah Terima (BAST) Penyewaan
+            </span>
             <div class="flex items-center gap-2">
               <button
                 @click="triggerPrint"
-                class="rounded-lg bg-amber-500 hover:bg-amber-600 px-4 py-1.5 text-xs font-bold text-white transition"
+                class="rounded-lg bg-amber-500 hover:bg-amber-600 px-4 py-1.5 text-xs font-bold text-white transition shadow-sm flex items-center gap-1.5"
               >
-                🖨️ Cetak / Simpan PDF
+                <span>🖨️</span> Cetak / Simpan PDF
               </button>
-              <button @click="isBastModalOpen = false" class="text-gray-400 hover:text-gray-600 p-1">✕</button>
+              <button @click="isBastModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1">✕</button>
             </div>
           </div>
 
-          <div id="bast-rental-print" class="p-8 overflow-y-auto bg-white text-gray-900 font-sans space-y-6">
-            <div class="border-b-2 border-gray-800 pb-3 flex justify-between items-center">
+          <!-- Document Sheet (Dark mode supported on screen, clean white paper on print) -->
+          <div id="bast-rental-print" class="p-8 overflow-y-auto bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-sans space-y-6">
+            <div class="border-b-2 border-gray-800 dark:border-gray-600 pb-4 flex justify-between items-center">
               <div>
-                <h1 class="text-lg font-black tracking-tight text-gray-900 uppercase">PT SISTEM RENTAL ENTERPRISE TBK</h1>
-                <p class="text-xs text-gray-500">Divisi Penyewaan Aset & Alat Berat Industri</p>
+                <h1 class="text-lg font-black tracking-tight text-gray-900 dark:text-white uppercase">PT SISTEM RENTAL ENTERPRISE TBK</h1>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Divisi Penyewaan Aset & Alat Berat Industri</p>
               </div>
               <div class="text-right">
-                <h2 class="text-base font-bold text-gray-800">SURAT SERAH TERIMA (BAST)</h2>
-                <p class="text-xs font-mono font-semibold">{{ selectedOrder?.name || ('RO/' + selectedOrder?.id) }}</p>
+                <h2 class="text-base font-bold text-gray-800 dark:text-gray-100">SURAT SERAH TERIMA (BAST)</h2>
+                <p class="text-xs font-mono font-semibold text-gray-600 dark:text-gray-300">{{ selectedOrder?.name || ('RO/' + selectedOrder?.id) }}</p>
               </div>
             </div>
 
             <div class="text-xs space-y-3">
-              <p>Pada hari ini, telah dilakukan pemeriksaan dan serah terima unit aset sewa sebagai berikut:</p>
+              <p class="text-gray-700 dark:text-gray-300">Pada hari ini, telah dilakukan pemeriksaan dan serah terima unit aset sewa sebagai berikut:</p>
 
-              <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-1.5">
+              <div class="bg-gray-50 dark:bg-gray-700/40 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
                 <div class="flex justify-between">
-                  <span class="text-gray-500">Aset / Barang Disewa:</span>
-                  <span class="font-bold">{{ selectedOrder?.item_name || 'Genset Cummins 50kVA' }}</span>
+                  <span class="text-gray-500 dark:text-gray-400">Aset / Barang Disewa:</span>
+                  <span class="font-bold text-gray-900 dark:text-white">{{ selectedOrder?.item_name || 'Genset Cummins 50kVA' }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-500">Pihak Penyewa (Customer):</span>
-                  <span class="font-bold">{{ selectedOrder?.customer_name || 'PT Kontraktor Utama' }}</span>
+                  <span class="text-gray-500 dark:text-gray-400">Pihak Penyewa (Customer):</span>
+                  <span class="font-bold text-gray-900 dark:text-white">{{ selectedOrder?.customer_name || 'PT Kontraktor Utama' }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-500">Tanggal Pengambilan (Pickup):</span>
-                  <span>{{ formatDate(selectedOrder?.pickup_date) }}</span>
+                  <span class="text-gray-500 dark:text-gray-400">Tanggal Pengambilan (Pickup):</span>
+                  <span class="font-medium text-gray-800 dark:text-gray-200">{{ formatDate(selectedOrder?.pickup_date) }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-500">Batas Pengembalian (Return Due):</span>
-                  <span class="font-semibold text-rose-600">{{ formatDate(selectedOrder?.return_date) }}</span>
+                  <span class="text-gray-500 dark:text-gray-400">Batas Pengembalian (Return Due):</span>
+                  <span class="font-bold text-rose-600 dark:text-rose-400">{{ formatDate(selectedOrder?.return_date) }}</span>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-500">Uang Jaminan (Security Deposit):</span>
-                  <span class="font-mono font-bold">Rp {{ formatCurrency(selectedOrder?.deposit || 5000000) }}</span>
+                <div class="flex justify-between pt-1 border-t border-gray-200/60 dark:border-gray-600/60">
+                  <span class="text-gray-500 dark:text-gray-400">Uang Jaminan (Security Deposit):</span>
+                  <span class="font-mono font-bold text-gray-900 dark:text-white">Rp {{ formatCurrency(selectedOrder?.deposit || 5000000) }}</span>
                 </div>
               </div>
 
-              <p class="text-[11px] text-gray-500 leading-relaxed">
+              <p class="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
                 Ketentuan: Keterlambatan pengembalian unit melewati batas tanggal yang disepakati akan dikenakan denda keterlambatan sebesar Rp 150.000 / hari yang akan dipotong dari uang deposit atau ditagihkan pada pelunasan.
               </p>
             </div>
 
             <div class="grid grid-cols-2 gap-8 pt-8 text-center text-xs">
               <div>
-                <p class="font-semibold text-gray-600">Pihak Penyewa (Penerima Aset),</p>
+                <p class="font-semibold text-gray-600 dark:text-gray-300">Pihak Penyewa (Penerima Aset),</p>
                 <div class="h-16 flex items-end justify-center">
-                  <span class="text-[10px] text-gray-400 italic">( Tanda Tangan & Stempel )</span>
+                  <span class="text-[10px] text-gray-400 dark:text-gray-500 italic">( Tanda Tangan & Stempel )</span>
                 </div>
-                <p class="border-t border-gray-400 pt-1 font-bold">{{ selectedOrder?.customer_name || 'Penyewa' }}</p>
+                <p class="border-t border-gray-400 dark:border-gray-600 pt-1 font-bold text-gray-900 dark:text-white">{{ selectedOrder?.customer_name || 'Penyewa' }}</p>
               </div>
               <div>
-                <p class="font-semibold text-gray-600">Staf Gudang / Divisi Rental,</p>
+                <p class="font-semibold text-gray-600 dark:text-gray-300">Staf Gudang / Divisi Rental,</p>
                 <div class="h-16 flex items-end justify-center">
-                  <span class="text-xs text-amber-600 font-serif italic">Verified Signature</span>
+                  <span class="text-xs text-amber-600 dark:text-amber-400 font-serif italic">Verified Signature</span>
                 </div>
-                <p class="border-t border-gray-400 pt-1 font-bold">PT Sistem Rental Enterprise Tbk</p>
+                <p class="border-t border-gray-400 dark:border-gray-600 pt-1 font-bold text-gray-900 dark:text-white">PT Sistem Rental Enterprise Tbk</p>
               </div>
             </div>
           </div>
@@ -732,6 +736,8 @@ onMounted(() => {
   }
   #bast-rental-print, #bast-rental-print * {
     visibility: visible;
+    color: #111827 !important;
+    background-color: transparent !important;
   }
   #bast-rental-print {
     position: absolute;
@@ -739,7 +745,8 @@ onMounted(() => {
     top: 0;
     width: 100%;
     margin: 0;
-    padding: 20px;
+    padding: 24px;
+    background-color: #ffffff !important;
     border: none;
     box-shadow: none;
   }

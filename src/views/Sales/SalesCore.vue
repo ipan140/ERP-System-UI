@@ -40,7 +40,7 @@
           </button>
           <button @click="openModal('create')" class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-5 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            + Buat Penawaran Baru
+            Buat Penawaran Baru
           </button>
         </div>
       </div>
@@ -76,7 +76,23 @@
             <h3 class="font-bold text-gray-900 dark:text-white text-sm">Daftar Surat Penawaran & Pesanan Penjualan</h3>
             <p class="text-xs text-gray-500 dark:text-gray-400">Multi-Tier Pricing, Pengawasan Diskon Tim Sales, dan Alur Kerja Eksekutif</p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- FASE 2: Multi-Branch Data Filter -->
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs text-gray-500 dark:text-gray-400 font-semibold">🏢 Cabang:</span>
+              <select
+                v-model="selectedBranchFilter"
+                class="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              >
+                <option value="All">🌐 Semua Cabang (Konsolidasi Pusat)</option>
+                <option value="Head Office Jakarta">Jakarta (Head Office)</option>
+                <option value="Branch Surabaya">Surabaya (Jawa Timur)</option>
+                <option value="Branch Medan">Medan (Sumatera Utara)</option>
+                <option value="Branch Bandung">Bandung (Jawa Barat)</option>
+                <option value="Branch Bali">Denpasar (Bali & Nusra)</option>
+              </select>
+            </div>
+
             <input
               v-model="searchQuery"
               type="text"
@@ -109,9 +125,12 @@
                     <span>📄</span>
                     {{ record.name || ('SO-' + record.id) }}
                   </div>
-                  <div class="flex items-center gap-1.5 mt-0.5">
+                  <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <span class="inline-flex items-center gap-1 text-[11px] font-medium text-gray-600 dark:text-gray-300">
-                      👤 {{ record.salesperson_name || 'Sales Team' }}
+                       👤 {{ record.salesperson_name || 'Sales Team' }}
+                    </span>
+                    <span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 text-[10px] font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                      🏢 {{ record.branch_name || 'Jakarta' }}
                     </span>
                     <span v-if="record.is_payment_link_sent" class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 text-[10px] font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
                       💳 Link Aktif
@@ -137,18 +156,38 @@
                       <span :class="getStatusDotClass(record.state)" class="h-1.5 w-1.5 rounded-full"></span>
                       {{ getStatusLabel(record.state) }}
                     </span>
-                    <!-- Approval Pill -->
+                    <!-- FASE 2: Tiered Approval Pill (ASM vs Director) -->
                     <span
                       v-if="record.needs_approval && record.approval_status !== 'Approved'"
-                      class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300 animate-pulse"
+                      class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold animate-pulse"
+                      :class="record.approval_tier === 'Director' ? 'bg-purple-100 text-purple-900 border border-purple-300 dark:bg-purple-950 dark:text-purple-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300'"
                     >
-                      ⚠️ Butuh Approval (>15%)
+                      {{ record.approval_tier === 'Director' ? '👑 Butuh Otorisasi Direktur' : '👔 Butuh Approval ASM' }}
                     </span>
                     <span
                       v-else-if="record.approval_status === 'Approved'"
                       class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
                     >
-                      ✓ Approved Manager
+                      ✓ Disetujui ({{ record.approved_by || 'Manager' }})
+                    </span>
+
+                    <!-- FASE 1: Credit Risk Warning & Bypass Badge -->
+                    <span
+                      v-if="(record.credit_status === 'Exceeded' || record.credit_status === 'Hold') && !record.is_credit_bypassed"
+                      class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border border-red-300 animate-pulse"
+                    >
+                      🛡️ Limit Kredit Terlampaui
+                    </span>
+                    <span
+                      v-else-if="record.is_credit_bypassed"
+                      class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300"
+                    >
+                      🛡️ Credit Bypassed (Finance)
+                    </span>
+
+                    <!-- Payment Term Tag -->
+                    <span class="inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                      ⏱️ {{ record.payment_term || 'Net 30' }}
                     </span>
                   </div>
                 </td>
@@ -171,83 +210,136 @@
                   </div>
                   <div class="text-[10px] text-gray-400">Inc. 11% PPN</div>
                 </td>
-                <td class="px-5 py-4 text-center">
-                  <div class="flex items-center justify-center gap-1.5 flex-wrap">
-                    <!-- Cetak SPH PDF -->
-                    <button
-                      @click="printQuotation(record)"
-                      title="Cetak Surat Penawaran Resmi (PDF Generator)"
-                      class="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 transition"
-                    >
-                      🖨️ SPH
-                    </button>
-
-                    <!-- Tanda Tangan Digital (E-Signature) -->
-                    <button
-                      @click="openSignModal(record)"
-                      title="Buka Lembar Tanda Tangan Digital Pelanggan"
-                      :class="record.is_signed ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200' : 'bg-teal-50 text-teal-600 hover:bg-teal-100 dark:bg-teal-900/30 dark:text-teal-300'"
-                      class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition"
-                    >
-                      {{ record.is_signed ? '✍️ Tertanda' : '✍️ TTD' }}
-                    </button>
-
-                    <!-- Approve Diskon Manajer -->
+                <td class="px-5 py-4 text-right">
+                  <div class="inline-flex items-center justify-end gap-1.5 relative">
+                    <!-- 1. Primary Action based on Lifecycle State -->
                     <button
                       v-if="record.needs_approval && record.approval_status !== 'Approved'"
                       @click="approveDiscount(record, 'Approved')"
                       title="Setujui diskon khusus manajer"
-                      class="inline-flex items-center gap-1 rounded-md bg-amber-500 hover:bg-amber-600 px-2 py-1 text-xs font-bold text-white transition shadow-sm"
+                      class="inline-flex items-center gap-1 rounded-lg bg-amber-500 hover:bg-amber-600 px-2.5 py-1 text-xs font-bold text-white transition shadow-sm"
                     >
                       🛡️ Setujui Diskon
                     </button>
 
-                    <!-- Odoo Cycle: Confirm SO -->
                     <button
-                      v-if="record.state === 'draft' || record.state === 'sent'"
+                      v-else-if="record.state === 'draft' || record.state === 'sent'"
                       @click="confirmOrder(record)"
                       title="Konfirmasi Menjadi Sales Order (Reservasi Stok Otomatis)"
-                      class="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50 transition"
+                      class="inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white transition shadow-sm"
                     >
                       ✓ Konfirmasi SO
                     </button>
 
-                    <!-- One-Click Invoicing -->
                     <button
-                      v-if="record.state === 'sale'"
+                      v-else-if="record.state === 'sale' || record.state === 'done'"
                       @click="createInvoice(record)"
                       title="Buat Faktur Otomatis di Modul Finance (Invoicing)"
-                      class="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50 transition"
+                      class="inline-flex items-center gap-1 rounded-lg bg-purple-600 hover:bg-purple-700 px-2.5 py-1 text-xs font-semibold text-white transition shadow-sm"
                     >
                       💰 Tagihan
                     </button>
 
-                    <!-- Direct Payment Link -->
+                    <!-- Quick Print SPH -->
                     <button
-                      @click="generatePaymentLink(record)"
-                      title="Kirim Direct Payment Link (Midtrans / QRIS / VA)"
-                      class="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50 transition"
+                      @click="printQuotation(record)"
+                      title="Cetak Surat Penawaran Resmi (PDF Generator)"
+                      class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 transition"
                     >
-                      💳 PayLink
+                      🖨️ SPH
                     </button>
 
-                    <!-- Edit Button -->
+                    <!-- Quick Edit -->
                     <button
                       @click="openModal('edit', record)"
-                      class="p-1 rounded text-gray-500 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      class="p-1 rounded-lg text-gray-500 hover:text-brand-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400"
                       title="Ubah Penawaran"
                     >
                       ✏️
                     </button>
 
-                    <!-- Delete Button -->
-                    <button
-                      @click="deleteRecord(record.id)"
-                      class="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      title="Hapus Penawaran"
-                    >
-                      🗑️
-                    </button>
+                    <!-- Dropdown 'Lainnya ▾' Button -->
+                    <div class="relative">
+                      <button
+                        type="button"
+                        @click="toggleActionMenu(record.id)"
+                        class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition"
+                        title="Opsi & Integrasi Lainnya"
+                      >
+                        <span>Aksi</span>
+                        <svg class="w-3.5 h-3.5 text-gray-400 transition" :class="activeActionMenuId === record.id ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                      </button>
+
+                      <!-- Dropdown Menu Popover -->
+                      <div
+                        v-if="activeActionMenuId === record.id"
+                        class="absolute right-0 top-full mt-1.5 w-52 rounded-xl bg-white dark:bg-gray-800 shadow-xl border border-gray-100 dark:border-gray-700 py-1.5 z-50 text-left"
+                      >
+                        <!-- Digital Signature -->
+                        <button
+                          type="button"
+                          @click="openSignModal(record); closeActionMenu()"
+                          class="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200"
+                        >
+                          <span>✍️</span>
+                          <span>{{ record.is_signed ? 'Lihat Tanda Tangan' : 'Tanda Tangan Digital (TTD)' }}</span>
+                        </button>
+
+                        <!-- Surat Jalan / Delivery Order -->
+                        <button
+                          v-if="record.state === 'sale' || record.state === 'done'"
+                          type="button"
+                          @click="openDeliveryModal(record); closeActionMenu()"
+                          class="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200"
+                        >
+                          <span>📦</span>
+                          <span>Surat Jalan & Pengiriman</span>
+                        </button>
+
+                        <!-- Direct Payment Link -->
+                        <button
+                          type="button"
+                          @click="generatePaymentLink(record); closeActionMenu()"
+                          class="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200"
+                        >
+                          <span>💳</span>
+                          <span>Kirim Direct Payment Link</span>
+                        </button>
+
+                        <!-- Ekspor E-Faktur DJP -->
+                        <button
+                          type="button"
+                          @click="exportEFaktur(record); closeActionMenu()"
+                          class="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200"
+                        >
+                          <span>📑</span>
+                          <span>Ekspor CSV E-Faktur DJP</span>
+                        </button>
+
+                        <!-- Bypass Credit Limit if needed -->
+                        <button
+                          v-if="(record.credit_status === 'Exceeded' || record.credit_status === 'Hold') && !record.is_credit_bypassed"
+                          type="button"
+                          @click="bypassCredit(record); closeActionMenu()"
+                          class="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                        >
+                          <span>🛡️</span>
+                          <span>Bypass Credit Limit</span>
+                        </button>
+
+                        <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
+
+                        <!-- Hapus Pesanan -->
+                        <button
+                          type="button"
+                          @click="deleteRecord(record.id); closeActionMenu()"
+                          class="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                        >
+                          <span>🗑️</span>
+                          <span>Hapus Pesanan</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -382,51 +474,137 @@
 
           <!-- Modal Body Scrollable -->
           <div class="p-6 overflow-y-auto space-y-6">
-            <!-- Informasi Pokok Penawaran -->
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">Nama / PT Pelanggan *</label>
-                <input
-                  v-model="formData.customer_name"
-                  type="text"
-                  placeholder="PT Maju Bersama Sejahtera"
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  required
-                />
+            <!-- Section 1: Informasi Mitra & Transaksi -->
+            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700/60 dark:bg-gray-800/40 space-y-3">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <span>🏢</span> Informasi Pelanggan & Penjualan
+              </h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <div>
+                  <label class="block text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1">Nama / PT Pelanggan *</label>
+                  <input
+                    v-model="formData.customer_name"
+                    type="text"
+                    placeholder="PT Maju Bersama Sejahtera"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1">Email Pelanggan</label>
+                  <input
+                    v-model="formData.customer_email"
+                    type="email"
+                    placeholder="procurement@majubersama.com"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1">Tier Daftar Harga</label>
+                  <div class="relative">
+                    <select
+                      v-model="formData.pricelist_name"
+                      @change="applyPricelistAdjustment"
+                      class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 pr-8 py-2 text-xs font-semibold focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="Standard Retail">Standard Retail (0% Disc)</option>
+                      <option value="Grosir B2B">Grosir B2B (Auto Disc 10%)</option>
+                      <option value="VIP Distributor">VIP Distributor (Auto Disc 20%)</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1">Salesperson Pemegang Deal</label>
+                  <div class="relative">
+                    <select
+                      v-model="formData.salesperson_name"
+                      class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 pr-8 py-2 text-xs font-semibold focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="Ahmad Dahlan">Ahmad Dahlan (Senior Sales)</option>
+                      <option value="Budi Pratama">Budi Pratama (Account Exec)</option>
+                      <option value="Citra Lestari">Citra Lestari (B2B Specialist)</option>
+                      <option value="Dewi Sartika">Dewi Sartika (Enterprise Lead)</option>
+                      <option value="Sales Team">Tim Sales Umum</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">Email Pelanggan</label>
-                <input
-                  v-model="formData.customer_email"
-                  type="email"
-                  placeholder="procurement@majubersama.com"
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-              <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">Tier Daftar Harga (Pricelist)</label>
-                <select
-                  v-model="formData.pricelist_name"
-                  @change="applyPricelistAdjustment"
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="Standard Retail">Standard Retail (0% Disc)</option>
-                  <option value="Grosir B2B">Grosir B2B (Auto Disc 10%)</option>
-                  <option value="VIP Distributor">VIP Distributor (Auto Disc 20%)</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1">Salesperson Pemegang Deal</label>
-                <select
-                  v-model="formData.salesperson_name"
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="Ahmad Dahlan">Ahmad Dahlan (Senior Sales)</option>
-                  <option value="Budi Pratama">Budi Pratama (Account Exec)</option>
-                  <option value="Citra Lestari">Citra Lestari (B2B Specialist)</option>
-                  <option value="Dewi Sartika">Dewi Sartika (Enterprise Lead)</option>
-                  <option value="Sales Team">Tim Sales Umum</option>
-                </select>
+            </div>
+
+            <!-- Section 2: Syarat Finansial, Pajak & Operasional -->
+            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-700/60 dark:bg-gray-800/40 space-y-3">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <span>📑</span> Ketentuan Pembayaran & Pajak
+              </h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <div>
+                  <label class="block text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1">Term of Payment (TOP)</label>
+                  <div class="relative">
+                    <select
+                      v-model="formData.payment_term"
+                      class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 pr-8 py-2 text-xs font-semibold focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="COD">Cash On Delivery (COD)</option>
+                      <option value="Net 14">Net 14 Hari</option>
+                      <option value="Net 30">Net 30 Hari (Standar)</option>
+                      <option value="Net 60">Net 60 Hari (Korporat)</option>
+                      <option value="DP 30%">DP 30% Bertahap</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1">Pajak Pertambahan Nilai</label>
+                  <div class="relative">
+                    <select
+                      v-model="formData.tax_type"
+                      class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 pr-8 py-2 text-xs font-semibold focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="PPN 11%">PPN 11% (Standar DJP)</option>
+                      <option value="PPN 12%">PPN 12% (Regulasi 2025/2026)</option>
+                      <option value="Non-PPN">Non-PPN (0%)</option>
+                      <option value="PPh 23">PPh 23 Jasa (2%)</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1">Nomor Faktur Pajak (NSFP)</label>
+                  <input
+                    v-model="formData.nsfp"
+                    type="text"
+                    placeholder="010.002-26.00000001"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-mono focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1">Kantor Cabang Transaksi</label>
+                  <div class="relative">
+                    <select
+                      v-model="formData.branch_name"
+                      class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 pr-8 py-2 text-xs font-semibold focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="Head Office Jakarta">Jakarta (Head Office)</option>
+                      <option value="Branch Surabaya">Surabaya (Jawa Timur)</option>
+                      <option value="Branch Medan">Medan (Sumatera Utara)</option>
+                      <option value="Branch Bandung">Bandung (Jawa Barat)</option>
+                      <option value="Branch Bali">Denpasar (Bali & Nusra)</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -461,63 +639,63 @@
                 </button>
               </div>
 
-              <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+              <div class="overflow-hidden border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
                 <table class="min-w-full text-xs">
-                  <thead class="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 font-semibold text-gray-600 dark:text-gray-300">
+                  <thead class="bg-gray-50/80 dark:bg-gray-800/80 border-b border-gray-200 dark:border-gray-700 font-semibold text-gray-600 dark:text-gray-300">
                     <tr>
-                      <th class="px-3 py-2 text-left">Deskripsi Produk / Layanan</th>
-                      <th class="px-3 py-2 text-center w-20">Kuantiti</th>
-                      <th class="px-3 py-2 text-right w-36">Harga Satuan (Rp)</th>
-                      <th class="px-3 py-2 text-center w-24">Diskon (%)</th>
-                      <th class="px-3 py-2 text-right w-36">Subtotal (Rp)</th>
-                      <th class="px-2 py-2 text-center w-10"></th>
+                      <th class="px-3.5 py-2.5 text-left">Deskripsi Produk / Layanan</th>
+                      <th class="px-3.5 py-2.5 text-center w-24">Kuantiti</th>
+                      <th class="px-3.5 py-2.5 text-right w-40">Harga Satuan (Rp)</th>
+                      <th class="px-3.5 py-2.5 text-center w-28">Diskon (%)</th>
+                      <th class="px-3.5 py-2.5 text-right w-40">Subtotal (Rp)</th>
+                      <th class="px-2 py-2.5 text-center w-10"></th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                    <tr v-for="(line, idx) in formData.order_lines" :key="idx" class="hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
-                      <td class="p-2">
+                  <tbody class="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800/60">
+                    <tr v-for="(line, idx) in formData.order_lines" :key="idx" class="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition">
+                      <td class="p-2.5">
                         <input
                           v-model="line.description"
                           type="text"
                           placeholder="e.g. Server Dell PowerEdge R750 / Jasa Konsultasi ERP"
-                          class="w-full rounded border border-gray-300 px-2 py-1 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                           required
                         />
                       </td>
-                      <td class="p-2">
+                      <td class="p-2.5">
                         <input
                           v-model.number="line.quantity"
                           type="number"
                           min="1"
-                          class="w-full rounded border border-gray-300 px-2 py-1 text-center focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          class="w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-center font-mono focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                         />
                       </td>
-                      <td class="p-2">
+                      <td class="p-2.5">
                         <input
                           v-model.number="line.unit_price"
                           type="number"
                           min="0"
-                          class="w-full rounded border border-gray-300 px-2 py-1 text-right focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          class="w-full rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-right font-mono focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                         />
                       </td>
-                      <td class="p-2">
+                      <td class="p-2.5">
                         <input
                           v-model.number="line.discount"
                           type="number"
                           min="0"
                           max="100"
-                          class="w-full rounded border border-gray-300 px-2 py-1 text-center font-bold focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          class="w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-center font-mono font-bold focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                           :class="line.discount > 15 ? 'text-rose-600 dark:text-rose-400' : 'text-gray-900 dark:text-white'"
                         />
                       </td>
-                      <td class="p-2 text-right font-mono font-semibold text-gray-900 dark:text-white">
+                      <td class="p-2.5 text-right font-mono font-bold text-gray-900 dark:text-white">
                         Rp {{ formatCurrency(calcLineSubtotal(line)) }}
                       </td>
-                      <td class="p-2 text-center">
+                      <td class="p-2.5 text-center">
                         <button
                           type="button"
                           @click="removeLine(idx)"
-                          class="text-gray-400 hover:text-rose-500 transition p-1"
+                          class="text-gray-400 hover:text-rose-500 transition p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40"
                           title="Hapus baris"
                         >
                           ✕
@@ -530,29 +708,29 @@
             </div>
 
             <!-- Kalkulasi Subtotal, PPN, dan Estimasi Komisi -->
-            <div class="flex flex-col sm:flex-row justify-between gap-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-              <div class="sm:max-w-xs w-full space-y-2">
+            <div class="flex flex-col sm:flex-row justify-between gap-6 border-t border-gray-200 dark:border-gray-700 pt-5">
+              <div class="sm:max-w-sm w-full space-y-2">
                 <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Catatan / Syarat & Ketentuan</label>
                 <textarea
                   v-model="formData.notes"
                   rows="3"
                   placeholder="Harga sudah termasuk pengiriman Jabodetabek. Pembayaran 30 hari (Net 30)."
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 ></textarea>
               </div>
 
-              <div class="sm:max-w-xs w-full rounded-xl bg-gray-50 dark:bg-gray-700/30 p-4 space-y-2 border border-gray-100 dark:border-gray-700">
-                <div class="flex justify-between text-xs text-gray-600 dark:text-gray-300">
+              <div class="sm:max-w-xs w-full rounded-2xl bg-gray-50/80 dark:bg-gray-800/80 p-4 space-y-2.5 border border-gray-200/80 dark:border-gray-700 shadow-sm">
+                <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400">
                   <span>DPP (Untaxed):</span>
-                  <span class="font-mono font-medium">Rp {{ formatCurrency(computedUntaxed) }}</span>
+                  <span class="font-mono font-medium text-gray-900 dark:text-gray-200">Rp {{ formatCurrency(computedUntaxed) }}</span>
                 </div>
-                <div class="flex justify-between text-xs text-gray-600 dark:text-gray-300">
+                <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400">
                   <span>PPN (Pajak 11%):</span>
-                  <span class="font-mono font-medium">Rp {{ formatCurrency(computedTax) }}</span>
+                  <span class="font-mono font-medium text-gray-900 dark:text-gray-200">Rp {{ formatCurrency(computedTax) }}</span>
                 </div>
-                <div class="border-t border-gray-200 dark:border-gray-600 pt-2 flex justify-between text-sm font-bold text-gray-900 dark:text-white">
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-2 flex justify-between text-sm font-bold text-gray-900 dark:text-white">
                   <span>Total Tagihan:</span>
-                  <span class="font-mono text-brand-600 dark:text-brand-400">Rp {{ formatCurrency(computedTotal) }}</span>
+                  <span class="font-mono text-brand-600 dark:text-brand-400 font-extrabold">Rp {{ formatCurrency(computedTotal) }}</span>
                 </div>
                 <div class="border-t border-dashed border-amber-200 dark:border-amber-800/50 pt-2 flex justify-between text-xs text-amber-700 dark:text-amber-400 font-semibold">
                   <span>Estimasi Komisi (3%):</span>
@@ -592,8 +770,26 @@
         <div class="w-full max-w-4xl rounded-2xl bg-white text-gray-900 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
           <!-- Actions Header -->
           <div class="flex items-center justify-between border-b border-gray-200 px-6 py-3 bg-gray-50 print:hidden">
-            <div class="flex items-center gap-2">
-              <span class="font-bold text-sm text-gray-800">📄 Pratinjau Dokumen Resmi Penawaran Harga (SPH)</span>
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-sm text-gray-800">📄 Pratinjau Dokumen Korporat Resmi</span>
+              <div class="inline-flex rounded-lg border border-gray-300 bg-white p-0.5 text-xs font-semibold">
+                <button
+                  type="button"
+                  @click="previewType = 'quotation'"
+                  :class="previewType === 'quotation' ? 'bg-brand-500 text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'"
+                  class="rounded-md px-3 py-1 transition"
+                >
+                  Surat Penawaran (SPH)
+                </button>
+                <button
+                  type="button"
+                  @click="previewType = 'proforma'"
+                  :class="previewType === 'proforma' ? 'bg-brand-500 text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'"
+                  class="rounded-md px-3 py-1 transition"
+                >
+                  Proforma Invoice (PI)
+                </button>
+              </div>
             </div>
             <div class="flex items-center gap-2">
               <button
@@ -619,13 +815,21 @@
                 <div>
                   <h1 class="text-xl font-black tracking-tight text-gray-900 uppercase">PT SISTEM SOLUSI ENTERPRISE TBK</h1>
                   <p class="text-xs text-gray-500">Kawasan Industri Cyber, Gedung Menara Utama Lt. 12, Jakarta 12950</p>
-                  <p class="text-xs text-gray-500">Tel: (021) 555-8899 | Email: sales@enterprise-erp.co.id</p>
+                  <p class="text-xs text-gray-500">Tel: (021) 555-8899 | Email: finance@enterprise-erp.co.id</p>
                 </div>
               </div>
               <div class="text-right">
-                <h2 class="text-lg font-bold text-gray-800 uppercase tracking-wider">Surat Penawaran Harga</h2>
-                <p class="text-xs font-mono font-semibold text-gray-600">{{ selectedOrder?.name || ('SO/' + selectedOrder?.id) }}</p>
+                <h2 class="text-lg font-bold text-gray-800 uppercase tracking-wider">
+                  {{ previewType === 'proforma' ? 'PROFORMA INVOICE' : 'SURAT PENAWARAN HARGA' }}
+                </h2>
+                <p class="text-xs font-mono font-semibold text-gray-600">
+                  {{ previewType === 'proforma' ? ('PI/' + (selectedOrder?.name || selectedOrder?.id)) : (selectedOrder?.name || ('SO/' + selectedOrder?.id)) }}
+                </p>
                 <p class="text-xs text-gray-500 mt-1">Tanggal: {{ formatDate(selectedOrder?.date_order || selectedOrder?.created_at) }}</p>
+                <div class="mt-1 flex items-center justify-end gap-1.5 text-[10px] font-mono text-gray-500">
+                  <span>Cabang:</span>
+                  <span class="font-bold text-gray-800">{{ selectedOrder?.branch_name || 'Head Office Jakarta' }}</span>
+                </div>
               </div>
             </div>
 
@@ -671,7 +875,7 @@
               </thead>
               <tbody class="divide-y divide-gray-300">
                 <tr v-for="(line, i) in (selectedOrder?.order_lines || [])" :key="i">
-                  <td class="p-2 text-center border-r border-gray-300">{{ i + 1 }}</td>
+                  <td class="p-2 text-center border-r border-gray-300">{{ Number(i) + 1 }}</td>
                   <td class="p-2 border-r border-gray-300 font-medium">{{ line.description }}</td>
                   <td class="p-2 text-center border-r border-gray-300">{{ line.quantity }}</td>
                   <td class="p-2 text-right border-r border-gray-300 font-mono">Rp {{ formatCurrency(line.unit_price) }}</td>
@@ -689,19 +893,35 @@
               </tbody>
             </table>
 
-            <!-- Ringkasan Total Penawaran -->
-            <div class="flex justify-end">
-              <div class="w-72 space-y-1.5 text-xs border border-gray-300 p-3 rounded bg-gray-50">
+            <!-- Ringkasan Total Penawaran & Info Rekening Pembayaran -->
+            <div class="flex flex-col sm:flex-row justify-between gap-4">
+              <!-- Info Bank & Syarat Pembayaran -->
+              <div class="flex-1 rounded-lg border border-gray-200 bg-gray-50/50 p-3.5 text-xs space-y-2">
+                <div class="font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>🏦</span> Rekening Pembayaran Resmi Perusahaan
+                </div>
+                <div class="text-[11px] text-gray-600 space-y-0.5">
+                  <p><b class="text-gray-900">Bank Mandiri (Persero) Tbk:</b> 122-00-1122334-9</p>
+                  <p><b class="text-gray-900">Bank Central Asia (BCA):</b> 541-0988776</p>
+                  <p>A/N: <b class="text-gray-900">PT SISTEM SOLUSI ENTERPRISE TBK</b></p>
+                  <p class="pt-1 text-gray-500">
+                    Termin: <b class="text-brand-600">{{ selectedOrder?.payment_term || 'Net 30 Hari' }}</b> • Pajak: <b>{{ selectedOrder?.tax_type || 'PPN 11%' }}</b>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Total Kalkulasi -->
+              <div class="w-72 space-y-1.5 text-xs border border-gray-300 p-3 rounded bg-gray-50 shrink-0">
                 <div class="flex justify-between text-gray-600">
                   <span>Subtotal (DPP):</span>
                   <span class="font-mono font-semibold">Rp {{ formatCurrency(selectedOrder?.amount_untaxed || selectedOrder?.total_amount || 0) }}</span>
                 </div>
                 <div class="flex justify-between text-gray-600">
-                  <span>PPN 11%:</span>
+                  <span>PPN / Pajak:</span>
                   <span class="font-mono font-semibold">Rp {{ formatCurrency(selectedOrder?.amount_tax || ((selectedOrder?.amount_untaxed || 0) * 0.11)) }}</span>
                 </div>
                 <div class="border-t border-gray-300 pt-1 flex justify-between font-bold text-sm text-gray-900">
-                  <span>Total Nilai:</span>
+                  <span>Total Tagihan:</span>
                   <span class="font-mono text-brand-600">Rp {{ formatCurrency(selectedOrder?.amount_total || ((selectedOrder?.amount_untaxed || 0) * 1.11)) }}</span>
                 </div>
               </div>
@@ -802,10 +1022,7 @@
         </div>
       </div>
     </Teleport>
-
-    <!-- ========================================================================= -->
-    <!-- MODAL 4: DIGITAL E-SIGNATURE PAD CANVAS                                   -->
-    <!-- ========================================================================= -->
+    
     <Teleport to="body">
       <div v-if="isSignModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
         <div class="w-full max-w-lg rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-2xl border border-gray-100 dark:border-gray-700">
@@ -885,6 +1102,147 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL 5: SURAT JALAN & FULFILLMENT GUDANG (DELIVERY ORDER)                 -->
+    <!-- ========================================================================= -->
+    <Teleport to="body">
+      <div v-if="isDeliveryModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm overflow-y-auto">
+        <div class="w-full max-w-3xl rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col max-h-[92vh]">
+          <!-- Modal Header -->
+          <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">📦</span>
+              <div>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">
+                  Surat Jalan & Pengeluaran Barang (Fulfillment)
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  Pesanan: <span class="font-mono font-bold text-brand-600 dark:text-brand-400">{{ selectedDeliveryOrder?.name || ('SO/' + selectedDeliveryOrder?.id) }}</span> • Pelanggan: <b>{{ selectedDeliveryOrder?.customer_name }}</b>
+                </p>
+              </div>
+            </div>
+            <button @click="isDeliveryModalOpen = false" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700">
+              ✕
+            </button>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="p-6 overflow-y-auto space-y-6">
+            <!-- Ringkasan Status Surat Jalan Gudang -->
+            <div class="rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-900/20 p-4">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-teal-800 dark:text-teal-300 mb-2 flex items-center gap-1.5">
+                <span>🚛</span> Status Dokumen Pengiriman (Stock Picking WH/OUT)
+              </h4>
+              <div v-if="isDeliveryLoading" class="text-xs text-gray-500 py-2">
+                Memeriksa data dokumen pengiriman gudang...
+              </div>
+              <div v-else-if="deliveryPickings.length === 0" class="text-xs text-gray-500 py-2">
+                Dokumen pengiriman otomatis dibuat saat SO dikonfirmasi. (ID Terkait: SO-{{ selectedDeliveryOrder?.id }})
+              </div>
+              <div v-else class="space-y-2">
+                <div
+                  v-for="picking in deliveryPickings"
+                  :key="picking.id"
+                  class="flex items-center justify-between bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-teal-100 dark:border-teal-900 text-xs shadow-xs"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono font-bold text-teal-700 dark:text-teal-300">{{ picking.name }}</span>
+                    <span
+                      class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                      :class="picking.state === 'done' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'"
+                    >
+                      {{ picking.state === 'done' ? '✓ SELESAI (DONE)' : '⏳ MENUNGGU PENGIRIMAN' }}
+                    </span>
+                  </div>
+                  <span class="text-[11px] text-gray-400">Jadwal: {{ formatDate(picking.scheduled_date || picking.created_at) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabel Item Barang yang Akan Dikirim -->
+            <div>
+              <h4 class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-3 flex items-center justify-between">
+                <span>Barang Pesanan & Eksekusi Pengiriman (Partial / Full)</span>
+                <span class="text-[11px] font-normal text-gray-400">Pengiriman mengurangi stok fisik & melepaskan kuota reservasi</span>
+              </h4>
+
+              <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs">
+                  <thead class="bg-gray-50 dark:bg-gray-800/80 text-gray-600 dark:text-gray-400">
+                    <tr>
+                      <th class="p-3 text-left font-semibold">Deskripsi Barang</th>
+                      <th class="p-3 text-center font-semibold">Dipesan</th>
+                      <th class="p-3 text-center font-semibold">Terkirim</th>
+                      <th class="p-3 text-center font-semibold">Sisa Kirim</th>
+                      <th class="p-3 text-center font-semibold w-28">Kirim Sekarang</th>
+                      <th class="p-3 text-center font-semibold">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                    <tr v-for="line in selectedDeliveryOrder?.order_lines" :key="line.id" class="hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
+                      <td class="p-3">
+                        <div class="font-medium text-gray-900 dark:text-white">{{ line.description }}</div>
+                        <div v-if="line.product_id" class="text-[10px] text-gray-400 font-mono">Product ID: #{{ line.product_id }}</div>
+                      </td>
+                      <td class="p-3 text-center font-mono font-bold text-gray-700 dark:text-gray-300">
+                        {{ line.quantity }}
+                      </td>
+                      <td class="p-3 text-center font-mono font-bold" :class="(line.delivered_qty || 0) >= line.quantity ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-600 dark:text-gray-400'">
+                        {{ line.delivered_qty || 0 }}
+                      </td>
+                      <td class="p-3 text-center font-mono font-bold" :class="Math.max(0, line.quantity - (line.delivered_qty || 0)) === 0 ? 'text-gray-400' : 'text-amber-600 dark:text-amber-400'">
+                        {{ Math.max(0, line.quantity - (line.delivered_qty || 0)) }}
+                      </td>
+                      <td class="p-3 text-center">
+                        <input
+                          v-if="Math.max(0, line.quantity - (line.delivered_qty || 0)) > 0"
+                          v-model.number="deliveryInputs[line.id]"
+                          type="number"
+                          min="1"
+                          :max="Math.max(0, line.quantity - (line.delivered_qty || 0))"
+                          class="w-20 rounded border border-gray-300 px-2 py-1 text-center font-mono font-bold focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                        <span v-else class="text-emerald-600 font-bold text-[11px]">Lengkap ✓</span>
+                      </td>
+                      <td class="p-3 text-center">
+                        <button
+                          v-if="Math.max(0, line.quantity - (line.delivered_qty || 0)) > 0"
+                          @click="executeDelivery(line.id)"
+                          :disabled="isDelivering"
+                          class="rounded-lg bg-teal-600 hover:bg-teal-700 px-3 py-1 text-[11px] font-bold text-white shadow-xs disabled:opacity-50 transition"
+                        >
+                          Kirim ➔
+                        </button>
+                        <span v-else class="text-xs text-gray-400">-</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50/50 dark:bg-gray-800/50">
+            <button
+              type="button"
+              @click="isDeliveryModalOpen = false"
+              class="rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              Tutup
+            </button>
+            <button
+              type="button"
+              @click="printQuotation(selectedDeliveryOrder)"
+              class="rounded-lg bg-brand-500 hover:bg-brand-600 px-5 py-2 text-xs font-bold text-white shadow-xs transition inline-flex items-center gap-1.5"
+            >
+              🖨️ Cetak Dokumen Surat Jalan
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </AdminLayout>
 </template>
 
@@ -910,18 +1268,37 @@ const isLoading = ref(false)
 const isLeaderboardLoading = ref(false)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
+const selectedBranchFilter = ref('All')
 
 const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
 const isSaving = ref(false)
+const activeActionMenuId = ref<number | null>(null)
+
+const toggleActionMenu = (id: number) => {
+  activeActionMenuId.value = activeActionMenuId.value === id ? null : id
+}
+
+const closeActionMenu = () => {
+  activeActionMenuId.value = null
+}
 
 const isPreviewOpen = ref(false)
+const previewType = ref<'quotation' | 'proforma'>('quotation')
 const selectedOrder = ref<any>(null)
 
 // Payment modal state
 const isPaymentModalOpen = ref(false)
 const paymentData = ref<any>(null)
 const isCopied = ref(false)
+
+// FASE 3: Delivery Order / Surat Jalan state
+const isDeliveryModalOpen = ref(false)
+const selectedDeliveryOrder = ref<any>(null)
+const deliveryPickings = ref<any[]>([])
+const isDeliveryLoading = ref(false)
+const isDelivering = ref(false)
+const deliveryInputs = ref<Record<number, number>>({})
 
 // Digital E-Signature state
 const isSignModalOpen = ref(false)
@@ -939,6 +1316,10 @@ const formData = ref({
   customer_email: '',
   pricelist_name: 'Standard Retail',
   salesperson_name: 'Ahmad Dahlan',
+  branch_name: 'Head Office Jakarta',
+  payment_term: 'Net 30',
+  tax_type: 'PPN 11%',
+  nsfp: '',
   state: 'draft',
   notes: '',
   order_lines: [] as OrderLine[]
@@ -965,14 +1346,20 @@ const totalAccruedCommission = computed(() =>
 )
 
 const filteredRecords = computed(() => {
-  if (!searchQuery.value) return records.value
+  let list = records.value
+  if (selectedBranchFilter.value && selectedBranchFilter.value !== 'All') {
+    list = list.filter(r => (r.branch_name || 'Head Office Jakarta') === selectedBranchFilter.value)
+  }
+  if (!searchQuery.value) return list
   const q = searchQuery.value.toLowerCase()
-  return records.value.filter(r =>
+  return list.filter(r =>
     (r.name && r.name.toLowerCase().includes(q)) ||
     (r.customer_name && r.customer_name.toLowerCase().includes(q)) ||
     (r.customer_email && r.customer_email.toLowerCase().includes(q)) ||
     (r.pricelist_name && r.pricelist_name.toLowerCase().includes(q)) ||
-    (r.salesperson_name && r.salesperson_name.toLowerCase().includes(q))
+    (r.salesperson_name && r.salesperson_name.toLowerCase().includes(q)) ||
+    (r.branch_name && r.branch_name.toLowerCase().includes(q)) ||
+    (r.payment_term && r.payment_term.toLowerCase().includes(q))
   )
 })
 
@@ -988,8 +1375,17 @@ const computedUntaxed = computed(() => {
   return formData.value.order_lines.reduce((acc, line) => acc + calcLineSubtotal(line), 0)
 })
 
+const computedTaxRate = computed(() => {
+  switch (formData.value.tax_type) {
+    case 'PPN 12%': return 0.12
+    case 'Non-PPN': return 0.0
+    case 'PPh 23': return 0.02
+    default: return 0.11
+  }
+})
+
 const computedTax = computed(() => {
-  return computedUntaxed.value * 0.11 // PPN 11%
+  return computedUntaxed.value * computedTaxRate.value
 })
 
 const computedTotal = computed(() => {
@@ -1153,6 +1549,10 @@ const openModal = (mode: 'create' | 'edit', data: any = null) => {
       customer_email: data.customer_email || '',
       pricelist_name: data.pricelist_name || 'Standard Retail',
       salesperson_name: data.salesperson_name || 'Ahmad Dahlan',
+      branch_name: data.branch_name || 'Head Office Jakarta',
+      payment_term: data.payment_term || 'Net 30',
+      tax_type: data.tax_type || 'PPN 11%',
+      nsfp: data.nsfp || '',
       state: data.state || (data.status === 'Accepted' ? 'sale' : data.status?.toLowerCase()) || 'draft',
       notes: data.notes || '',
       order_lines: Array.isArray(data.order_lines) && data.order_lines.length > 0
@@ -1174,6 +1574,10 @@ const openModal = (mode: 'create' | 'edit', data: any = null) => {
       customer_email: '',
       pricelist_name: 'Standard Retail',
       salesperson_name: 'Ahmad Dahlan',
+      branch_name: 'Head Office Jakarta',
+      payment_term: 'Net 30',
+      tax_type: 'PPN 11%',
+      nsfp: '',
       state: 'draft',
       notes: '',
       order_lines: [
@@ -1209,6 +1613,11 @@ const saveRecord = async () => {
       customer_email: formData.value.customer_email,
       pricelist_name: formData.value.pricelist_name,
       salesperson_name: formData.value.salesperson_name,
+      branch_name: formData.value.branch_name,
+      payment_term: formData.value.payment_term,
+      tax_type: formData.value.tax_type,
+      tax_rate: computedTaxRate.value * 100,
+      nsfp: formData.value.nsfp,
       state: formData.value.state,
       notes: formData.value.notes,
       order_lines: formData.value.order_lines.map(l => ({
@@ -1243,9 +1652,63 @@ const saveRecord = async () => {
   }
 }
 
-// [FASE 3]: Approve Diskon Khusus
+// [FASE 1]: Bypass Credit Limit
+const bypassCredit = async (record: any) => {
+  const manager = prompt('Otorisasi Finance: Masukkan nama Finance Manager yang menyetujui bypass limit kredit:', 'Hendra Kurniawan (Finance Manager)')
+  if (!manager) return
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`${API_BASE_URL}/sales/core/${record.id}/bypass-credit`, {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ manager_name: manager })
+    })
+    if (!res.ok) throw new Error('Gagal bypass credit limit')
+    alert(`Sukses! Pesanan ${record.name} telah disetujui untuk bypass limit piutang oleh ${manager}. Sekarang pesanan dapat dikonfirmasi menjadi SO resmi.`)
+    refreshAll()
+  } catch (err: any) {
+    alert(err.message)
+  }
+}
+
+// [FASE 1]: Export CSV E-Faktur DJP Resmi
+const exportEFaktur = async (record: any) => {
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`${API_BASE_URL}/sales/core/${record.id}/export-efaktur`, {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    })
+    if (!res.ok) throw new Error('Gagal mengekspor E-Faktur')
+    const blob = await res.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `efaktur-${record.name?.replace(/\//g, '-') || record.id}.csv`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  } catch (err: any) {
+    alert('Gagal unduh E-Faktur: ' + err.message)
+  }
+}
+
+// [FASE 2]: Approve Diskon Bertingkat (ASM vs National Sales Director)
 const approveDiscount = async (record: any, status: 'Approved' | 'Rejected') => {
-  const approver = prompt('Masukkan nama Sales Manager penyetuju:', 'Budi Santoso (Head of Sales)')
+  const isDirectorTier = record.approval_tier === 'Director'
+  const defaultTitle = isDirectorTier
+    ? 'Dr. Ir. Bambang Soediro (National Sales Director)'
+    : 'Budi Santoso (Area Sales Manager / ASM)'
+  const promptMsg = isDirectorTier
+    ? `⚠️ Otorisasi Direksi Dibutuhkan (Diskon ${record.max_discount}% atau Nilai Order > Rp 250 Jt).\nMasukkan Nama National Sales Director penyetuju:`
+    : `Otorisasi Wilayah ASM (Diskon ${record.max_discount}%).\nMasukkan Nama Area Sales Manager (ASM) penyetuju:`
+
+  const approver = prompt(promptMsg, defaultTitle)
   if (!approver) return
   try {
     const token = localStorage.getItem('token')
@@ -1266,8 +1729,9 @@ const approveDiscount = async (record: any, status: 'Approved' | 'Rejected') => 
 }
 
 const confirmOrder = async (record: any) => {
-  if ((record.needs_approval || (record.max_discount > 15)) && record.approval_status !== 'Approved') {
-    alert(`Perhatian: Pesanan ini memiliki diskon sebesar ${record.max_discount}%, melebihi batas kebijakan 15%. Harap minta persetujuan Sales Manager (Klik tombol "Setujui Diskon") terlebih dahulu sebelum konfirmasi SO.`)
+  if ((record.needs_approval || (record.max_discount > 10)) && record.approval_status !== 'Approved') {
+    const tierMsg = record.approval_tier === 'Director' ? 'National Sales Director' : 'Area Sales Manager (ASM)'
+    alert(`Perhatian: Pesanan ini memiliki diskon sebesar ${record.max_discount}%. Harap minta persetujuan dari ${tierMsg} terlebih dahulu (Klik tombol "Setujui Diskon") sebelum konfirmasi SO.`)
     return
   }
 
@@ -1310,6 +1774,83 @@ const createInvoice = async (record: any) => {
     refreshAll()
   } catch (err: any) {
     alert('Gagal: ' + err.message)
+  }
+}
+
+// [FASE 3]: Delivery Order / Surat Jalan Management
+const openDeliveryModal = async (record: any) => {
+  selectedDeliveryOrder.value = record
+  isDeliveryModalOpen.value = true
+  isDeliveryLoading.value = true
+  deliveryPickings.value = []
+  deliveryInputs.value = {}
+
+  // Inisialisasi default sisa kirim untuk masing-masing baris
+  if (record.order_lines && Array.isArray(record.order_lines)) {
+    record.order_lines.forEach((line: any) => {
+      const remaining = Math.max(0, (line.quantity || 0) - (line.delivered_qty || 0))
+      deliveryInputs.value[line.id] = remaining
+    })
+  }
+
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`${API_BASE_URL}/sales/core/${record.id}/deliveries`, {
+      headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+    })
+    if (res.ok) {
+      const resJson = await res.json()
+      deliveryPickings.value = resJson.data || []
+    }
+  } catch (err) {
+    console.error('Gagal mengambil surat jalan:', err)
+  } finally {
+    isDeliveryLoading.value = false
+  }
+}
+
+const executeDelivery = async (lineId: number, qty?: number) => {
+  if (!selectedDeliveryOrder.value) return
+  const qtyToShip = qty !== undefined ? qty : (deliveryInputs.value[lineId] || 0)
+  if (qtyToShip <= 0) {
+    alert('Kuantitas kirim harus lebih besar dari 0!')
+    return
+  }
+
+  if (!confirm(`Eksekusi pengiriman barang untuk item ini sejumlah ${qtyToShip}? Stok fisik gudang akan dikurangi dan kuota reservasi dilepaskan.`)) {
+    return
+  }
+
+  isDelivering.value = true
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`${API_BASE_URL}/sales/core/${selectedDeliveryOrder.value.id}/deliver`, {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        line_id: lineId,
+        delivered_qty: qtyToShip
+      })
+    })
+
+    if (!res.ok) {
+      const errRes = await res.json()
+      throw new Error(errRes.message || 'Gagal memproses pengiriman Surat Jalan')
+    }
+
+    const resJson = await res.json()
+    selectedDeliveryOrder.value = resJson.data
+    alert('Pengiriman barang berhasil dicatat! Status Surat Jalan diperbarui.')
+    refreshAll()
+    // Muat ulang daftar picking
+    openDeliveryModal(selectedDeliveryOrder.value)
+  } catch (err: any) {
+    alert('Gagal kirim barang: ' + err.message)
+  } finally {
+    isDelivering.value = false
   }
 }
 
