@@ -395,14 +395,24 @@
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Sumber Saluran (UTM)</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Sumber Saluran (UTM)</label>
+                <button type="button" @click="openUtmModal" class="text-[11px] font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                  ⚙️ Kelola Saluran
+                </button>
+              </div>
               <div class="relative">
-                <select v-model="formData.utm_source" class="w-full appearance-none rounded-lg border border-gray-300 bg-white dark:bg-gray-700 pl-3 pr-9 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:text-white">
-                  <option value="organik">Organik / Langsung</option>
-                  <option value="wa_blast">WhatsApp Broadcast</option>
-                  <option value="meta">Meta Ads (FB/IG)</option>
-                  <option value="google">Google Ads</option>
-                  <option value="affiliate">Mitra Afiliasi</option>
+                <select v-model="formData.utm_source" class="w-full appearance-none rounded-lg border border-gray-300 bg-white dark:bg-gray-700 pl-3 pr-9 py-2 text-sm font-semibold focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:text-white">
+                  <optgroup v-if="marketingCampaigns.length > 0" label="🚀 Kampanye Modul Marketing (Live)">
+                    <option v-for="cmp in marketingCampaigns" :key="'mkt_' + cmp.id" :value="cmp.code">
+                      {{ cmp.name }}
+                    </option>
+                  </optgroup>
+                  <optgroup label="📢 Saluran Standar & Kustom">
+                    <option v-for="src in utmSources" :key="src.value" :value="src.value">
+                      {{ src.label }}
+                    </option>
+                  </optgroup>
                 </select>
                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400 dark:text-gray-300">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -512,6 +522,76 @@
     </div>
   </Teleport>
 
+  <!-- Modal CRUD Sumber Saluran / UTM Tracker -->
+  <Teleport to="body">
+    <div v-if="isUtmModalOpen" class="fixed inset-0 z-[100001] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 dark:border dark:border-gray-700">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span>📢</span> Kelola Sumber Saluran (UTM)
+          </h3>
+          <button @click="isUtmModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+        </div>
+
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+          Sumber saluran digunakan untuk melacak atribusi asal prospek (Marketing Campaign Attribution & ROI).
+        </p>
+
+        <!-- Form Tambah UTM Kustom -->
+        <div class="flex gap-2 mb-4">
+          <input
+            v-model="newUtmInput"
+            type="text"
+            placeholder="Misal: TikTok Ads, Pameran Expo..."
+            @keyup.enter="addUtmItem"
+            class="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          />
+          <button
+            type="button"
+            @click="addUtmItem"
+            class="rounded-lg bg-brand-500 px-4 py-2 text-xs font-bold text-white hover:bg-brand-600 transition shadow-sm"
+          >
+            + Tambah
+          </button>
+        </div>
+
+        <!-- Daftar Saluran List with Delete -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+          <div
+            v-for="item in utmSources"
+            :key="item.value"
+            class="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition text-sm"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-gray-400">🔗</span>
+              <span class="font-medium text-gray-800 dark:text-gray-200">{{ item.label }}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button
+                v-if="utmSources.length > 1"
+                @click="removeUtmItem(item.value)"
+                class="text-xs text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 px-2 py-1 rounded transition"
+                title="Hapus Saluran"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-4 mt-4 border-t border-gray-100 dark:border-gray-700">
+          <button
+            type="button"
+            @click="isUtmModalOpen = false"
+            class="rounded-lg bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+          >
+            Selesai
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
   <!-- Modal Quick Create Stage -->
   <Teleport to="body">
     <div v-if="isStageModalOpen" class="fixed inset-0 z-[100000] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
@@ -603,6 +683,7 @@
 import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { crmService } from '@/services/sales/crm.service'
+import { massMailingService } from '@/services/marketing/mass-mailing.service'
 
 const activeView = ref<'kanban' | 'table'>('kanban')
 const records = ref<any[]>([])
@@ -707,6 +788,79 @@ const removeTerritoryItem = (item: string) => {
   saveTerritoriesToStorage()
   if (formData.value.territory === item) {
     formData.value.territory = territories.value[0] || 'Jakarta'
+  }
+}
+
+// UTM Sources & Marketing Campaigns Integration
+interface UtmItem {
+  value: string
+  label: string
+}
+
+const defaultUtmSources: UtmItem[] = [
+  { value: 'organik', label: 'Organik / Langsung' },
+  { value: 'wa_blast', label: 'WhatsApp Broadcast' },
+  { value: 'meta', label: 'Meta Ads (FB/IG)' },
+  { value: 'google', label: 'Google Ads' },
+  { value: 'affiliate', label: 'Mitra Afiliasi' },
+  { value: 'tiktok', label: 'TikTok Ads & Content' },
+  { value: 'linkedin', label: 'LinkedIn B2B Outreach' }
+]
+
+const loadSavedUtmSources = (): UtmItem[] => {
+  try {
+    const saved = localStorage.getItem('erp_crm_utm_sources')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    }
+  } catch (e) {
+    console.error('Error loading saved UTM sources:', e)
+  }
+  return [...defaultUtmSources]
+}
+
+const utmSources = ref<UtmItem[]>(loadSavedUtmSources())
+const marketingCampaigns = ref<{ id: any; name: string; code: string }[]>([])
+const newUtmInput = ref('')
+const isUtmModalOpen = ref(false)
+
+const saveUtmSourcesToStorage = () => {
+  try {
+    localStorage.setItem('erp_crm_utm_sources', JSON.stringify(utmSources.value))
+  } catch (e) {
+    console.error('Error saving UTM sources to localStorage:', e)
+  }
+}
+
+const openUtmModal = () => {
+  newUtmInput.value = ''
+  isUtmModalOpen.value = true
+}
+
+const addUtmItem = () => {
+  const val = newUtmInput.value.trim()
+  if (!val) return
+  const slug = val.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+  if (!utmSources.value.some(s => s.value === slug)) {
+    utmSources.value.push({ value: slug, label: val })
+    saveUtmSourcesToStorage()
+  }
+  formData.value.utm_source = slug
+  newUtmInput.value = ''
+}
+
+const removeUtmItem = (slug: string) => {
+  if (utmSources.value.length <= 1) {
+    alert('Minimal harus ada 1 saluran tersisa.')
+    return
+  }
+  const item = utmSources.value.find(s => s.value === slug)
+  if (!confirm(`Hapus saluran "${item?.label || slug}" dari daftar pilihan?`)) return
+  utmSources.value = utmSources.value.filter(s => s.value !== slug)
+  saveUtmSourcesToStorage()
+  if (formData.value.utm_source === slug) {
+    formData.value.utm_source = utmSources.value[0]?.value || 'organik'
   }
 }
 
@@ -892,6 +1046,20 @@ const fetchStagesAndPartners = async () => {
   } catch (e) {
     console.warn('Could not load partners:', e)
   }
+
+  // Fetch live Marketing Campaigns and UTM Trackers from Marketing Module
+  try {
+    const utmData = await massMailingService.getAllUtm()
+    if (utmData && utmData.length > 0) {
+      marketingCampaigns.value = utmData.map((u: any) => ({
+        id: u.id,
+        name: `Campaign: ${u.campaign?.name || u.utm_source || 'Mailing'} (${u.utm_medium || 'cpc'})`,
+        code: u.utm_source || `campaign_${u.id}`
+      }))
+    }
+  } catch (e) {
+    console.warn('Could not load marketing campaign UTMs:', e)
+  }
 }
 
 const fetchData = async () => {
@@ -915,6 +1083,9 @@ const openModal = (mode: 'create' | 'edit', data: any = null) => {
   if (mode === 'edit' && data) {
     if (data.territory && !territories.value.includes(data.territory)) {
       territories.value.push(data.territory)
+    }
+    if (data.utm_source && !utmSources.value.some(s => s.value === data.utm_source) && !marketingCampaigns.value.some(c => c.code === data.utm_source)) {
+      utmSources.value.push({ value: data.utm_source, label: data.utm_source })
     }
     formData.value = {
       id: data.id,
