@@ -362,6 +362,12 @@ const router = createRouter({
       component: () => import('../views/Services/Timesheets.vue'),
       meta: { title: 'Timesheets' },
     },
+    {
+      path: '/tracking',
+      name: 'CustomerTracking',
+      component: () => import('../views/Services/CustomerTracking.vue'),
+      meta: { title: 'Lacak Servis Pelanggan' },
+    },
     // FASE 5 ROUTES (SUPPLY CHAIN)
     {
       path: '/supply_chain/barcode',

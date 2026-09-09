@@ -179,6 +179,7 @@
           <div class="relative w-full sm:w-64">
             <input
               v-model="searchQuery"
+              @input="onFilterChange"
               type="text"
               placeholder="Cari janji temu, nama klien..."
               class="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 pl-9 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -188,9 +189,27 @@
             </span>
           </div>
 
+          <!-- RBAC View Switcher: Semua Agenda vs Agenda Saya -->
+          <button
+            type="button"
+            @click="myTasksOnly = !myTasksOnly; onFilterChange()"
+            class="rounded-lg border px-3 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
+            :class="myTasksOnly
+              ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-600'
+              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'"
+            :title="myTasksOnly ? 'Tampilkan seluruh jadwal tim' : 'Hanya tampilkan agenda tugas saya'"
+          >
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            {{ myTasksOnly ? 'Agenda Saya' : 'Semua Agenda' }}
+          </button>
+
           <!-- Status Filter -->
           <select
             v-model="filterStatus"
+            @change="onFilterChange"
             class="rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           >
             <option value="all">Semua Status ({{ appointments.length }})</option>
@@ -203,6 +222,7 @@
           <!-- Staff/Employee Filter -->
           <select
             v-model="filterStaff"
+            @change="onFilterChange"
             class="rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           >
             <option value="all">Semua Staff/Teknisi</option>
@@ -496,6 +516,9 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination Bar -->
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
     </div>
 
@@ -857,6 +880,7 @@ import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Alert from '@/components/ui/Alert.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { appointmentsService } from '@/services/services/appointments.service'
 import { fieldServiceService } from '@/services/services/field-service.service'
 import { timesheetsService } from '@/services/services/timesheets.service'
@@ -864,12 +888,24 @@ import { helpdeskService } from '@/services/services/helpdesk.service'
 import { employeesService } from '@/services/hr/employees.service'
 import { crmService } from '@/services/sales/crm.service'
 import type { IAppointmentDto } from '@/types/services'
+import type { IPaginationMeta } from '@/types'
 
 // View & Filter States
 const viewMode = ref<'agenda' | 'table'>('agenda')
 const searchQuery = ref('')
 const filterStatus = ref('all')
 const filterStaff = ref('all')
+
+// Server-side Pagination & RBAC State
+const myTasksOnly = ref(false)
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 // Data Collections
 const appointments = ref<IAppointmentDto[]>([])
@@ -927,13 +963,34 @@ const tsFormData = ref({
   description: ''
 })
 
-// Load All Relevant Data
+// Load All Relevant Data with server-side pagination & filters
 const fetchData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const data = await appointmentsService.getAll()
-    appointments.value = data || []
+    const params: any = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
+    if (filterStatus.value !== 'all') params.state = filterStatus.value
+    if (filterStaff.value !== 'all') params.employee_id = filterStaff.value
+    if (myTasksOnly.value) params.my_only = true
+
+    const res: any = await appointmentsService.getAll(params)
+    if (res && res.pagination) {
+      appointments.value = res.data || []
+      pagination.value = res.pagination
+    } else if (Array.isArray(res)) {
+      appointments.value = res
+      pagination.value.total_items = res.length
+      pagination.value.total_pages = 1
+    } else if (res && res.data && Array.isArray(res.data)) {
+      appointments.value = res.data
+      if (res.pagination) pagination.value = res.pagination
+    } else {
+      appointments.value = []
+    }
 
     // Concurrently load employees, partners, and helpdesk tickets
     if (employees.value.length === 0) {
@@ -955,25 +1012,21 @@ const fetchData = async () => {
   }
 }
 
-// Filtered Appointments
-const filteredAppointments = computed(() => {
-  return appointments.value.filter(apt => {
-    // Search match
-    const q = searchQuery.value.toLowerCase().trim()
-    const clientName = getCustomerName(apt.partner_id, apt.partner).toLowerCase()
-    const matchSearch = !q || (apt.name && apt.name.toLowerCase().includes(q)) ||
-      (apt.notes && apt.notes.toLowerCase().includes(q)) ||
-      clientName.includes(q)
+const onPaginationChange = (page: number, limit?: number) => {
+  pagination.value.current_page = page
+  if (limit) {
+    pagination.value.per_page = limit
+  }
+  fetchData()
+}
 
-    // Status match
-    const matchStatus = filterStatus.value === 'all' || (apt.state || 'draft').toLowerCase() === filterStatus.value.toLowerCase()
+const onFilterChange = () => {
+  pagination.value.current_page = 1
+  fetchData()
+}
 
-    // Staff match
-    const matchStaff = filterStaff.value === 'all' || String(apt.employee_id) === String(filterStaff.value)
-
-    return matchSearch && matchStatus && matchStaff
-  })
-})
+// Filtered Appointments (Server-side handled)
+const filteredAppointments = computed(() => appointments.value)
 
 // KPI Counters
 const todayAppointmentsCount = computed(() => {

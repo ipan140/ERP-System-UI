@@ -5,3 +5,5 @@ export * from './planning.dto';
 export * from './project.dto';
 export * from './repairs.dto';
 export * from './timesheets.dto';
+export * from './activity_logs.dto';
+export * from './notifications.dto';

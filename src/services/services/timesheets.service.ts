@@ -1,10 +1,17 @@
 import { http } from "@/services/http";
-import type { IResponse } from "@/types";
+import type { IPaginatedResponse, IResponse } from "@/types";
 
 export const timesheetsService = {
-  async getAll(): Promise<any[]> {
-    const response = await http.get<IResponse<any[]>>("/services/timesheets");
-    return response.data.data ?? response.data;
+  async getAll(params?: Record<string, any>): Promise<{ data: any[]; pagination?: any }> {
+    const response = await http.get<IPaginatedResponse<any[]>>("/services/timesheets", { params });
+    const resData = response.data as any;
+    if (Array.isArray(resData)) {
+      return { data: resData };
+    }
+    return {
+      data: resData.data || [],
+      pagination: resData.pagination
+    };
   },
 
   async getById(id: number | string): Promise<any> {
@@ -24,5 +31,26 @@ export const timesheetsService = {
 
   async delete(id: number | string): Promise<void> {
     await http.delete(`/services/timesheets/${id}`);
+  },
+
+  // Fase 2: Workflow Approval Methods
+  async submit(id: number | string): Promise<any> {
+    const response = await http.post<IResponse<any>>(`/services/timesheets/${id}/submit`);
+    return response.data.data ?? response.data;
+  },
+
+  async approve(id: number | string): Promise<any> {
+    const response = await http.post<IResponse<any>>(`/services/timesheets/${id}/approve`);
+    return response.data.data ?? response.data;
+  },
+
+  async reject(id: number | string, reason?: string): Promise<any> {
+    const response = await http.post<IResponse<any>>(`/services/timesheets/${id}/reject`, { reason });
+    return response.data.data ?? response.data;
+  },
+
+  async bulkApprove(ids: (number | string)[]): Promise<any> {
+    const response = await http.post<IResponse<any>>("/services/timesheets/bulk-approve", { ids });
+    return response.data.data ?? response.data;
   },
 };

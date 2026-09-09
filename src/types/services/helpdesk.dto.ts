@@ -20,4 +20,13 @@ export interface ITicketDto {
   name?: string;
   priority?: string;
   state?: string;
+
+  // Fase 3: SLA Escalation Engine
+  sla_deadline?: string;
+  sla_status?: 'ok' | 'warning' | 'breached';
+  escalation_level?: number;
+  escalated_at?: string;
+  first_response_at?: string;
+  resolved_at?: string;
 }
+

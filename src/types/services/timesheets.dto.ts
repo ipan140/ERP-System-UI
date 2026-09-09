@@ -12,4 +12,8 @@ export interface ITimesheetDto {
   project_id?: number;
   task?: any;
   task_id?: number;
+  status?: 'draft' | 'submitted' | 'approved' | 'rejected' | 'invoiced';
+  approved_by_id?: number;
+  approved_at?: string;
+  rejection_reason?: string;
 }

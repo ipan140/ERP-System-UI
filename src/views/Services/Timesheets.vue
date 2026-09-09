@@ -219,12 +219,66 @@
 
       <!-- Main Filter and Table Card -->
       <div class="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
+        <!-- Fase 2: Approval Workflow Tabs & Bulk Action Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200 px-4 pt-3 pb-0 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/30 gap-2">
+          <div class="flex items-center gap-1 overflow-x-auto">
+            <button
+              type="button"
+              @click="activeApprovalTab = 'all'; onApprovalTabChange()"
+              class="px-3 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              :class="activeApprovalTab === 'all'
+                ? 'border-brand-500 text-brand-600 dark:text-brand-400'
+                : 'border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'"
+            >
+              Semua Log Kerja
+            </button>
+            <button
+              type="button"
+              @click="activeApprovalTab = 'pending'; onApprovalTabChange()"
+              class="px-3 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              :class="activeApprovalTab === 'pending'
+                ? 'border-amber-500 text-amber-600 dark:text-amber-400'
+                : 'border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'"
+            >
+              Menunggu Approval
+              <span v-if="pendingCount > 0" class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                {{ pendingCount }}
+              </span>
+            </button>
+            <button
+              type="button"
+              @click="activeApprovalTab = 'approved'; onApprovalTabChange()"
+              class="px-3 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              :class="activeApprovalTab === 'approved'
+                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                : 'border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'"
+            >
+              Telah Disetujui
+            </button>
+          </div>
+
+          <!-- Bulk Approve Action Button -->
+          <div v-if="selectedIds.length > 0" class="flex items-center gap-2 pb-2 self-end sm:self-auto">
+            <span class="text-xs text-gray-500 font-medium">{{ selectedIds.length }} dipilih</span>
+            <button
+              type="button"
+              @click="bulkApprove"
+              :disabled="isProcessingApproval"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition"
+            >
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Setujui Terpilih
+            </button>
+          </div>
+        </div>
+
         <!-- Toolbar & Filter Bar -->
         <div class="flex flex-col gap-3 p-4 border-b border-gray-200 dark:border-gray-800 lg:flex-row lg:items-center lg:justify-between">
           <!-- Search -->
           <div class="relative flex-1 max-w-sm">
             <input
               v-model="searchQuery"
+              @input="onFilterChange"
               type="text"
               placeholder="Cari karyawan, proyek, atau uraian kerja..."
               class="w-full rounded-lg border border-gray-300 bg-transparent px-3.5 py-2 pl-9 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -236,11 +290,29 @@
             </span>
           </div>
 
-          <!-- Select Filters -->
+          <!-- Select Filters & RBAC Switcher -->
           <div class="flex flex-wrap items-center gap-2">
+            <!-- RBAC View Switcher: Semua Tim vs Tugas Saya -->
+            <button
+              type="button"
+              @click="myTasksOnly = !myTasksOnly; onFilterChange()"
+              class="rounded-lg border px-3 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
+              :class="myTasksOnly
+                ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-600'
+                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'"
+              :title="myTasksOnly ? 'Tampilkan seluruh tim' : 'Hanya tampilkan log tugas saya'"
+            >
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              {{ myTasksOnly ? 'Log Saya' : 'Semua Tim' }}
+            </button>
+
             <!-- Filter Proyek -->
             <select
               v-model="selectedProjectFilter"
+              @change="onFilterChange"
               class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
             >
               <option value="">Semua Proyek</option>
@@ -252,6 +324,7 @@
             <!-- Filter Karyawan -->
             <select
               v-model="selectedEmployeeFilter"
+              @change="onFilterChange"
               class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
             >
               <option value="">Semua Karyawan</option>
@@ -263,6 +336,7 @@
             <!-- Filter Status Penagihan -->
             <select
               v-model="selectedBillableFilter"
+              @change="onFilterChange"
               class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
             >
               <option value="all">Semua Tipe Penagihan</option>
@@ -282,11 +356,20 @@
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="border-b border-gray-200 bg-gray-50 text-2xs font-semibold uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-400">
+                <th class="py-3 px-3 text-center w-10">
+                  <input
+                    type="checkbox"
+                    :checked="isAllSelected"
+                    @change="toggleSelectAll"
+                    class="rounded border-gray-300 text-brand-500 focus:ring-brand-400 dark:border-gray-700"
+                  />
+                </th>
                 <th class="py-3 px-4">Tanggal</th>
                 <th class="py-3 px-4">Karyawan</th>
                 <th class="py-3 px-4">Proyek & Tugas</th>
                 <th class="py-3 px-4">Uraian Pekerjaan</th>
                 <th class="py-3 px-4 text-center">Durasi (Jam)</th>
+                <th class="py-3 px-4 text-center">Status</th>
                 <th class="py-3 px-4 text-center">Tipe Penagihan</th>
                 <th class="py-3 px-4 text-right">HPP Tenaga Kerja</th>
                 <th class="py-3 px-4 text-right">Aksi</th>
@@ -295,7 +378,7 @@
             <tbody class="divide-y divide-gray-100 text-xs dark:divide-gray-800">
               <!-- Loading Skeleton -->
               <tr v-if="isLoading">
-                <td colspan="8" class="py-12 text-center">
+                <td colspan="10" class="py-12 text-center">
                   <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent"></div>
                   <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Memuat log jam kerja...</p>
                 </td>
@@ -303,7 +386,7 @@
 
               <!-- Empty State -->
               <tr v-else-if="filteredRecords.length === 0">
-                <td colspan="8" class="py-12 text-center">
+                <td colspan="10" class="py-12 text-center">
                   <div class="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 dark:bg-gray-800 mb-3">
                     <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <circle cx="12" cy="12" r="10" />
@@ -320,7 +403,18 @@
                 v-for="record in filteredRecords"
                 :key="record.id"
                 class="hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-colors"
+                :class="{ 'bg-amber-50/40 dark:bg-amber-950/20': record.status === 'submitted' }"
               >
+                <!-- Checkbox -->
+                <td class="py-3.5 px-3 text-center">
+                  <input
+                    type="checkbox"
+                    :value="record.id"
+                    v-model="selectedIds"
+                    class="rounded border-gray-300 text-brand-500 focus:ring-brand-400 dark:border-gray-700"
+                  />
+                </td>
+
                 <!-- Tanggal -->
                 <td class="py-3.5 px-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
                   {{ formatDate(record.date) }}
@@ -370,6 +464,44 @@
                   </span>
                 </td>
 
+                <!-- Status Approval -->
+                <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                  <span
+                    v-if="record.status === 'submitted'"
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                    title="Menunggu persetujuan Project Manager"
+                  >
+                    ⏳ Menunggu Review
+                  </span>
+                  <span
+                    v-else-if="record.status === 'approved'"
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                    title="Disetujui dan siap ditagihkan"
+                  >
+                    ✓ Disetujui
+                  </span>
+                  <span
+                    v-else-if="record.status === 'rejected'"
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 cursor-help"
+                    :title="record.rejection_reason ? `Ditolak: ${record.rejection_reason}` : 'Ditolak - Perlu revisi'"
+                  >
+                    ✕ Ditolak
+                  </span>
+                  <span
+                    v-else-if="record.status === 'invoiced'"
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                    title="Sudah ditagihkan ke klien (Terkunci)"
+                  >
+                    🔒 Invoiced
+                  </span>
+                  <span
+                    v-else
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
+                  >
+                    Draft
+                  </span>
+                </td>
+
                 <!-- Tipe Penagihan & Quick Toggle -->
                 <td class="py-3.5 px-4 text-center whitespace-nowrap">
                   <button
@@ -398,7 +530,42 @@
                 <!-- Aksi -->
                 <td class="py-3.5 px-4 text-right whitespace-nowrap">
                   <div class="flex items-center justify-end gap-1.5">
+                    <!-- Quick Approve / Reject for Submitted records -->
+                    <template v-if="record.status === 'submitted'">
+                      <button
+                        @click="record.id && approveRecord(record.id)"
+                        class="rounded p-1.5 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                        title="Setujui Jam Kerja"
+                      >
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </button>
+                      <button
+                        @click="record.id && openRejectModal(record.id)"
+                        class="rounded p-1.5 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                        title="Tolak Jam Kerja"
+                      >
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </template>
+
+                    <!-- Submit action for Draft records -->
                     <button
+                      v-if="record.status === 'draft' || record.status === 'rejected'"
+                      @click="record.id && submitRecord(record.id)"
+                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-2xs font-semibold bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                      title="Ajukan untuk Review"
+                    >
+                      Ajukan
+                    </button>
+
+                    <!-- Edit (Lock if approved/invoiced) -->
+                    <button
+                      v-if="record.status !== 'approved' && record.status !== 'invoiced'"
                       @click="openModal('edit', record)"
                       class="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-brand-400"
                       title="Edit Log"
@@ -408,7 +575,10 @@
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
                     </button>
+
+                    <!-- Delete (Lock if approved/invoiced) -->
                     <button
+                      v-if="record.status !== 'approved' && record.status !== 'invoiced'"
                       @click="record.id && deleteRecord(record.id)"
                       class="rounded p-1.5 text-gray-500 hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-950/40 dark:hover:text-red-400"
                       title="Hapus Log"
@@ -418,6 +588,18 @@
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                       </svg>
                     </button>
+
+                    <!-- Locked icon if approved/invoiced -->
+                    <span
+                      v-if="record.status === 'approved' || record.status === 'invoiced'"
+                      class="p-1 text-gray-400"
+                      title="Terkunci - Hubungi Admin/PM untuk revisi"
+                    >
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -425,14 +607,8 @@
           </table>
         </div>
 
-        <!-- Footer Stats & Count -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400 gap-2">
-          <span>Menampilkan {{ filteredRecords.length }} dari {{ records.length }} entri</span>
-          <div class="flex items-center gap-3">
-            <span>Total jam terfilter: <strong class="text-gray-800 dark:text-white">{{ totalFilteredHours.toFixed(1) }}h</strong></span>
-            <span>Total HPP: <strong class="text-emerald-600 dark:text-emerald-400">{{ formatRupiah(totalFilteredLaborCost) }}</strong></span>
-          </div>
-        </div>
+        <!-- Pagination Bar -->
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
     </div>
   </AdminLayout>
@@ -628,6 +804,55 @@
       </div>
     </div>
   </Teleport>
+
+  <!-- Modal Alasan Penolakan Timesheet -->
+  <Teleport to="body">
+    <div v-if="isRejectModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+      <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
+          <h3 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span class="p-1 rounded bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-400">✕</span>
+            Tolak Log Jam Kerja
+          </h3>
+          <button @click="isRejectModalOpen = false" class="p-1 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
+        <div class="py-4">
+          <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Alasan Penolakan <span class="text-red-500">*</span>
+          </label>
+          <textarea
+            v-model="rejectReason"
+            rows="3"
+            placeholder="Berikan catatan alasan penolakan (cth: Jam lembur belum dilampirkan bukti lembur, dll)..."
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs focus:border-rose-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          ></textarea>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+          <button
+            type="button"
+            @click="isRejectModalOpen = false"
+            class="rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            @click="confirmReject"
+            :disabled="isProcessingApproval"
+            class="rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50 flex items-center gap-1.5"
+          >
+            <svg v-if="isProcessingApproval" class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 6v6l4 2" />
+            </svg>
+            Tolak Log
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -635,10 +860,12 @@ import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Alert from '@/components/ui/Alert.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { timesheetsService } from '@/services/services/timesheets.service'
 import { projectService } from '@/services/services/project.service'
 import { employeesService } from '@/services/hr/employees.service'
 import type { ITimesheetDto } from '@/types/services'
+import type { IPaginationMeta } from '@/types'
 
 // Data States
 const records = ref<ITimesheetDto[]>([])
@@ -646,6 +873,47 @@ const projectsList = ref<any[]>([])
 const employeesList = ref<any[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+
+// Server-side Pagination & RBAC State
+const myTasksOnly = ref(false)
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+// Fase 2: Approval & Selection State
+const activeApprovalTab = ref<'all' | 'pending' | 'approved'>('all')
+const selectedIds = ref<number[]>([])
+const isProcessingApproval = ref(false)
+const isRejectModalOpen = ref(false)
+const rejectTargetId = ref<number | null>(null)
+const rejectReason = ref('')
+
+const isAllSelected = computed(() => {
+  return filteredRecords.value.length > 0 && selectedIds.value.length === filteredRecords.value.length
+})
+
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    selectedIds.value = []
+  } else {
+    selectedIds.value = filteredRecords.value.map(r => r.id!).filter(Boolean)
+  }
+}
+
+const pendingCount = computed(() => {
+  return records.value.filter(r => r.status === 'submitted').length
+})
+
+const onApprovalTabChange = () => {
+  selectedIds.value = []
+  pagination.value.current_page = 1
+  fetchData()
+}
 
 // Filters
 const searchQuery = ref('')
@@ -668,18 +936,50 @@ const formData = ref<ITimesheetDto>({
   description: ''
 })
 
-// Fetch all dependencies
+// Fetch all dependencies with pagination & filters
 const fetchData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const [timesheetsData, projectsData, employeesData] = await Promise.all([
-      timesheetsService.getAll().catch(() => []),
+    const params: any = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
+    if (selectedProjectFilter.value) params.project_id = selectedProjectFilter.value
+    if (selectedEmployeeFilter.value) params.employee_id = selectedEmployeeFilter.value
+    if (selectedBillableFilter.value !== 'all') {
+      params.is_billable = selectedBillableFilter.value === 'billable'
+    }
+    if (myTasksOnly.value) {
+      params.my_only = true
+    }
+    if (activeApprovalTab.value === 'pending') {
+      params.status = 'submitted'
+    } else if (activeApprovalTab.value === 'approved') {
+      params.status = 'approved'
+    }
+
+    const [timesheetsRes, projectsData, employeesData] = await Promise.all([
+      timesheetsService.getAll(params).catch(() => ({ data: [], pagination: undefined })),
       projectService.getAll().catch(() => []),
       employeesService.getAll().catch(() => [])
     ])
 
-    records.value = Array.isArray(timesheetsData) ? timesheetsData : []
+    if (timesheetsRes && 'pagination' in (timesheetsRes as any) && (timesheetsRes as any).pagination) {
+      records.value = (timesheetsRes as any).data || []
+      pagination.value = (timesheetsRes as any).pagination
+    } else if (Array.isArray(timesheetsRes)) {
+      records.value = timesheetsRes
+      pagination.value.total_items = timesheetsRes.length
+      pagination.value.total_pages = 1
+    } else if (timesheetsRes && 'data' in (timesheetsRes as any) && Array.isArray((timesheetsRes as any).data)) {
+      records.value = (timesheetsRes as any).data
+      if ((timesheetsRes as any).pagination) pagination.value = (timesheetsRes as any).pagination
+    } else {
+      records.value = []
+    }
+
     projectsList.value = Array.isArray(projectsData) ? projectsData : []
     employeesList.value = Array.isArray(employeesData) ? employeesData : []
   } catch (err: any) {
@@ -687,6 +987,26 @@ const fetchData = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+const onPaginationChange = (payloadOrPage: { page: number; limit?: number } | number, maybeLimit?: number) => {
+  if (typeof payloadOrPage === 'object') {
+    pagination.value.current_page = payloadOrPage.page
+    if (payloadOrPage.limit) {
+      pagination.value.per_page = payloadOrPage.limit
+    }
+  } else {
+    pagination.value.current_page = payloadOrPage
+    if (maybeLimit) {
+      pagination.value.per_page = maybeLimit
+    }
+  }
+  fetchData()
+}
+
+const onFilterChange = () => {
+  pagination.value.current_page = 1
+  fetchData()
 }
 
 // Formatters & Lookups
@@ -726,36 +1046,8 @@ const formatRupiah = (val?: number) => {
   }).format(val || 0)
 }
 
-// Filtered Records
-const filteredRecords = computed(() => {
-  return records.value.filter(item => {
-    // Project filter
-    if (selectedProjectFilter.value && item.project_id != selectedProjectFilter.value) {
-      return false
-    }
-
-    // Employee filter
-    if (selectedEmployeeFilter.value && item.employee_id != selectedEmployeeFilter.value) {
-      return false
-    }
-
-    // Billable filter
-    if (selectedBillableFilter.value === 'billable' && !item.is_billable) return false
-    if (selectedBillableFilter.value === 'non_billable' && item.is_billable) return false
-
-    // Search query
-    if (searchQuery.value.trim()) {
-      const q = searchQuery.value.toLowerCase()
-      const emp = getEmployeeName(item).toLowerCase()
-      const proj = getProjectName(item).toLowerCase()
-      const desc = (item.description || '').toLowerCase()
-      const task = (item.task?.name || '').toLowerCase()
-      return emp.includes(q) || proj.includes(q) || desc.includes(q) || task.includes(q)
-    }
-
-    return true
-  })
-})
+// Filtered Records (Server-side handled)
+const filteredRecords = computed(() => records.value)
 
 // KPI Computations
 const totalHours = computed(() => records.value.reduce((sum, r) => sum + (Number(r.hours) || 0), 0))
@@ -849,7 +1141,66 @@ const deleteRecord = async (id: number) => {
     await timesheetsService.delete(id)
     fetchData()
   } catch (err: any) {
-    alert('Gagal menghapus data: ' + (err.response?.data?.message || err.message))
+    alert('Gagal menghapus timesheet: ' + (err.response?.data?.message || err.message))
+  }
+}
+
+// Fase 2: Approval Actions
+const submitRecord = async (id: number) => {
+  try {
+    await timesheetsService.submit(id)
+    fetchData()
+  } catch (err: any) {
+    alert('Gagal mengajukan timesheet: ' + (err.response?.data?.message || err.message))
+  }
+}
+
+const approveRecord = async (id: number) => {
+  try {
+    await timesheetsService.approve(id)
+    fetchData()
+  } catch (err: any) {
+    alert('Gagal menyetujui timesheet: ' + (err.response?.data?.message || err.message))
+  }
+}
+
+const openRejectModal = (id: number) => {
+  rejectTargetId.value = id
+  rejectReason.value = ''
+  isRejectModalOpen.value = true
+}
+
+const confirmReject = async () => {
+  if (!rejectTargetId.value) return
+  if (!rejectReason.value.trim()) {
+    alert('Mohon isi alasan penolakan.')
+    return
+  }
+  isProcessingApproval.value = true
+  try {
+    await timesheetsService.reject(rejectTargetId.value, rejectReason.value.trim())
+    isRejectModalOpen.value = false
+    rejectTargetId.value = null
+    fetchData()
+  } catch (err: any) {
+    alert('Gagal menolak timesheet: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isProcessingApproval.value = false
+  }
+}
+
+const bulkApprove = async () => {
+  if (selectedIds.value.length === 0) return
+  if (!confirm(`Setujui ${selectedIds.value.length} catatan jam kerja yang dipilih?`)) return
+  isProcessingApproval.value = true
+  try {
+    await timesheetsService.bulkApprove(selectedIds.value)
+    selectedIds.value = []
+    fetchData()
+  } catch (err: any) {
+    alert('Gagal memproses approval massal: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isProcessingApproval.value = false
   }
 }
 

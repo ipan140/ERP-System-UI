@@ -13,6 +13,16 @@ export interface IRepairOrderDto {
   total_cost?: number;
   state?: string;
   technician_id?: number;
+  qc_passed?: boolean;
+  qc_notes?: string;
+  qc_inspector_id?: number;
+  qc_passed_at?: string;
+
+  // Fase 4: Customer Portal Approval
+  customer_approved_at?: string;
+  customer_approval_note?: string;
+
   created_at?: string;
 }
+
 

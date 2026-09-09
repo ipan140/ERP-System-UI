@@ -1,10 +1,17 @@
 import { http } from "@/services/http";
-import type { IResponse } from "@/types";
+import type { IPaginatedResponse, IResponse } from "@/types";
 
 export const appointmentsService = {
-  async getAll(): Promise<any[]> {
-    const response = await http.get<IResponse<any[]>>("/services/appointments");
-    return response.data.data ?? response.data;
+  async getAll(params?: Record<string, any>): Promise<{ data: any[]; pagination?: any }> {
+    const response = await http.get<IPaginatedResponse<any[]>>("/services/appointments", { params });
+    const resData = response.data as any;
+    if (Array.isArray(resData)) {
+      return { data: resData };
+    }
+    return {
+      data: resData.data || [],
+      pagination: resData.pagination
+    };
   },
 
   async getById(id: number | string): Promise<any> {

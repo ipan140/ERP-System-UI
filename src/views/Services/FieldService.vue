@@ -29,6 +29,19 @@
         </div>
       </div>
 
+      <!-- Offline Mode & Sync Alert Banner (PWA Field Support) -->
+      <div v-if="!isOnline" class="p-3.5 rounded-xl bg-amber-50 border border-amber-300 dark:bg-amber-950/60 dark:border-amber-700 text-amber-900 dark:text-amber-200 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2.5">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0"></span>
+          <div>
+            <span class="font-bold">Mode Offline PWA Aktif:</span> Koneksi internet terputus. Teknisi tetap dapat mencatat checklist SOP dan data tersimpan di penyimpanan lokal perangkat.
+          </div>
+        </div>
+        <span v-if="offlineQueueCount > 0" class="px-2.5 py-1 rounded text-2xs font-bold bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-100 shrink-0">
+          {{ offlineQueueCount }} antrean pending
+        </span>
+      </div>
+
       <!-- KPI Summary Cards -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03] shadow-sm">
@@ -83,6 +96,7 @@
           <div class="relative w-full sm:w-64">
             <input
               v-model="searchQuery"
+              @input="onFilterChange"
               type="text"
               placeholder="Cari no. SPK, pekerjaan, alamat..."
               class="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 pl-9 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -92,9 +106,27 @@
             </span>
           </div>
 
+          <!-- RBAC View Switcher: Semua Tugas vs Tugas Saya -->
+          <button
+            type="button"
+            @click="myTasksOnly = !myTasksOnly; onFilterChange()"
+            class="rounded-lg border px-3 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
+            :class="myTasksOnly
+              ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-600'
+              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'"
+            :title="myTasksOnly ? 'Tampilkan seluruh tim dispatch' : 'Hanya tampilkan tugas saya'"
+          >
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            {{ myTasksOnly ? 'Tugas Saya' : 'Semua Tugas' }}
+          </button>
+
           <!-- Priority Filter -->
           <select
             v-model="filterPriority"
+            @change="onFilterChange"
             class="rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           >
             <option value="all">Semua Prioritas</option>
@@ -107,6 +139,7 @@
           <!-- Technician Filter -->
           <select
             v-model="filterTechnician"
+            @change="onFilterChange"
             class="rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           >
             <option value="all">Semua Teknisi</option>
@@ -236,15 +269,23 @@
                   </span>
                 </div>
 
-                <!-- Signature Badge -->
+                <!-- Signature & Validation Badge -->
                 <span
-                  v-if="task.signature"
-                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 text-[9px] font-bold"
-                  title="BAST telah ditandatangani klien"
+                  v-if="task.bast_validated"
+                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[9px] font-bold"
+                  title="e-BAST telah divalidasi oleh Supervisor"
                 >
                   <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  e-BAST
+                  BAST Valid ✓
                 </span>
+                <button
+                  v-else-if="task.signature"
+                  @click.stop="validateBastTask(task)"
+                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-300 text-[9px] font-bold border border-amber-200 dark:border-amber-800"
+                  title="Klik untuk Validasi e-BAST"
+                >
+                  ⏳ Validasi BAST
+                </button>
                 <span
                   v-else
                   class="text-[9px] text-gray-400"
@@ -253,8 +294,46 @@
                 </span>
               </div>
 
-              <!-- Stage Quick Moves -->
+              <!-- GPS Presence Badge in Kanban Card -->
+              <div v-if="task.check_in_at" class="mt-2 flex items-center justify-between text-[10px] text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded">
+                <span class="flex items-center gap-1 font-medium">
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                  In: {{ formatTime(task.check_in_at) }}
+                </span>
+                <span v-if="task.check_out_at" class="text-emerald-700 dark:text-emerald-300 font-medium">
+                  Out: {{ formatTime(task.check_out_at) }}
+                </span>
+                <a
+                  v-if="task.check_in_lat && task.check_in_lng"
+                  :href="'https://www.google.com/maps?q=' + task.check_in_lat + ',' + task.check_in_lng"
+                  target="_blank"
+                  @click.stop
+                  class="text-[9px] underline font-bold hover:text-purple-900 dark:hover:text-purple-200"
+                >
+                  Peta 📍
+                </a>
+              </div>
+
+              <!-- Stage Quick Moves & GPS -->
               <div class="mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  v-if="task.id && !task.check_in_at && task.state !== 'completed' && task.state !== 'cancelled'"
+                  @click.stop="handleGPSCheckIn(task.id)"
+                  :disabled="isLocating"
+                  class="p-1 rounded text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/40"
+                  title="Presensi Check-In GPS"
+                >
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                </button>
+                <button
+                  v-if="task.id && task.check_in_at && !task.check_out_at && task.state !== 'completed' && task.state !== 'cancelled'"
+                  @click.stop="handleGPSCheckOut(task.id)"
+                  :disabled="isLocating"
+                  class="p-1 rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                  title="Presensi Check-Out GPS"
+                >
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                </button>
                 <button
                   v-if="getPrevStage(task.state)"
                   @click.stop="quickUpdateStage(task, getPrevStage(task.state)!)"
@@ -328,17 +407,67 @@
                 </td>
                 <td class="px-4 py-3">
                   <span
-                    v-if="task.signature"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-bold"
+                    v-if="task.bast_validated"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 text-2xs font-bold border border-emerald-200 dark:border-emerald-800"
+                    title="e-BAST Terverifikasi oleh Supervisor"
                   >
-                    ✓ Ditandatangani
+                    ✓ Validasi OK
                   </span>
-                  <span v-else class="text-xs text-gray-400">Pending</span>
+                  <button
+                    v-else-if="task.signature"
+                    @click="validateBastTask(task)"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-2xs font-semibold bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800 transition"
+                    title="Klik untuk Validasi e-BAST"
+                  >
+                    ⏳ Validasi BAST
+                  </button>
+                  <span v-else class="text-2xs text-gray-400">
+                    Belum TTD
+                  </span>
                 </td>
-                <td class="px-4 py-3 text-right">
-                  <div class="flex items-center justify-end gap-1.5">
-                    <button
-                      @click="openModal('edit', task)"
+                  <td class="px-4 py-3 text-right">
+                    <div class="flex items-center justify-end gap-1.5">
+                      <!-- GPS Check-In Button -->
+                      <button
+                        v-if="task.id && !task.check_in_at && task.state !== 'completed' && task.state !== 'cancelled'"
+                        @click="handleGPSCheckIn(task.id)"
+                        :disabled="isLocating"
+                        class="rounded p-1.5 text-purple-600 hover:bg-purple-50 hover:text-purple-700 dark:text-purple-400 dark:hover:bg-purple-950/40"
+                        title="Presensi Check-In GPS"
+                      >
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                      </button>
+                      <!-- GPS Check-Out Button -->
+                      <button
+                        v-if="task.id && task.check_in_at && !task.check_out_at && task.state !== 'completed' && task.state !== 'cancelled'"
+                        @click="handleGPSCheckOut(task.id)"
+                        :disabled="isLocating"
+                        class="rounded p-1.5 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                        title="Presensi Check-Out GPS"
+                      >
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                          <circle cx="8.5" cy="7" r="4" />
+                          <polyline points="17 11 19 13 23 9" />
+                        </svg>
+                      </button>
+                      <!-- Quick Validate BAST Button -->
+                      <button
+                        v-if="task.signature && !task.bast_validated"
+                        @click="validateBastTask(task)"
+                        class="rounded p-1.5 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                        title="Validasi e-BAST Sekarang"
+                      >
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                          <polyline points="9 12 11 14 15 10" />
+                        </svg>
+                      </button>
+                      <button
+                        @click="openModal('edit', task)"
                       class="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-brand-400"
                       title="Detail & Tanda Tangan (e-BAST)"
                     >
@@ -363,6 +492,9 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination Bar -->
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
     </div>
 
@@ -386,7 +518,114 @@
             </button>
           </div>
 
-          <form @submit.prevent="saveTask" class="space-y-4 mt-4">
+          <!-- Tab Navigation for Edit Modal -->
+          <div v-if="modalMode === 'edit'" class="flex items-center gap-4 border-b border-gray-200 dark:border-gray-700 mt-3">
+            <button
+              type="button"
+              @click="activeFieldTab = 'details'"
+              class="pb-2.5 text-xs font-semibold transition border-b-2"
+              :class="activeFieldTab === 'details' ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+            >
+              Work Order & e-BAST
+            </button>
+            <button
+              type="button"
+              @click="activeFieldTab = 'audit'"
+              class="pb-2.5 text-xs font-semibold transition border-b-2 flex items-center gap-1.5"
+              :class="activeFieldTab === 'audit' ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+            >
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              Jejak Audit Aktivitas (ISO 9001)
+            </button>
+          </div>
+
+          <!-- Tab: Audit Logs -->
+          <div v-if="modalMode === 'edit' && activeFieldTab === 'audit'" class="mt-4 max-h-[60vh] overflow-y-auto pr-1">
+            <ActivityLogsTab entity-type="field_service_tasks" :entity-id="formData.id" />
+            <div class="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800 mt-4">
+              <button
+                type="button"
+                @click="isModalOpen = false"
+                class="px-4 py-2 text-xs font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+
+          <form v-show="modalMode === 'create' || activeFieldTab === 'details'" @submit.prevent="saveTask" class="space-y-4 mt-4">
+            <!-- GPS Presensi & Geotagging Panel -->
+            <div v-if="modalMode === 'edit'" class="p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/50 space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <svg class="w-4 h-4 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span class="text-xs font-bold text-gray-800 dark:text-gray-200">Presensi & Geotagging GPS Lapangan</span>
+                </div>
+                <span v-if="isOnline" class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Online
+                </span>
+                <span v-else class="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span> Offline PWA
+                </span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <!-- Check In Box -->
+                <div class="p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                  <div class="flex items-center justify-between">
+                    <span class="text-2xs font-bold text-gray-500 uppercase tracking-wider">Check-In Kedatangan</span>
+                    <button
+                      v-if="!formData.check_in_at"
+                      type="button"
+                      @click="handleGPSCheckIn(formData.id)"
+                      :disabled="isLocating"
+                      class="px-2.5 py-1 rounded bg-purple-600 hover:bg-purple-700 text-white text-2xs font-semibold flex items-center gap-1 shadow-xs"
+                    >
+                      📍 Check-In GPS
+                    </button>
+                    <span v-else class="text-2xs font-bold text-purple-600 dark:text-purple-400">
+                      ✓ Tercatat
+                    </span>
+                  </div>
+                  <div v-if="formData.check_in_at" class="mt-1.5 text-2xs text-gray-600 dark:text-gray-300 space-y-0.5">
+                    <p>Waktu: <span class="font-mono font-semibold">{{ formatDateTime(formData.check_in_at) }}</span></p>
+                    <p v-if="formData.check_in_lat">
+                      Koordinat: <span class="font-mono">{{ formData.check_in_lat.toFixed(5) }}, {{ formData.check_in_lng?.toFixed(5) }}</span>
+                      <a :href="'https://www.google.com/maps?q=' + formData.check_in_lat + ',' + formData.check_in_lng" target="_blank" class="ml-1 text-blue-500 hover:underline font-bold">Buka Maps ↗</a>
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Check Out Box -->
+                <div class="p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                  <div class="flex items-center justify-between">
+                    <span class="text-2xs font-bold text-gray-500 uppercase tracking-wider">Check-Out Kepulangan</span>
+                    <button
+                      v-if="formData.check_in_at && !formData.check_out_at"
+                      type="button"
+                      @click="handleGPSCheckOut(formData.id)"
+                      :disabled="isLocating"
+                      class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-2xs font-semibold flex items-center gap-1 shadow-xs"
+                    >
+                      🏁 Check-Out GPS
+                    </button>
+                    <span v-else-if="formData.check_out_at" class="text-2xs font-bold text-emerald-600 dark:text-emerald-400">
+                      ✓ Selesai
+                    </span>
+                    <span v-else class="text-2xs text-gray-400">
+                      Menunggu Check-In
+                    </span>
+                  </div>
+                  <div v-if="formData.check_out_at" class="mt-1.5 text-2xs text-gray-600 dark:text-gray-300 space-y-0.5">
+                    <p>Waktu: <span class="font-mono font-semibold">{{ formatDateTime(formData.check_out_at) }}</span></p>
+                    <p v-if="formData.check_out_lat">
+                      Koordinat: <span class="font-mono">{{ formData.check_out_lat.toFixed(5) }}, {{ formData.check_out_lng?.toFixed(5) }}</span>
+                      <a :href="'https://www.google.com/maps?q=' + formData.check_out_lat + ',' + formData.check_out_lng" target="_blank" class="ml-1 text-blue-500 hover:underline font-bold">Buka Maps ↗</a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
             <!-- Task Title -->
             <div>
               <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Judul / Uraian Tugas Lapangan *</label>
@@ -551,6 +790,37 @@
                   </span>
                 </div>
               </div>
+
+              <!-- Supervisor BAST Validation Status (Fase 2) -->
+              <div class="mt-2 flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-semibold text-gray-800 dark:text-gray-200">Validasi Supervisor:</span>
+                  <span
+                    v-if="formData.bast_validated"
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                  >
+                    ✓ e-BAST TERVALIDASI
+                  </span>
+                  <span
+                    v-else-if="formData.signature"
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                  >
+                    ⏳ Menunggu Validasi Supervisor
+                  </span>
+                  <span v-else class="text-2xs text-gray-400">
+                    Menunggu TTD Klien
+                  </span>
+                </div>
+                <button
+                  v-if="modalMode === 'edit' && formData.id && formData.signature && !formData.bast_validated"
+                  type="button"
+                  @click="validateBastInModal"
+                  class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 shadow-xs"
+                >
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+                  Validasi e-BAST
+                </button>
+              </div>
             </div>
 
             <!-- Notes -->
@@ -589,20 +859,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Alert from '@/components/ui/Alert.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import ActivityLogsTab from '@/components/services/ActivityLogsTab.vue'
 import { fieldServiceService } from '@/services/services/field-service.service'
 import { employeesService } from '@/services/hr/employees.service'
 import { crmService } from '@/services/sales/crm.service'
 import type { IFieldServiceTaskDto, IChecklistItem } from '@/types/services'
+import type { IPaginationMeta } from '@/types'
 
 // View & Filter States
 const viewMode = ref<'kanban' | 'table'>('kanban')
 const searchQuery = ref('')
 const filterPriority = ref('all')
 const filterTechnician = ref('all')
+const activeFieldTab = ref<'details' | 'audit'>('details')
+const isOnline = ref(navigator.onLine)
+const isLocating = ref(false)
+const offlineQueueCount = ref(0)
+
+// Server-side Pagination & RBAC State
+const myTasksOnly = ref(false)
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 // Data Collections
 const tasks = ref<IFieldServiceTaskDto[]>([])
@@ -632,7 +920,14 @@ const formData = ref<Partial<IFieldServiceTaskDto>>({
   priority: 'low',
   state: 'draft',
   notes: '',
-  signature: ''
+  signature: '',
+  bast_validated: false,
+  check_in_lat: undefined,
+  check_in_lng: undefined,
+  check_in_at: undefined,
+  check_out_lat: undefined,
+  check_out_lng: undefined,
+  check_out_at: undefined
 })
 
 // SOP Checklist items state
@@ -648,13 +943,34 @@ const signatureCanvasRef = ref<HTMLCanvasElement | null>(null)
 const isDrawing = ref(false)
 const isCanvasTouched = ref(false)
 
-// Fetch Data
+// Fetch Data with server-side pagination & filters
 const fetchData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const data = await fieldServiceService.getAll()
-    tasks.value = data || []
+    const params: any = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
+    if (filterPriority.value !== 'all') params.priority = filterPriority.value
+    if (filterTechnician.value !== 'all') params.employee_id = filterTechnician.value
+    if (myTasksOnly.value) params.my_only = true
+
+    const res: any = await fieldServiceService.getAll(params)
+    if (res && res.pagination) {
+      tasks.value = res.data || []
+      pagination.value = res.pagination
+    } else if (Array.isArray(res)) {
+      tasks.value = res
+      pagination.value.total_items = res.length
+      pagination.value.total_pages = 1
+    } else if (res && res.data && Array.isArray(res.data)) {
+      tasks.value = res.data
+      if (res.pagination) pagination.value = res.pagination
+    } else {
+      tasks.value = []
+    }
 
     // Concurrently load employees and partners
     if (employees.value.length === 0) {
@@ -670,22 +986,21 @@ const fetchData = async () => {
   }
 }
 
-// Filtered Tasks
-const filteredTasks = computed(() => {
-  return tasks.value.filter(t => {
-    const q = searchQuery.value.toLowerCase().trim()
-    const clientName = getCustomerName(t.partner_id, t.partner).toLowerCase()
-    const woCode = `#wo-${String(t.id).padStart(4, '0')}`.toLowerCase()
-    const matchSearch = !q || (t.name && t.name.toLowerCase().includes(q)) ||
-      (t.address && t.address.toLowerCase().includes(q)) ||
-      clientName.includes(q) || woCode.includes(q)
+const onPaginationChange = (page: number, limit?: number) => {
+  pagination.value.current_page = page
+  if (limit) {
+    pagination.value.per_page = limit
+  }
+  fetchData()
+}
 
-    const matchPriority = filterPriority.value === 'all' || (t.priority || 'low').toLowerCase() === filterPriority.value.toLowerCase()
-    const matchTech = filterTechnician.value === 'all' || String(t.employee_id) === String(filterTechnician.value)
+const onFilterChange = () => {
+  pagination.value.current_page = 1
+  fetchData()
+}
 
-    return matchSearch && matchPriority && matchTech
-  })
-})
+// Filtered Tasks (Server-side handled)
+const filteredTasks = computed(() => tasks.value)
 
 const getTasksByStage = (stageKey: string) => {
   return filteredTasks.value.filter(t => (t.state || 'draft').toLowerCase() === stageKey.toLowerCase())
@@ -790,6 +1105,21 @@ const getNextStage = (current?: string) => {
 }
 
 const quickUpdateStage = async (task: IFieldServiceTaskDto, nextStage: string) => {
+  // Fase 2 Validation Gate: Block moving to completed if e-BAST is not signed and validated
+  if (nextStage === 'completed') {
+    if (!task.signature) {
+      alert('Work Order belum dapat diselesaikan: Pelanggan belum menandatangani e-BAST.')
+      openModal('edit', task)
+      return
+    }
+    if (!task.bast_validated) {
+      if (confirm('e-BAST belum divalidasi oleh Supervisor. Validasi sekarang?')) {
+        await validateBastTask(task)
+      } else {
+        return
+      }
+    }
+  }
   try {
     await fieldServiceService.update(task.id!, {
       ...task,
@@ -799,6 +1129,30 @@ const quickUpdateStage = async (task: IFieldServiceTaskDto, nextStage: string) =
     await fetchData()
   } catch (err: any) {
     alert('Gagal memindahkan tahap: ' + (err.response?.data?.message || err.message))
+  }
+}
+
+// Fase 2: e-BAST Validation Methods
+const validateBastTask = async (task: IFieldServiceTaskDto) => {
+  if (!task.id) return
+  if (!confirm(`Validasi e-BAST untuk SPK #${task.id} (${task.name})?`)) return
+  try {
+    await fieldServiceService.validateBast(task.id)
+    task.bast_validated = true
+    await fetchData()
+  } catch (err: any) {
+    alert('Gagal memvalidasi e-BAST: ' + (err.response?.data?.message || err.message))
+  }
+}
+
+const validateBastInModal = async () => {
+  if (!formData.value.id) return
+  try {
+    await fieldServiceService.validateBast(formData.value.id)
+    formData.value.bast_validated = true
+    await fetchData()
+  } catch (err: any) {
+    alert('Gagal memvalidasi e-BAST: ' + (err.response?.data?.message || err.message))
   }
 }
 
@@ -910,9 +1264,151 @@ const clearSignature = () => {
   isCanvasTouched.value = true
 }
 
+const formatDateTime = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return dateStr
+  }
+}
+
+const formatTime = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return dateStr
+  }
+}
+
+// GPS Check-In & Check-Out Handlers (Fase 4 Geotagging)
+const handleGPSCheckIn = async (taskId?: number) => {
+  if (!taskId) return
+  if (!navigator.geolocation) {
+    alert('Browser perangkat ini tidak mendukung Geolocation API.')
+    return
+  }
+  isLocating.value = true
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      try {
+        const lat = pos.coords.latitude
+        const lng = pos.coords.longitude
+        await fieldServiceService.checkIn(taskId, { lat, lng })
+        alert(`Check-In GPS Sukses!\nLokasi kehadiran tercatat: (${lat.toFixed(5)}, ${lng.toFixed(5)})`)
+        if (formData.value.id === taskId) {
+          formData.value.check_in_lat = lat
+          formData.value.check_in_lng = lng
+          formData.value.check_in_at = new Date().toISOString()
+        }
+        await fetchData()
+      } catch (err: any) {
+        alert('Gagal mencatat check-in GPS: ' + (err.response?.data?.message || err.message))
+      } finally {
+        isLocating.value = false
+      }
+    },
+    (err) => {
+      isLocating.value = false
+      alert('Gagal mengambil titik GPS teknisi: ' + err.message)
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  )
+}
+
+const handleGPSCheckOut = async (taskId?: number) => {
+  if (!taskId) return
+  if (!navigator.geolocation) {
+    alert('Browser perangkat ini tidak mendukung Geolocation API.')
+    return
+  }
+  isLocating.value = true
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      try {
+        const lat = pos.coords.latitude
+        const lng = pos.coords.longitude
+        await fieldServiceService.checkOut(taskId, { lat, lng })
+        alert(`Check-Out GPS Sukses!\nLokasi penyelesaian tercatat: (${lat.toFixed(5)}, ${lng.toFixed(5)})`)
+        if (formData.value.id === taskId) {
+          formData.value.check_out_lat = lat
+          formData.value.check_out_lng = lng
+          formData.value.check_out_at = new Date().toISOString()
+        }
+        await fetchData()
+      } catch (err: any) {
+        alert('Gagal mencatat check-out GPS: ' + (err.response?.data?.message || err.message))
+      } finally {
+        isLocating.value = false
+      }
+    },
+    (err) => {
+      isLocating.value = false
+      alert('Gagal mengambil titik GPS teknisi: ' + err.message)
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  )
+}
+
+// Offline PWA Sync Queue Logic (Fase 4)
+const getOfflineQueue = (): any[] => {
+  try {
+    const raw = localStorage.getItem('offline_field_tasks')
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+const setOfflineQueue = (queue: any[]) => {
+  localStorage.setItem('offline_field_tasks', JSON.stringify(queue))
+  offlineQueueCount.value = queue.length
+}
+
+const syncOfflineQueue = async () => {
+  const queue = getOfflineQueue()
+  if (queue.length === 0) return
+  let synced = 0
+  for (const item of queue) {
+    try {
+      if (item.action === 'update' && item.id) {
+        await fieldServiceService.update(item.id, item.payload)
+        synced++
+      } else if (item.action === 'create') {
+        await fieldServiceService.create(item.payload)
+        synced++
+      }
+    } catch (e) {
+      console.error('Failed syncing offline item:', item, e)
+    }
+  }
+  setOfflineQueue([])
+  if (synced > 0) {
+    alert(`Sinkronisasi Offline Selesai: ${synced} perubahan data lapangan berhasil diunggah ke server!`)
+    await fetchData()
+  }
+}
+
+const updateOnlineStatus = () => {
+  isOnline.value = navigator.onLine
+  if (isOnline.value) {
+    syncOfflineQueue()
+  }
+}
+
 // Modal Form Actions
 const openModal = (mode: 'create' | 'edit', data?: IFieldServiceTaskDto) => {
   modalMode.value = mode
+  activeFieldTab.value = 'details'
   if (mode === 'edit' && data) {
     formData.value = {
       id: data.id,
@@ -923,7 +1419,14 @@ const openModal = (mode: 'create' | 'edit', data?: IFieldServiceTaskDto) => {
       priority: data.priority || 'medium',
       state: data.state || 'draft',
       notes: data.notes || '',
-      signature: data.signature || ''
+      signature: data.signature || '',
+      bast_validated: data.bast_validated,
+      check_in_lat: data.check_in_lat,
+      check_in_lng: data.check_in_lng,
+      check_in_at: data.check_in_at,
+      check_out_lat: data.check_out_lat,
+      check_out_lng: data.check_out_lng,
+      check_out_at: data.check_out_at
     }
     checklistItems.value = data.checklist && data.checklist.length > 0 ? [...data.checklist] : [
       { title: 'Inspeksi & asesmen kondisi fisik unit di lokasi', done: false },
@@ -940,7 +1443,14 @@ const openModal = (mode: 'create' | 'edit', data?: IFieldServiceTaskDto) => {
       priority: 'medium',
       state: 'draft',
       notes: '',
-      signature: ''
+      signature: '',
+      bast_validated: false,
+      check_in_lat: undefined,
+      check_in_lng: undefined,
+      check_in_at: undefined,
+      check_out_lat: undefined,
+      check_out_lng: undefined,
+      check_out_at: undefined
     }
     checklistItems.value = [
       { title: 'Inspeksi & asesmen kondisi fisik unit di lokasi', done: false },
@@ -968,6 +1478,20 @@ const saveTask = async () => {
       checklist: checklistItems.value
     }
 
+    if (!navigator.onLine) {
+      const queue = getOfflineQueue()
+      queue.push({
+        action: modalMode.value === 'edit' ? 'update' : 'create',
+        id: formData.value.id,
+        payload,
+        timestamp: new Date().toISOString()
+      })
+      setOfflineQueue(queue)
+      alert('Mode Offline (PWA): Data tersimpan di memori lokal. Perubahan akan otomatis disinkronkan ke server begitu Anda kembali online.')
+      isModalOpen.value = false
+      return
+    }
+
     if (modalMode.value === 'edit' && formData.value.id) {
       await fieldServiceService.update(formData.value.id, payload)
     } else {
@@ -993,6 +1517,17 @@ const deleteTask = async (id: number) => {
 }
 
 onMounted(() => {
+  window.addEventListener('online', updateOnlineStatus)
+  window.addEventListener('offline', updateOnlineStatus)
+  offlineQueueCount.value = getOfflineQueue().length
+  if (navigator.onLine && offlineQueueCount.value > 0) {
+    syncOfflineQueue()
+  }
   fetchData()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('online', updateOnlineStatus)
+  window.removeEventListener('offline', updateOnlineStatus)
 })
 </script>

@@ -41,6 +41,16 @@
           </div>
 
           <button
+            @click="runSLAWorker"
+            :disabled="isEvaluatingSLA"
+            class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50 transition"
+            title="Jalankan Pengecekan Mesin Otomasi SLA"
+          >
+            <svg class="w-4 h-4" :class="isEvaluatingSLA ? 'animate-spin' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+            Evaluasi SLA
+          </button>
+
+          <button
             @click="fetchAllData"
             class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
             title="Refresh Data"
@@ -133,6 +143,7 @@
             <div class="relative w-full sm:w-64">
               <input
                 v-model="searchQuery"
+                @input="onFilterChange"
                 type="text"
                 placeholder="Cari no. tiket, judul, klien..."
                 class="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 pl-9 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
@@ -142,9 +153,27 @@
               </span>
             </div>
 
+            <!-- RBAC View Switcher: Semua Tiket vs Tiket Saya -->
+            <button
+              type="button"
+              @click="myTasksOnly = !myTasksOnly; onFilterChange()"
+              class="rounded-lg border px-3 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
+              :class="myTasksOnly
+                ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-600'
+                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'"
+              :title="myTasksOnly ? 'Tampilkan seluruh antrean tiket' : 'Hanya tampilkan tiket tugas saya'"
+            >
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              {{ myTasksOnly ? 'Tiket Saya' : 'Semua Tiket' }}
+            </button>
+
             <!-- Priority Filter -->
             <select
               v-model="filterPriority"
+              @change="onFilterChange"
               class="rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
               <option value="all">Semua Prioritas</option>
@@ -157,6 +186,7 @@
             <!-- Assignee Filter -->
             <select
               v-model="filterAssignee"
+              @change="onFilterChange"
               class="rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
               <option value="all">Semua Teknisi</option>
@@ -271,8 +301,16 @@
                   </div>
                 </div>
 
-                <!-- Quick Stage Move Actions -->
+                <!-- Quick Stage Move & Escalate Actions -->
                 <div class="mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    v-if="ticket.id && (!ticket.escalation_level || ticket.escalation_level <= 1) && ticket.state !== 'solved' && ticket.state !== 'closed'"
+                    @click.stop="escalateTicket(ticket.id)"
+                    class="p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-500 hover:text-rose-700 dark:hover:text-rose-300"
+                    title="Eskalasi ke Tier-2 (Manajer Operasional)"
+                  >
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  </button>
                   <button
                     v-if="getPrevStage(ticket.state)"
                     @click.stop="quickUpdateStage(ticket, getPrevStage(ticket.state)!)"
@@ -349,6 +387,18 @@
                   <td class="px-4 py-3 text-right">
                     <div class="flex items-center justify-end gap-1.5">
                       <button
+                        v-if="ticket.id && (!ticket.escalation_level || ticket.escalation_level <= 1) && ticket.state !== 'solved' && ticket.state !== 'closed'"
+                        @click="escalateTicket(ticket.id)"
+                        class="rounded p-1.5 text-rose-500 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                        title="Eskalasi ke Tier-2 (Manajer Operasional)"
+                      >
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                          <line x1="12" y1="9" x2="12" y2="13" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                      </button>
+                      <button
                         @click="openTicketModal('edit', ticket)"
                         class="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-brand-400"
                         title="Detail & Resolusi Tiket"
@@ -374,6 +424,9 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Pagination Bar -->
+          <PaginationBar :pagination="pagination" @change="onPaginationChange" />
         </div>
       </div>
 
@@ -521,7 +574,53 @@
             </button>
           </div>
 
-          <form @submit.prevent="saveTicket" class="space-y-4 mt-4">
+          <!-- Tab Navigation for Edit Modal -->
+          <div v-if="ticketModalMode === 'edit'" class="flex items-center gap-4 border-b border-gray-200 dark:border-gray-700 mt-3">
+            <button
+              type="button"
+              @click="activeTicketTab = 'details'"
+              class="pb-2.5 text-xs font-semibold transition border-b-2"
+              :class="activeTicketTab === 'details' ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+            >
+              Rincian Tiket & Resolusi
+            </button>
+            <button
+              type="button"
+              @click="activeTicketTab = 'audit'"
+              class="pb-2.5 text-xs font-semibold transition border-b-2 flex items-center gap-1.5"
+              :class="activeTicketTab === 'audit' ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+            >
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              Jejak Audit Aktivitas (ISO 9001)
+            </button>
+          </div>
+
+          <!-- Tab: Audit Logs -->
+          <div v-if="ticketModalMode === 'edit' && activeTicketTab === 'audit'" class="mt-4 max-h-[60vh] overflow-y-auto pr-1">
+            <ActivityLogsTab entity-type="tickets" :entity-id="ticketForm.id" />
+            <div class="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800 mt-4">
+              <button
+                type="button"
+                @click="isTicketModalOpen = false"
+                class="px-4 py-2 text-xs font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+
+          <form v-show="ticketModalMode === 'create' || activeTicketTab === 'details'" @submit.prevent="saveTicket" class="space-y-4 mt-4">
+            <!-- Tier-2 Escalation Alert Banner -->
+            <div v-if="ticketForm.escalation_level && ticketForm.escalation_level > 1" class="p-3 rounded-xl bg-rose-50 border border-rose-200 dark:bg-rose-950/40 dark:border-rose-800 flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2.5 text-rose-800 dark:text-rose-300">
+                <svg class="w-5 h-5 text-rose-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div>
+                  <span class="font-bold">Eskalasi Tier-2 (Manajer Operasional):</span> Tiket telah melampaui SLA dan dieskalasi ke pengawasan manajemen.
+                  <p v-if="ticketForm.escalated_at" class="text-2xs text-rose-700 dark:text-rose-400 mt-0.5">Waktu eskalasi: {{ formatDateTime(ticketForm.escalated_at) }}</p>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-200 text-rose-900 dark:bg-rose-900 dark:text-rose-200 shrink-0">Tier-2 Active</span>
+            </div>
             <!-- Subject / Title -->
             <div>
               <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Judul / Subjek Keluhan *</label>
@@ -622,21 +721,36 @@
             </div>
 
             <!-- Modal Footer -->
-            <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
-              <button
-                type="button"
-                @click="isTicketModalOpen = false"
-                class="px-4 py-2 text-xs font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-              >
-                Batal
-              </button>
-              <button
-                type="submit"
-                :disabled="isSaving"
-                class="px-5 py-2 text-xs font-semibold rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 shadow-sm"
-              >
-                {{ isSaving ? 'Menyimpan...' : 'Simpan Tiket' }}
-              </button>
+            <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-800">
+              <div>
+                <button
+                  v-if="ticketForm.id && (!ticketForm.escalation_level || ticketForm.escalation_level <= 1) && ticketForm.state !== 'solved' && ticketForm.state !== 'closed'"
+                  type="button"
+                  @click="escalateTicket(ticketForm.id)"
+                  :disabled="isEscalating"
+                  class="px-3 py-2 text-xs font-semibold rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800 flex items-center gap-1.5 transition"
+                >
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  {{ isEscalating ? 'Mengeskalasi...' : 'Eskalasi ke Tier-2' }}
+                </button>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  @click="isTicketModalOpen = false"
+                  class="px-4 py-2 text-xs font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  :disabled="isSaving"
+                  class="px-5 py-2 text-xs font-semibold rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 shadow-sm"
+                >
+                  {{ isSaving ? 'Menyimpan...' : 'Simpan Tiket' }}
+                </button>
+              </div>
             </div>
           </form>
         </div>
@@ -776,14 +890,31 @@ import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Alert from '@/components/ui/Alert.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import ActivityLogsTab from '@/components/services/ActivityLogsTab.vue'
 import { helpdeskService } from '@/services/services/helpdesk.service'
 import { employeesService } from '@/services/hr/employees.service'
 import { crmService } from '@/services/sales/crm.service'
 import type { ITicketDto, IHelpdeskSLADto, IHelpdeskCannedResponseDto } from '@/types/services'
+import type { IPaginationMeta } from '@/types'
 
 // Tab & View Control
 const activeTab = ref<'tickets' | 'sla' | 'canned'>('tickets')
 const viewMode = ref<'kanban' | 'table'>('kanban')
+const activeTicketTab = ref<'details' | 'audit'>('details')
+const isEvaluatingSLA = ref(false)
+const isEscalating = ref(false)
+
+// Server-side Pagination & RBAC State
+const myTasksOnly = ref(false)
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 // State Data
 const tickets = ref<ITicketDto[]>([])
@@ -837,17 +968,40 @@ const cannedForm = ref<Partial<IHelpdeskCannedResponseDto>>({
   response: ''
 })
 
-// Fetch All Data
+// Fetch All Data with server-side pagination & filters
 const fetchAllData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const [ticketsData, slaData, cannedData] = await Promise.all([
-      helpdeskService.getAll(),
+    const params: any = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
+    if (filterPriority.value !== 'all') params.priority = filterPriority.value
+    if (filterAssignee.value !== 'all') params.assignee_id = filterAssignee.value
+    if (myTasksOnly.value) params.my_only = true
+
+    const [ticketsRes, slaData, cannedData] = await Promise.all([
+      helpdeskService.getAll(params),
       helpdeskService.getSLAs().catch(() => []),
       helpdeskService.getCannedResponses().catch(() => [])
     ])
-    tickets.value = ticketsData || []
+
+    if (ticketsRes && (ticketsRes as any).pagination) {
+      tickets.value = (ticketsRes as any).data || []
+      pagination.value = (ticketsRes as any).pagination
+    } else if (Array.isArray(ticketsRes)) {
+      tickets.value = ticketsRes
+      pagination.value.total_items = ticketsRes.length
+      pagination.value.total_pages = 1
+    } else if (ticketsRes && (ticketsRes as any).data && Array.isArray((ticketsRes as any).data)) {
+      tickets.value = (ticketsRes as any).data
+      if ((ticketsRes as any).pagination) pagination.value = (ticketsRes as any).pagination
+    } else {
+      tickets.value = []
+    }
+
     slaList.value = slaData || []
     cannedResponses.value = cannedData || []
 
@@ -865,26 +1019,21 @@ const fetchAllData = async () => {
   }
 }
 
-// Filtered Tickets
-const filteredTickets = computed(() => {
-  return tickets.value.filter(t => {
-    // Search query match
-    const q = searchQuery.value.toLowerCase().trim()
-    const customerName = getCustomerName(t.customer_id).toLowerCase()
-    const ticketNo = `#tck-${String(t.id).padStart(4, '0')}`.toLowerCase()
-    const matchSearch = !q || (t.name && t.name.toLowerCase().includes(q)) ||
-      (t.issue_description && t.issue_description.toLowerCase().includes(q)) ||
-      customerName.includes(q) || ticketNo.includes(q)
+const onPaginationChange = (page: number, limit?: number) => {
+  pagination.value.current_page = page
+  if (limit) {
+    pagination.value.per_page = limit
+  }
+  fetchAllData()
+}
 
-    // Priority match
-    const matchPriority = filterPriority.value === 'all' || (t.priority || 'low').toLowerCase() === filterPriority.value.toLowerCase()
+const onFilterChange = () => {
+  pagination.value.current_page = 1
+  fetchAllData()
+}
 
-    // Assignee match
-    const matchAssignee = filterAssignee.value === 'all' || String(t.assignee_id) === String(filterAssignee.value)
-
-    return matchSearch && matchPriority && matchAssignee
-  })
-})
+// Filtered Tickets (Server-side handled)
+const filteredTickets = computed(() => tickets.value)
 
 // Get Tickets by Stage
 const getTicketsByStage = (stageKey: string) => {
@@ -949,8 +1098,68 @@ const isTicketSLABreached = (ticket: ITicketDto) => {
   return hoursPassed > target
 }
 
+const formatDateTime = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return dateStr
+  }
+}
+
+const runSLAWorker = async () => {
+  isEvaluatingSLA.value = true
+  try {
+    const res = await helpdeskService.processSla()
+    alert(res.message || 'Evaluasi SLA berhasil dijalankan!\nTiket mendekati batas telah diberi peringatan dan tiket terlampaui telah dieskalasi ke Tier-2.')
+    await fetchAllData()
+  } catch (err: any) {
+    alert('Gagal mengevaluasi SLA: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isEvaluatingSLA.value = false
+  }
+}
+
+const escalateTicket = async (ticketId?: number) => {
+  if (!ticketId) return
+  const reason = prompt('Masukkan catatan/alasan eskalasi tiket ke Tier-2 (Manajer Operasional):', 'Waktu penanganan melewati standar SLA ISO 9001')
+  if (reason === null) return
+
+  isEscalating.value = true
+  try {
+    await helpdeskService.escalate(ticketId, reason)
+    alert('Tiket berhasil dieskalasi ke Tier-2 (Manajer Operasional)! Status telah dicatat pada Jejak Audit.')
+    if (isTicketModalOpen.value && ticketForm.value.id === ticketId) {
+      ticketForm.value.escalation_level = 2
+      ticketForm.value.sla_status = 'breached'
+      ticketForm.value.priority = 'urgent'
+    }
+    await fetchAllData()
+  } catch (err: any) {
+    alert('Gagal melakukan eskalasi tiket: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isEscalating.value = false
+  }
+}
+
 const getSLAText = (ticket: ITicketDto) => {
-  if (ticket.state === 'solved' || ticket.state === 'closed') return 'SLA Terpenuhi'
+  if (ticket.state === 'solved' || ticket.state === 'closed') return 'Lolos SLA'
+  if (ticket.escalation_level && ticket.escalation_level > 1) {
+    return '🚨 Breached (Tier-2)'
+  }
+  if (ticket.sla_status === 'breached') {
+    return '🚨 SLA Breached'
+  }
+  if (ticket.sla_status === 'warning') {
+    return '⚠️ Mendekati SLA (<20%)'
+  }
   if (!ticket.created_at) return 'SLA Aktif'
   const created = new Date(ticket.created_at).getTime()
   const now = new Date().getTime()
@@ -958,13 +1167,19 @@ const getSLAText = (ticket: ITicketDto) => {
   const target = getTargetHoursForPriority(ticket.priority)
   const remaining = target - hoursPassed
 
-  if (remaining < 0) return `Breach (${Math.abs(Math.round(remaining))}j lalu)`
-  if (remaining <= 2) return `Sisa ${remaining.toFixed(1)}j`
+  if (remaining < 0) return `🚨 Breach (${Math.abs(Math.round(remaining))}j lalu)`
+  if (remaining <= 2) return `⚠️ Sisa ${remaining.toFixed(1)}j`
   return `${Math.round(remaining)}j tersisa`
 }
 
 const getSLAStatusColor = (ticket: ITicketDto) => {
-  if (ticket.state === 'solved' || ticket.state === 'closed') return 'text-emerald-600 dark:text-emerald-400'
+  if (ticket.state === 'solved' || ticket.state === 'closed') return 'text-emerald-600 dark:text-emerald-400 font-semibold'
+  if ((ticket.escalation_level && ticket.escalation_level > 1) || ticket.sla_status === 'breached') {
+    return 'text-rose-600 font-bold dark:text-rose-400'
+  }
+  if (ticket.sla_status === 'warning') {
+    return 'text-amber-600 font-semibold dark:text-amber-400'
+  }
   if (!ticket.created_at) return 'text-gray-500'
   const created = new Date(ticket.created_at).getTime()
   const now = new Date().getTime()
@@ -972,7 +1187,7 @@ const getSLAStatusColor = (ticket: ITicketDto) => {
   const target = getTargetHoursForPriority(ticket.priority)
   const remaining = target - hoursPassed
 
-  if (remaining < 0) return 'text-red-600 font-bold dark:text-red-400'
+  if (remaining < 0) return 'text-rose-600 font-bold dark:text-rose-400'
   if (remaining <= 2) return 'text-amber-600 font-semibold dark:text-amber-400'
   return 'text-emerald-600 dark:text-emerald-400'
 }
@@ -1037,6 +1252,7 @@ const quickUpdateStage = async (ticket: ITicketDto, nextStage: string) => {
 // --- Ticket CRUD Modal Actions ---
 const openTicketModal = (mode: 'create' | 'edit', data?: ITicketDto) => {
   ticketModalMode.value = mode
+  activeTicketTab.value = 'details'
   if (mode === 'edit' && data) {
     ticketForm.value = { ...data }
   } else {

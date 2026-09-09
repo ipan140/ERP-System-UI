@@ -1,14 +1,53 @@
-export interface IDummy5Dto {
-  barcode?: string;
-  created_at?: string;
-  default_code?: string;
+export interface IProductDto {
   id?: number;
-  productTemplate?: any;
   product_template_id?: number;
-  stock_qty?: number;
+  ProductTemplate?: IProductTemplateDto;
+  productTemplate?: IProductTemplateDto;
+  default_code?: string;
+  barcode?: string;
   volume?: number;
   weight?: number;
+  stock_qty?: number;
+  reserved_qty?: number;
+  created_at?: string;
 }
+
+export interface IInventorySummaryDto {
+  total_sku: number;
+  total_valuation: number;
+  low_stock_count: number;
+  out_of_stock_count: number;
+  total_reserved: number;
+  total_on_hand: number;
+}
+
+export interface IStockAdjustmentPayload {
+  product_id: number;
+  location_id?: number;
+  theoretical_qty: number;
+  counted_qty: number;
+  reason: string;
+}
+
+export interface IInternalTransferPayload {
+  product_id: number;
+  source_warehouse_id?: number;
+  dest_warehouse_id: number;
+  quantity: number;
+  notes?: string;
+}
+
+export interface IInventoryFilterParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category_id?: number;
+  warehouse_id?: number;
+  stock_status?: string;
+  all?: string;
+}
+
+export type IDummy5Dto = IProductDto;
 
 export interface IProductAttributeDto {
   id?: number;
