@@ -10,34 +10,72 @@ export interface IProductSupplierInfoDto {
 }
 
 export interface IPurchaseOrderDto {
-  amount_tax?: number;
-  amount_total?: number;
-  amount_untaxed?: number;
-  created_at?: string;
-  date_order?: string;
   id?: number;
   name?: string;
-  partner?: any;
   partner_id?: number;
-  requisition?: any;
+  partner?: any;
   requisition_id?: number;
-  state?: string;
+  requisition?: any;
+  state?: 'draft' | 'sent' | 'to_approve' | 'purchase' | 'done' | 'cancel' | string;
+  amount_untaxed?: number;
+  amount_tax?: number;
+  amount_total?: number;
+  date_order?: string;
+  notes?: string;
+  company_id?: number;
+  approved_by?: number;
+  approved_at?: string;
+  created_at?: string;
+  order_lines?: IPurchaseOrderLineDto[];
 }
 
 export interface IPurchaseOrderLineDto {
   id?: number;
-  name?: string;
-  order?: any;
   order_id?: number;
-  price_subtotal?: number;
-  price_unit?: number;
-  product?: any;
+  order?: any;
   product_id?: number;
-  qty_invoiced?: number;
-  qty_received?: number;
+  product?: any;
+  name?: string;
   quantity?: number;
-  taxes?: any;
+  qty_received?: number;
+  qty_invoiced?: number;
+  price_unit?: number;
   taxes_id?: number;
+  taxes?: any;
+  price_subtotal?: number;
+}
+
+export interface IPurchaseSummaryDto {
+  total_spent_monthly: number;
+  to_approve_count: number;
+  to_receive_count: number;
+  active_vendor_count: number;
+  total_po_count: number;
+}
+
+export interface ICreatePOLinePayload {
+  product_id: number;
+  name?: string;
+  quantity: number;
+  price_unit: number;
+}
+
+export interface ICreatePOPayload {
+  partner_id: number;
+  date_order?: string;
+  notes?: string;
+  lines: ICreatePOLinePayload[];
+}
+
+export interface IReceiveGoodsItemPayload {
+  line_id: number;
+  qty_received: number;
+}
+
+export interface IReceiveGoodsPayload {
+  warehouse_id?: number;
+  items: IReceiveGoodsItemPayload[];
+  notes?: string;
 }
 
 export interface IPurchaseRequisitionDto {

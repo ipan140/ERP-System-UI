@@ -1,3 +1,11 @@
+export interface IMrpSummaryDto {
+  total_mo_count: number;
+  mo_in_progress: number;
+  mo_done_count: number;
+  total_workcenters: number;
+  total_boms: number;
+}
+
 export interface IMrpBomDto {
   code?: string;
   id?: number;
@@ -5,6 +13,7 @@ export interface IMrpBomDto {
   product_id?: number;
   quantity?: number;
   type?: string;
+  bom_lines?: IMrpBomLineDto[];
 }
 
 export interface IMrpBomByproductDto {
@@ -26,16 +35,22 @@ export interface IMrpBomLineDto {
 }
 
 export interface IMrpProductionDto {
-  bom?: any;
-  bom_id?: number;
-  created_at?: string;
-  date_planned?: string;
   id?: number;
   name?: string;
-  product?: any;
   product_id?: number;
+  product?: any;
   product_qty?: number;
-  state?: string;
+  bom_id?: number;
+  bom?: IMrpBomDto;
+  warehouse_id?: number;
+  warehouse?: any;
+  state?: 'draft' | 'confirmed' | 'progress' | 'to_close' | 'done' | 'cancel' | string;
+  date_planned?: string;
+  date_start?: string;
+  date_finished?: string;
+  notes?: string;
+  company_id?: number;
+  created_at?: string;
 }
 
 export interface IMrpWorkcenterDto {
@@ -58,3 +73,26 @@ export interface IMrpWorkorderDto {
   workcenter?: any;
   workcenter_id?: number;
 }
+
+export interface ICreateMORequest {
+  product_id: number;
+  bom_id?: number;
+  product_qty: number;
+  warehouse_id?: number;
+  date_planned?: string;
+  notes?: string;
+}
+
+export interface ICreateBomLineInput {
+  product_id: number;
+  quantity: number;
+}
+
+export interface ICreateBomRequest {
+  product_id: number;
+  code?: string;
+  type?: string;
+  quantity: number;
+  lines: ICreateBomLineInput[];
+}
+
