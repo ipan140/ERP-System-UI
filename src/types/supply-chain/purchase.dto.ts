@@ -70,6 +70,8 @@ export interface ICreatePOPayload {
 export interface IReceiveGoodsItemPayload {
   line_id: number;
   qty_received: number;
+  lot_name?: string;
+  expiration_date?: string;
 }
 
 export interface IReceiveGoodsPayload {

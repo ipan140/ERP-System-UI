@@ -351,14 +351,14 @@
 
                   <!-- Date -->
                   <td class="px-4 py-3.5 text-gray-500 dark:text-gray-400">
-                    {{ formatDate(mo.date_planned || mo.created_at) }}
+                    {{ formatDate(mo.date_planned || mo.created_at || '') }}
                   </td>
 
                   <!-- Status Badge -->
                   <td class="px-4 py-3.5 text-center">
-                    <span :class="['inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-2xs font-semibold', getStatusBadgeClass(mo.state)]">
+                    <span :class="['inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-2xs font-semibold', getStatusBadgeClass(mo.state || '')]">
                       <span v-if="mo.state === 'progress'" class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
-                      {{ getStatusLabel(mo.state) }}
+                      {{ getStatusLabel(mo.state || '') }}
                     </span>
                   </td>
 
@@ -741,7 +741,7 @@
                     • {{ comp.product?.ProductTemplate?.name || comp.product?.default_code || `Bahan #${comp.product_id}` }}
                   </span>
                   <span class="font-bold text-amber-700 dark:text-amber-400">
-                    {{ calculateRequiredCompQty(comp.quantity, selectedBOMForMO.quantity, moForm.product_qty) }} Unit
+                    {{ calculateRequiredCompQty(comp.quantity || 1, selectedBOMForMO.quantity || 1, moForm.product_qty || 1) }} Unit
                   </span>
                 </div>
               </div>
@@ -1055,8 +1055,8 @@
               <span class="text-2xs font-semibold text-gray-400 uppercase tracking-wider">Rincian Dokumen Produksi</span>
               <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 {{ activeMO.name }}
-                <span :class="['text-2xs px-2.5 py-0.5 rounded-full font-bold', getStatusBadgeClass(activeMO.state)]">
-                  {{ getStatusLabel(activeMO.state) }}
+                <span :class="['text-2xs px-2.5 py-0.5 rounded-full font-bold', getStatusBadgeClass(activeMO.state || '')]">
+                  {{ getStatusLabel(activeMO.state || '') }}
                 </span>
               </h3>
             </div>
@@ -1113,7 +1113,7 @@
                         {{ line.quantity }} / batch
                       </td>
                       <td class="px-3 py-2 text-right font-bold text-amber-600 dark:text-amber-400">
-                        {{ calculateRequiredCompQty(line.quantity, activeMO.bom?.quantity, activeMO.product_qty) }} Unit
+                        {{ calculateRequiredCompQty(line.quantity || 1, activeMO.bom?.quantity || 1, activeMO.product_qty || 1) }} Unit
                       </td>
                     </tr>
                   </tbody>
@@ -1148,3 +1148,386 @@
     </div>
   </AdminLayout>
 </template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+
+import { manufacturingService } from '@/services/supply-chain/manufacturing.service'
+import type {
+  IMrpSummaryDto,
+  IMrpProductionDto,
+  IMrpBomDto,
+  IMrpWorkcenterDto,
+  ICreateMORequest,
+  ICreateBomRequest
+} from '@/types/supply-chain/manufacturing.dto'
+
+// Tabs
+const activeTab = ref<'orders' | 'boms' | 'workcenters'>('orders')
+
+// Global State
+const isLoading = ref(false)
+const isSubmitting = ref(false)
+const summaryData = ref<IMrpSummaryDto>({
+  total_mo_count: 0,
+  mo_in_progress: 0,
+  mo_done_count: 0,
+  total_boms: 0,
+  total_workcenters: 0
+})
+
+// Data
+const productions = ref<IMrpProductionDto[]>([])
+const boms = ref<IMrpBomDto[]>([])
+const workcenters = ref<IMrpWorkcenterDto[]>([])
+const products = ref<any[]>([])
+const warehouses = ref<any[]>([])
+
+// Pagination & Filters
+const moPagination = ref({ page: 1, limit: 10, total_pages: 0, total_items: 0 })
+const bomPagination = ref({ page: 1, limit: 10, total_pages: 0, total_items: 0 })
+const moFilters = ref({ search: '', state: 'all' })
+const bomSearch = ref('')
+
+// Modals
+const isCreateMOModalOpen = ref(false)
+const isCreateBomModalOpen = ref(false)
+const isCreateWorkcenterModalOpen = ref(false)
+const isDetailMOModalOpen = ref(false)
+
+const activeMO = ref<IMrpProductionDto | null>(null)
+
+// Forms
+const moForm = ref<ICreateMORequest>({
+  product_id: 0,
+  product_qty: 1,
+  bom_id: undefined,
+  warehouse_id: undefined,
+  date_planned: '',
+  notes: ''
+})
+
+const bomForm = ref<ICreateBomRequest>({
+  product_id: 0,
+  quantity: 1,
+  code: '',
+  type: 'normal',
+  lines: [{ product_id: 0, quantity: 1 }]
+})
+
+const wcForm = ref<Partial<IMrpWorkcenterDto>>({
+  name: '',
+  code: '',
+  capacity: 1,
+  time_efficiency: 100,
+  costs_hour: 0
+})
+
+// Computed
+const filteredBOMsForProduct = computed(() => {
+  return boms.value.filter(b => b.product_id === moForm.value.product_id)
+})
+const selectedBOMForMO = computed(() => {
+  return boms.value.find(b => b.id === moForm.value.bom_id)
+})
+
+// Fetch Data
+const fetchSummary = async () => {
+  try {
+    summaryData.value = await manufacturingService.getSummary()
+  } catch (err) {
+    console.error('Failed to fetch summary', err)
+  }
+}
+
+const fetchMOs = async (page = 1) => {
+  isLoading.value = true
+  try {
+    const res = await manufacturingService.getAllProductions({
+      page,
+      limit: moPagination.value.limit,
+      search: moFilters.value.search || undefined,
+      state: moFilters.value.state !== 'all' ? moFilters.value.state : undefined
+    })
+    productions.value = res.data
+    if (res.pagination) {
+      moPagination.value = res.pagination
+    }
+  } catch (err) {
+    console.error('Failed to fetch MOs', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const fetchBOMs = async (page = 1) => {
+  isLoading.value = true
+  try {
+    const res = await manufacturingService.getAllBoms({
+      page,
+      limit: bomPagination.value.limit,
+      search: bomSearch.value || undefined
+    })
+    boms.value = res.data
+    if (res.pagination) {
+      bomPagination.value = res.pagination
+    }
+  } catch (err) {
+    console.error('Failed to fetch BOMs', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const fetchWorkcenters = async () => {
+  isLoading.value = true
+  try {
+    workcenters.value = await manufacturingService.getWorkcenters()
+  } catch (err) {
+    console.error('Failed to fetch Workcenters', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const fetchProductsAndWarehouses = async () => {
+  try {
+    products.value = await manufacturingService.getProducts()
+    warehouses.value = await manufacturingService.getWarehouses()
+  } catch (err) {
+    console.error('Failed to fetch master data', err)
+  }
+}
+
+// Actions
+const refreshCurrentTab = () => {
+  fetchSummary()
+  if (activeTab.value === 'orders') fetchMOs(moPagination.value.page)
+  else if (activeTab.value === 'boms') fetchBOMs(bomPagination.value.page)
+  else if (activeTab.value === 'workcenters') fetchWorkcenters()
+}
+
+const exportCsv = () => {
+  alert('Fitur Export CSV segera hadir!')
+}
+
+let moSearchTimeout: any
+const debounceFetchMOs = () => {
+  clearTimeout(moSearchTimeout)
+  moSearchTimeout = setTimeout(() => fetchMOs(1), 500)
+}
+
+const resetMOFilters = () => {
+  moFilters.value = { search: '', state: 'all' }
+  fetchMOs(1)
+}
+
+let bomSearchTimeout: any
+const debounceFetchBOMs = () => {
+  clearTimeout(bomSearchTimeout)
+  bomSearchTimeout = setTimeout(() => fetchBOMs(1), 500)
+}
+
+const handleMOLimitChange = (limit: number) => {
+  moPagination.value.limit = limit
+  fetchMOs(1)
+}
+
+const handleMOProductSelect = () => {
+  if (filteredBOMsForProduct.value.length > 0) {
+    moForm.value.bom_id = filteredBOMsForProduct.value[0].id
+  } else {
+    moForm.value.bom_id = undefined
+  }
+}
+
+const calculateRequiredCompQty = (bomLineQty: number, bomQty: number, moQty: number) => {
+  return parseFloat(((bomLineQty / bomQty) * moQty).toFixed(2))
+}
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+const formatRupiah = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount)
+}
+
+const getStatusBadgeClass = (state: string) => {
+  switch (state) {
+    case 'draft': return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+    case 'confirmed': return 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+    case 'progress': return 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+    case 'done': return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+    case 'cancel': return 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+    default: return 'bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+  }
+}
+
+const getStatusLabel = (state: string) => {
+  switch (state) {
+    case 'draft': return 'Draft'
+    case 'confirmed': return 'Confirmed'
+    case 'progress': return 'In Progress'
+    case 'done': return 'Done'
+    case 'cancel': return 'Cancelled'
+    default: return state
+  }
+}
+
+// MO Actions
+const openDetailMOModal = (mo: IMrpProductionDto) => {
+  activeMO.value = mo
+  isDetailMOModalOpen.value = true
+}
+
+const confirmMO = async (mo: IMrpProductionDto) => {
+  if (!confirm('Konfirmasi MO ini?')) return
+  try {
+    await manufacturingService.confirmProduction(mo.id!)
+    refreshCurrentTab()
+  } catch (err: any) { alert(err.response?.data?.message || err.message) }
+}
+
+const startMO = async (mo: IMrpProductionDto) => {
+  if (!confirm('Mulai produksi MO ini?')) return
+  try {
+    await manufacturingService.startProduction(mo.id!)
+    refreshCurrentTab()
+  } catch (err: any) { alert(err.response?.data?.message || err.message) }
+}
+
+const finishMO = async (mo: IMrpProductionDto) => {
+  if (!confirm('Selesaikan produksi MO ini?')) return
+  try {
+    await manufacturingService.finishProduction(mo.id!)
+    refreshCurrentTab()
+  } catch (err: any) { alert(err.response?.data?.message || err.message) }
+}
+
+const cancelMO = async (mo: IMrpProductionDto) => {
+  if (!confirm('Batalkan MO ini?')) return
+  try {
+    await manufacturingService.cancelProduction(mo.id!)
+    refreshCurrentTab()
+  } catch (err: any) { alert(err.response?.data?.message || err.message) }
+}
+
+const deleteMO = async (mo: IMrpProductionDto) => {
+  if (!confirm('Hapus MO ini?')) return
+  try {
+    await manufacturingService.deleteProduction(mo.id!)
+    refreshCurrentTab()
+  } catch (err: any) { alert(err.response?.data?.message || err.message) }
+}
+
+const deleteBom = async (bom: IMrpBomDto) => {
+  if (!confirm('Hapus BOM ini?')) return
+  try {
+    await manufacturingService.deleteBom(bom.id!)
+    refreshCurrentTab()
+  } catch (err: any) { alert(err.response?.data?.message || err.message) }
+}
+
+const deleteWorkcenter = async (wc: IMrpWorkcenterDto) => {
+  if (!confirm('Hapus Pusat Kerja ini?')) return
+  try {
+    await manufacturingService.deleteWorkcenter(wc.id!)
+    refreshCurrentTab()
+  } catch (err: any) { alert(err.response?.data?.message || err.message) }
+}
+
+// Modals
+const openCreateMOModal = () => {
+  moForm.value = {
+    product_id: 0,
+    product_qty: 1,
+    bom_id: undefined,
+    warehouse_id: undefined,
+    date_planned: new Date().toISOString().split('T')[0],
+    notes: ''
+  }
+  isCreateMOModalOpen.value = true
+}
+
+const openCreateBomModal = () => {
+  bomForm.value = {
+    product_id: 0,
+    quantity: 1,
+    code: '',
+    type: 'normal',
+    lines: [{ product_id: 0, quantity: 1 }]
+  }
+  isCreateBomModalOpen.value = true
+}
+
+const openCreateWorkcenterModal = () => {
+  wcForm.value = {
+    name: '',
+    code: '',
+    capacity: 1,
+    time_efficiency: 100,
+    costs_hour: 0
+  }
+  isCreateWorkcenterModalOpen.value = true
+}
+
+// Forms Submission
+const submitCreateMO = async () => {
+  isSubmitting.value = true
+  try {
+    await manufacturingService.createProduction(moForm.value)
+    isCreateMOModalOpen.value = false
+    refreshCurrentTab()
+  } catch (err: any) {
+    alert(err.response?.data?.message || err.message)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const addBomLine = () => {
+  bomForm.value.lines.push({ product_id: 0, quantity: 1 })
+}
+
+const removeBomLine = (idx: number) => {
+  if (bomForm.value.lines.length > 1) {
+    bomForm.value.lines.splice(idx, 1)
+  }
+}
+
+const submitCreateBOM = async () => {
+  isSubmitting.value = true
+  try {
+    await manufacturingService.createBom(bomForm.value)
+    isCreateBomModalOpen.value = false
+    refreshCurrentTab()
+  } catch (err: any) {
+    alert(err.response?.data?.message || err.message)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const submitCreateWorkcenter = async () => {
+  isSubmitting.value = true
+  try {
+    await manufacturingService.createWorkcenter(wcForm.value)
+    isCreateWorkcenterModalOpen.value = false
+    refreshCurrentTab()
+  } catch (err: any) {
+    alert(err.response?.data?.message || err.message)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+onMounted(() => {
+  fetchProductsAndWarehouses()
+  refreshCurrentTab()
+})
+</script>

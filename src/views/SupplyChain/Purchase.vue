@@ -348,6 +348,18 @@
                       </svg>
                     </button>
 
+                    <!-- Landed Cost (for done state) -->
+                    <button
+                      v-if="po.state === 'done'"
+                      @click="openLandedCostModal(po)"
+                      class="p-1.5 rounded-lg text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors"
+                      title="Tambahkan Biaya Ongkir / Cukai (Landed Costs)"
+                    >
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                      </svg>
+                    </button>
+
                     <!-- Detail Modal -->
                     <button
                       @click="openDetailModal(po)"
