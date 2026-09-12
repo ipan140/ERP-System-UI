@@ -231,6 +231,43 @@
         </button>
       </div>
 
+        <!-- NEW FASE 9: MPS & Forecasting -->
+        <button
+          @click="activeTab = 'mps'"
+          :class="[
+            'pb-3 pt-2 px-4 text-xs font-bold transition-all border-b-2 flex items-center gap-2',
+            activeTab === 'mps'
+              ? 'border-brand-500 text-brand-600 dark:text-brand-400'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+          ]"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
+          MPS & Forecasting
+        </button>
+
+        <!-- NEW FASE 9: OEE & Workorders -->
+        <button
+          @click="activeTab = 'oee'"
+          :class="[
+            'pb-3 pt-2 px-4 text-xs font-bold transition-all border-b-2 flex items-center gap-2',
+            activeTab === 'oee'
+              ? 'border-brand-500 text-brand-600 dark:text-brand-400'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+          ]"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+          OEE & Tracking Pabrik
+        </button>
+</div>
+
       <!-- TAB 1: MANUFACTURING ORDERS (MO) -->
       <div v-if="activeTab === 'orders'" class="space-y-4">
         <!-- Filter Toolbar -->
@@ -640,10 +677,73 @@
         </div>
       </div>
 
+      <!-- TAB 4: MPS & FORECASTING -->
+      <div v-else-if="activeTab === 'mps'" class="space-y-4">
+        <div class="flex items-center justify-between">
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Master Production Schedule (MPS) memprediksi produksi bulan depan dan menghasilkan MO otomatis.
+          </p>
+          <button
+            @click="openCreateMPSModal"
+            class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition"
+          >
+            + Buat Jadwal Produksi (MPS)
+          </button>
+        </div>
+        <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/80 shadow-xs">
+          <table class="min-w-full text-left text-xs">
+            <thead class="border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+              <tr>
+                <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Bulan & Tahun</th>
+                <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Produk Target</th>
+                <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-center">Forecast Qty</th>
+                <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-center">Actual (MO Created)</th>
+                <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-300 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+              <tr v-if="mpsList.length === 0">
+                <td colspan="5" class="py-10 text-center text-gray-400">Belum ada MPS terjadwal.</td>
+              </tr>
+              <tr v-for="mps in mpsList" :key="mps.id">
+                <td class="px-4 py-3.5 font-bold">{{ formatDate(mps.date_planned) }}</td>
+                <td class="px-4 py-3.5">{{ mps.product?.ProductTemplate?.name || mps.product_id }}</td>
+                <td class="px-4 py-3.5 text-center font-bold text-gray-800 dark:text-white">{{ mps.forecast_qty }} Unit</td>
+                <td class="px-4 py-3.5 text-center font-bold text-emerald-600">{{ mps.actual_qty }} Unit</td>
+                <td class="px-4 py-3.5 text-right">
+                  <button @click="generateMOFromMPS(mps.id)" class="px-2 py-1 bg-brand-100 text-brand-700 rounded hover:bg-brand-200 text-2xs font-semibold">Generate MO</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 5: OEE DASHBOARD -->
+      <div v-else-if="activeTab === 'oee'" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div v-for="wc in workcenters" :key="wc.id" class="rounded-xl border border-gray-200 bg-white p-5 shadow-xs">
+                <h4 class="font-bold mb-2">{{ wc.name }} - OEE</h4>
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-3xl font-extrabold text-emerald-500">{{ wc.oeeSummary?.oee?.toFixed(1) || '0.0' }}%</span>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs"><span>Ketersediaan (A)</span> <strong>{{ wc.oeeSummary?.availability?.toFixed(1) || '0.0' }}%</strong></div>
+                    <div class="flex justify-between text-xs"><span>Kinerja (P)</span> <strong>{{ wc.oeeSummary?.performance?.toFixed(1) || '0.0' }}%</strong></div>
+                    <div class="flex justify-between text-xs"><span>Kualitas (Q)</span> <strong>{{ wc.oeeSummary?.quality?.toFixed(1) || '0.0' }}%</strong></div>
+                </div>
+                <div class="mt-4 flex gap-2">
+                    <button @click="openLogOEEModal(wc.id, 'productive')" class="flex-1 py-1.5 bg-emerald-100 text-emerald-700 rounded text-xs font-semibold">Uptime</button>
+                    <button @click="openLogOEEModal(wc.id, 'availability')" class="flex-1 py-1.5 bg-red-100 text-red-700 rounded text-xs font-semibold">Downtime</button>
+                </div>
+            </div>
+        </div>
+      </div>
+
       <!-- MODAL 1: CREATE MO (SURAT PERINTAH KERJA PRODUKSI) -->
       <div
         v-if="isCreateMOModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto backdrop-blur-xs p-4"
       >
         <div class="w-full max-w-2xl rounded-2xl bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -794,7 +894,7 @@
       <!-- MODAL 2: CREATE BOM (FORMULA RESEP) -->
       <div
         v-if="isCreateBomModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto backdrop-blur-xs p-4"
       >
         <div class="w-full max-w-3xl rounded-2xl bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -954,7 +1054,7 @@
       <!-- MODAL 3: CREATE WORK CENTER -->
       <div
         v-if="isCreateWorkcenterModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto backdrop-blur-xs p-4"
       >
         <div class="w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -1047,7 +1147,7 @@
       <!-- MODAL 4: DETAIL SPK / MO -->
       <div
         v-if="isDetailMOModalOpen && activeMO"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+        class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto backdrop-blur-xs p-4"
       >
         <div class="w-full max-w-2xl rounded-2xl bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
@@ -1144,9 +1244,76 @@
           </div>
         </div>
       </div>
+  
+      <!-- MODAL: CREATE MPS -->
+      <div v-if="isCreateMPSModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div class="w-full max-w-lg rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col">
+          <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
+            <div class="flex items-center gap-3">
+              <span class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+              </span>
+              <div>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">Buat Jadwal MPS Baru</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Master Production Schedule untuk perencanaan perakitan produk jadi</p>
+              </div>
+            </div>
+            <button @click="isCreateMPSModalOpen = false" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 transition">✕</button>
+          </div>
+          <div class="p-6 space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Produk Target <span class="text-rose-500">*</span></label>
+              <div class="relative">
+                <select v-model="mpsForm.product_id" class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                  <option v-for="p in products" :key="p.id" :value="p.id">{{ p.ProductTemplate?.name || p.default_code }}</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Tanggal Rencana Mulai <span class="text-rose-500">*</span></label>
+              <input type="date" v-model="mpsForm.date_planned" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Kuantitas Forecast (Unit) <span class="text-rose-500">*</span></label>
+              <input type="number" v-model="mpsForm.forecast_qty" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+            </div>
+            <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 -mx-6 -mb-6 mt-6 flex items-center justify-end gap-3 bg-gray-50/50 dark:bg-gray-800/50">
+              <button @click="isCreateMPSModalOpen = false" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition">Batal</button>
+              <button @click="submitCreateMPS" class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2 text-xs font-medium text-white shadow-sm hover:bg-emerald-700 transition">Simpan Jadwal MPS</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    </div>
-  </AdminLayout>
+      <!-- MODAL: LOG OEE -->
+      <div v-if="isLogOEEModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div class="w-full max-w-lg rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col">
+          <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
+            <div class="flex items-center gap-3">
+              <span class="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              </span>
+              <div>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">Log Efisiensi Waktu Mesin (OEE)</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Pencatatan aktual durasi kerja untuk kalkulasi Overall Equipment Effectiveness</p>
+              </div>
+            </div>
+            <button @click="isLogOEEModalOpen = false" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 transition">✕</button>
+          </div>
+          <div class="p-6 space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Durasi Pengerjaan Aktual (Menit) <span class="text-rose-500">*</span></label>
+              <input type="number" v-model="oeeForm.duration" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" placeholder="cth. 120" />
+            </div>
+            <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 -mx-6 -mb-6 mt-6 flex items-center justify-end gap-3 bg-gray-50/50 dark:bg-gray-800/50">
+              <button @click="isLogOEEModalOpen = false" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition">Batal</button>
+              <button @click="submitLogOEE" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-xs font-medium text-white shadow-sm hover:bg-blue-700 transition">Kirim Log OEE</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      </AdminLayout>
 </template>
 
 <script setup lang="ts">
@@ -1156,6 +1323,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import PaginationBar from '@/components/common/PaginationBar.vue'
 
 import { manufacturingService } from '@/services/supply-chain/manufacturing.service'
+import { http as api } from '@/services/http'
 import type {
   IMrpSummaryDto,
   IMrpProductionDto,
@@ -1166,7 +1334,23 @@ import type {
 } from '@/types/supply-chain/manufacturing.dto'
 
 // Tabs
-const activeTab = ref<'orders' | 'boms' | 'workcenters'>('orders')
+const activeTab = ref<'orders' | 'boms' | 'workcenters' | 'mps' | 'oee'>('orders')
+
+// MPS & OEE States
+const mpsList = ref<any[]>([])
+const isCreateMPSModalOpen = ref(false)
+const mpsForm = ref({
+  product_id: 1,
+  warehouse_id: 1,
+  date_planned: new Date().toISOString().slice(0, 10),
+  forecast_qty: 100
+})
+const isLogOEEModalOpen = ref(false)
+const oeeForm = ref({
+  workcenter_id: 1,
+  loss_type: 'productive',
+  duration: 60
+})
 
 // Global State
 const isLoading = ref(false)
@@ -1285,11 +1469,73 @@ const fetchBOMs = async (page = 1) => {
 const fetchWorkcenters = async () => {
   isLoading.value = true
   try {
-    workcenters.value = await manufacturingService.getWorkcenters()
+    const list = await manufacturingService.getWorkcenters()
+    for (const wc of list) {
+      try {
+        const res = await api.get(`/supply_chain/manufacturing/workcenter/${wc.id}/oee`)
+        wc.oeeSummary = res.data.data
+      } catch (e) {}
+    }
+    workcenters.value = list
   } catch (err) {
     console.error('Failed to fetch Workcenters', err)
   } finally {
     isLoading.value = false
+  }
+}
+
+const fetchMPS = async () => {
+  try {
+    const { data } = await api.get('/supply_chain/manufacturing/mps')
+    mpsList.value = data.data || []
+  } catch (err) {}
+}
+
+const openCreateMPSModal = () => {
+  mpsForm.value = {
+    product_id: products.value[0]?.id || 1,
+    warehouse_id: warehouses.value[0]?.id || 1,
+    date_planned: new Date().toISOString().slice(0, 10),
+    forecast_qty: 100
+  }
+  isCreateMPSModalOpen.value = true
+}
+
+const submitCreateMPS = async () => {
+  try {
+    await api.post('/supply_chain/manufacturing/mps', mpsForm.value)
+    alert('Jadwal MPS berhasil disimpan!')
+    isCreateMPSModalOpen.value = false
+    await fetchMPS()
+  } catch (err: any) {
+    alert('Gagal membuat MPS: ' + (err.response?.data?.message || err.message))
+  }
+}
+
+const generateMOFromMPS = async (id: number | string) => {
+  try {
+    await api.post(`/supply_chain/manufacturing/mps/${id}/generate-mo`)
+    alert('Surat Perintah Kerja (MO) berhasil di-generate dari jadwal MPS!')
+    await fetchMPS()
+    await fetchMOs(moPagination.value.page)
+  } catch (err: any) {
+    alert('Gagal generate MO dari MPS: ' + (err.response?.data?.message || err.message))
+  }
+}
+
+const openLogOEEModal = (wcId: any, lossType: string = 'productive') => {
+  oeeForm.value = { workcenter_id: wcId, loss_type: lossType, duration: 60 }
+  isLogOEEModalOpen.value = true
+}
+
+const submitLogOEE = async () => {
+  try {
+    await api.post('/supply_chain/manufacturing/workorder/log-time', oeeForm.value)
+    alert('Log efisiensi waktu OEE berhasil dikirim!')
+    isLogOEEModalOpen.value = false
+    await fetchWorkcenters()
+  } catch (err: any) {
+    alert('Gagal mengirim log OEE: ' + (err.response?.data?.message || err.message))
   }
 }
 
@@ -1308,6 +1554,8 @@ const refreshCurrentTab = () => {
   if (activeTab.value === 'orders') fetchMOs(moPagination.value.page)
   else if (activeTab.value === 'boms') fetchBOMs(bomPagination.value.page)
   else if (activeTab.value === 'workcenters') fetchWorkcenters()
+  else if (activeTab.value === 'mps') fetchMPS()
+  else if (activeTab.value === 'oee') fetchWorkcenters()
 }
 
 const exportCsv = () => {
@@ -1529,5 +1777,6 @@ const submitCreateWorkcenter = async () => {
 onMounted(() => {
   fetchProductsAndWarehouses()
   refreshCurrentTab()
+  fetchMPS()
 })
 </script>

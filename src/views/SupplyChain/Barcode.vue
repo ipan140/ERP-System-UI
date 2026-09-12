@@ -328,28 +328,38 @@
 
     <!-- Modal Cetak Label Barcode -->
     <Teleport to="body">
-      <div v-if="isPrintModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-        <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 my-8">
-          <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700">
-            <div>
-              <h3 class="text-base font-bold text-gray-900 dark:text-white">Cetak Label Barcode Standar</h3>
-              <p class="text-2xs text-gray-400">Thermal / Sticker Label Printer (50x30mm / 40x25mm)</p>
+      <div v-if="isPrintModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto">
+        <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl dark:bg-gray-800 border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col my-8">
+          <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
+            <div class="flex items-center gap-3">
+              <span class="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /><path d="M6 9V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v5" /></svg>
+              </span>
+              <div>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">Cetak Label Barcode Standar</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Thermal / Sticker Label Printer (50x30mm / 40x25mm)</p>
+              </div>
             </div>
-            <button @click="isPrintModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+            <button @click="isPrintModalOpen = false" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 transition">✕</button>
           </div>
 
-          <div class="mt-4 space-y-4 text-xs">
+          <div class="p-6 space-y-4 text-xs">
             <div>
-              <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Pilih Produk Sasaran</label>
-              <select
-                v-model="printTargetSku"
-                @change="onProductSelectForPrint"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-teal-500 focus:outline-none"
-              >
-                <option v-for="p in products" :key="p.id" :value="p.default_code">
-                  {{ p.name }} ({{ p.default_code }})
-                </option>
-              </select>
+              <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Pilih Produk Sasaran</label>
+              <div class="relative">
+                <select
+                  v-model="printTargetSku"
+                  @change="onProductSelectForPrint"
+                  class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-800 focus:border-teal-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                >
+                  <option v-for="p in products" :key="p.id" :value="p.default_code">
+                    {{ getProductName(p) }} ({{ p.default_code }})
+                  </option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                </div>
+              </div>
             </div>
 
             <!-- Preview Label Card (Printable) -->
@@ -465,6 +475,14 @@ const executeScan = async () => {
   }
 }
 
+const getProductName = (p: IProductDto): string => {
+  return p.ProductTemplate?.name || (p as any).name || p.default_code || 'Produk'
+}
+
+const getProductPrice = (p: IProductDto): number => {
+  return p.ProductTemplate?.list_price || (p as any).list_price || 0
+}
+
 const quickScan = (code: string) => {
   barcodeQuery.value = code
   executeScan()
@@ -476,7 +494,7 @@ const fetchData = async () => {
     const [sumRes, nomRes, prodRes] = await Promise.all([
       barcodeService.getSummary(),
       barcodeService.getAll(),
-      inventoryService.getAllProducts({ limit: 100 }),
+      inventoryService.getAll({ limit: 100 }),
     ])
 
     summary.value = sumRes
@@ -492,15 +510,15 @@ const fetchData = async () => {
 const openPrintModal = (data: any = null) => {
   if (data && data.default_code) {
     printTargetSku.value = data.default_code
-    previewLabelName.value = data.name
+    previewLabelName.value = data.ProductTemplate?.name || data.name || data.default_code
     previewBarcodeCode.value = data.barcode || data.default_code
-    previewPrice.value = data.list_price || 0
+    previewPrice.value = data.ProductTemplate?.list_price || data.list_price || 0
   } else if (products.value.length > 0) {
     const p = products.value[0]
     printTargetSku.value = p.default_code || ''
-    previewLabelName.value = p.name
+    previewLabelName.value = getProductName(p)
     previewBarcodeCode.value = p.barcode || p.default_code || '8990000001'
-    previewPrice.value = p.list_price || 0
+    previewPrice.value = getProductPrice(p)
   }
   isPrintModalOpen.value = true
 }
@@ -508,9 +526,9 @@ const openPrintModal = (data: any = null) => {
 const onProductSelectForPrint = () => {
   const p = products.value.find((item) => item.default_code === printTargetSku.value)
   if (p) {
-    previewLabelName.value = p.name
+    previewLabelName.value = getProductName(p)
     previewBarcodeCode.value = p.barcode || p.default_code || '8990000001'
-    previewPrice.value = p.list_price || 0
+    previewPrice.value = getProductPrice(p)
   }
 }
 

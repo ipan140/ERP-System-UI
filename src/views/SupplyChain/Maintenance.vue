@@ -556,19 +556,23 @@
       </div>
 
       <!-- MODAL 1: Buat Tiket Perawatan Baru -->
+      <Teleport to="body">
       <div
         v-if="isCreateRequestModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-xs overflow-y-auto"
+        class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
       >
         <div class="relative w-full max-w-lg rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl border border-gray-100 dark:border-gray-700 space-y-5">
           <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
             <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <span class="p-1.5 rounded-lg bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400">
+              <span class="p-2 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
               </span>
-              Buat Tiket Perawatan Mesin
+              <div>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">Buat Tiket Perawatan Mesin</h3>
+                <p class="text-2xs text-gray-400">Jadwalkan perbaikan korektif atau servis preventif berkala</p>
+              </div>
             </h3>
-            <button @click="isCreateRequestModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg">&times;</button>
+            <button @click="isCreateRequestModalOpen = false" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 transition">✕</button>
           </div>
 
           <form @submit.prevent="submitCreateRequest" class="space-y-4">
@@ -581,7 +585,7 @@
                 v-model="createRequestForm.name"
                 required
                 placeholder="Contoh: Penggantian Bearing Dinamo Utama"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs text-gray-800 dark:text-gray-200 focus:border-orange-500 focus:outline-none"
+                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-800 focus:border-orange-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               />
             </div>
 
@@ -589,16 +593,19 @@
               <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Pilih Mesin / Peralatan <span class="text-rose-500">*</span>
               </label>
-              <select
-                v-model="createRequestForm.equipment_id"
-                required
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs text-gray-800 dark:text-gray-200 focus:border-orange-500 focus:outline-none"
-              >
+              <div class="relative">
+                <select
+                  v-model="createRequestForm.equipment_id"
+                  required
+                  class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-800 focus:border-orange-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                >
                 <option value="0" disabled>-- Pilih Mesin --</option>
                 <option v-for="eq in equipments" :key="eq.id" :value="eq.id">
                   {{ eq.name }} ({{ eq.category || 'Aset Pabrik' }})
                 </option>
-              </select>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div>
+              </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
@@ -606,29 +613,35 @@
                 <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                   Jenis Servis <span class="text-rose-500">*</span>
                 </label>
-                <select
-                  v-model="createRequestForm.type"
-                  required
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs text-gray-800 dark:text-gray-200 focus:border-orange-500 focus:outline-none"
-                >
+                <div class="relative">
+                  <select
+                    v-model="createRequestForm.type"
+                    required
+                    class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-800 focus:border-orange-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  >
                   <option value="corrective">Korektif (Perbaikan Rusak)</option>
                   <option value="preventive">Preventif (Servis Rutin)</option>
-                </select>
+                  </select>
+                  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div>
+                </div>
               </div>
 
               <div>
                 <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                   Prioritas
                 </label>
-                <select
-                  v-model="createRequestForm.priority"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs text-gray-800 dark:text-gray-200 focus:border-orange-500 focus:outline-none"
-                >
+                <div class="relative">
+                  <select
+                    v-model="createRequestForm.priority"
+                    class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-800 focus:border-orange-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  >
                   <option value="low">Rendah (Low)</option>
                   <option value="normal">Normal</option>
                   <option value="high">Tinggi (High)</option>
                   <option value="urgent">Mendesak (Urgent)</option>
-                </select>
+                  </select>
+                  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div>
+                </div>
               </div>
             </div>
 
@@ -674,14 +687,14 @@
               <button
                 type="button"
                 @click="isCreateRequestModalOpen = false"
-                class="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                class="rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 :disabled="isSubmitting"
-                class="px-4 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm transition disabled:opacity-50"
+                class="rounded-lg bg-orange-600 hover:bg-orange-700 px-5 py-2 text-xs font-semibold text-white shadow-sm transition disabled:opacity-50"
               >
                 {{ isSubmitting ? 'Menyimpan...' : 'Simpan Tiket' }}
               </button>
@@ -689,11 +702,13 @@
           </form>
         </div>
       </div>
+    </Teleport>
 
       <!-- MODAL 2: Update Status Alur Kerja Servis -->
+      <Teleport to="body">
       <div
         v-if="isStateModalOpen && activeRequest"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-xs overflow-y-auto"
+        class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm backdrop-blur-xs overflow-y-auto"
       >
         <div class="relative w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl border border-gray-100 dark:border-gray-700 space-y-5">
           <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
@@ -703,7 +718,7 @@
               </span>
               Perbarui Alur Kerja Servis
             </h3>
-            <button @click="isStateModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg">&times;</button>
+            <button @click="isStateModalOpen = false" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 transition">✕</button>
           </div>
 
           <div class="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl space-y-1.5 text-xs">
@@ -806,11 +821,13 @@
           </form>
         </div>
       </div>
+    </Teleport>
 
       <!-- MODAL 3: Tambah Mesin / Peralatan Pabrik Baru -->
+      <Teleport to="body">
       <div
         v-if="isCreateEquipmentModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-xs overflow-y-auto"
+        class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm backdrop-blur-xs overflow-y-auto"
       >
         <div class="relative w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl border border-gray-100 dark:border-gray-700 space-y-5">
           <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
@@ -820,7 +837,7 @@
               </span>
               Tambah Mesin / Peralatan Pabrik
             </h3>
-            <button @click="isCreateEquipmentModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg">&times;</button>
+            <button @click="isCreateEquipmentModalOpen = false" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 transition">✕</button>
           </div>
 
           <form @submit.prevent="submitCreateEquipment" class="space-y-4">
@@ -908,11 +925,13 @@
           </form>
         </div>
       </div>
+    </Teleport>
 
       <!-- MODAL 4: Detail Tiket Servis -->
+      <Teleport to="body">
       <div
         v-if="isDetailModalOpen && activeRequest"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-xs overflow-y-auto"
+        class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm backdrop-blur-xs overflow-y-auto"
       >
         <div class="relative w-full max-w-lg rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl border border-gray-100 dark:border-gray-700 space-y-4">
           <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
@@ -922,7 +941,7 @@
               </span>
               Rincian Tiket Perawatan #{{ activeRequest.id }}
             </h3>
-            <button @click="isDetailModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg">&times;</button>
+            <button @click="isDetailModalOpen = false" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 transition">✕</button>
           </div>
 
           <div class="space-y-3 text-xs">
@@ -987,6 +1006,7 @@
           </div>
         </div>
       </div>
+    </Teleport>
 
     </div>
   </AdminLayout>
@@ -1167,12 +1187,12 @@ const switchTab = (tab: 'requests' | 'equipments') => {
 
 const refreshCurrentTab = () => {
   fetchSummary()
-  if (activeTab === 'requests') fetchRequests()
+  if (activeTab.value === 'requests') fetchRequests()
   else fetchEquipments()
 }
 
 const handleSearch = () => {
-  if (activeTab === 'requests') {
+  if (activeTab.value === 'requests') {
     paginationRequests.value.current_page = 1
     fetchRequests()
   } else {

@@ -36,6 +36,20 @@
             Refresh
           </button>
 
+          <!-- Tender Pengadaan Button -->
+          <button
+            @click="openTenderModal()"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-purple-300 dark:border-purple-700/60 bg-purple-50 dark:bg-purple-950/40 px-3.5 py-2 text-xs font-semibold text-purple-800 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition"
+          >
+            <svg class="w-4 h-4 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            Tender Pengadaan (RFQ Comparison)
+          </button>
+
           <!-- Export CSV -->
           <button
             @click="exportCsv"
@@ -779,6 +793,126 @@
         </div>
       </div>
     </Teleport>
+  
+    <!-- MODAL TENDER & RFQ COMPARISON -->
+    <Teleport to="body">
+      <div v-if="isTenderModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div class="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800">
+          <div class="flex items-center justify-between border-b pb-3 dark:border-gray-700">
+            <div>
+              <h3 class="text-base font-bold text-gray-900 dark:text-white">Tender Pengadaan Multi-Vendor & Matriks Komparasi RFQ</h3>
+              <p class="text-2xs text-gray-400">Undang beberapa vendor sekaligus, bandingkan penawaran harga, dan tentukan pemenang lelang</p>
+            </div>
+            <button @click="isTenderModalOpen = false" class="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+
+          <!-- Active Tenders List -->
+          <div class="mt-4">
+            <h4 class="text-xs font-bold text-gray-800 dark:text-white mb-2">Daftar Tender Aktif</h4>
+            <div class="overflow-x-auto max-h-48 border rounded mb-4">
+              <table class="min-w-full text-xs text-left">
+                <thead class="bg-gray-50 dark:bg-gray-900 border-b">
+                  <tr>
+                    <th class="p-2">Kode</th>
+                    <th class="p-2">Judul Tender</th>
+                    <th class="p-2">Batas Waktu</th>
+                    <th class="p-2">Status</th>
+                    <th class="p-2 text-right">Penawaran Masuk</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="tenders.length === 0"><td colspan="5" class="p-4 text-center text-gray-400">Belum ada tender pengadaan aktif.</td></tr>
+                  <tr v-for="t in tenders" :key="t.id" @click="selectTender(t)" class="border-b cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                    <td class="p-2 font-mono font-bold text-purple-600">{{ t.name }}</td>
+                    <td class="p-2 font-semibold">{{ t.title }}</td>
+                    <td class="p-2">{{ formatDate(t.date_end) }}</td>
+                    <td class="p-2"><span class="px-2 py-0.5 rounded text-2xs font-bold bg-purple-100 text-purple-700 uppercase">{{ t.state }}</span></td>
+                    <td class="p-2 text-right font-bold">{{ t.orders?.length || 0 }} Vendor</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- RFQ Comparison Matrix if selected -->
+            <div v-if="selectedTender" class="p-3 bg-purple-500/5 border border-purple-500/20 rounded-xl mb-4">
+              <div class="flex justify-between items-center mb-2">
+                <h5 class="text-xs font-bold text-purple-900 dark:text-purple-300">
+                  Matriks Perbandingan Penawaran: {{ selectedTender.title }} ({{ selectedTender.name }})
+                </h5>
+                <span class="text-2xs text-gray-400">Pilih penawaran terbaik untuk dijadikan PO Sah</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-xs text-left bg-white dark:bg-gray-800 border rounded">
+                  <thead class="bg-gray-100 dark:bg-gray-900">
+                    <tr>
+                      <th class="p-2">Vendor Peserta</th>
+                      <th class="p-2">No. RFQ</th>
+                      <th class="p-2 text-right">Total Penawaran</th>
+                      <th class="p-2 text-center">Status</th>
+                      <th class="p-2 text-right">Pemenang Tender</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="ord in selectedTender.orders" :key="ord.id" class="border-b">
+                      <td class="p-2 font-semibold">{{ ord.partner?.name || 'Vendor' }}</td>
+                      <td class="p-2 font-mono text-2xs">{{ ord.name }}</td>
+                      <td class="p-2 text-right font-bold text-emerald-600">{{ formatRupiah(ord.amount_total) }}</td>
+                      <td class="p-2 text-center"><span class="text-2xs uppercase">{{ ord.state }}</span></td>
+                      <td class="p-2 text-right">
+                        <button
+                          v-if="selectedTender.state !== 'done' && ord.state !== 'cancel'"
+                          @click="chooseWinner(selectedTender.id, ord.id)"
+                          class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-2xs font-bold"
+                        >
+                          🏆 Pilih Sebagai Pemenang
+                        </button>
+                        <span v-else-if="selectedTender.winner_po_id === ord.id" class="text-2xs font-bold text-emerald-600">🏆 Pemenang Sah</span>
+                        <span v-else class="text-2xs text-gray-400">-</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Form Create Tender -->
+            <form @submit.prevent="submitCreateTender" class="border-t pt-3 space-y-3 dark:border-gray-700">
+              <h4 class="text-xs font-bold text-gray-800 dark:text-white">+ Buka Undangan Tender Baru</h4>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="col-span-2">
+                  <label class="block text-2xs mb-1">Judul Pengadaan / Tender</label>
+                  <input type="text" v-model="tenderForm.title" required class="w-full border rounded p-1.5 text-xs dark:bg-gray-900" placeholder="cth. Pengadaan 500 Karung Bahan Baku Plastik PP" />
+                </div>
+                <div>
+                  <label class="block text-2xs mb-1">Pilih Produk</label>
+                  <select v-model="tenderForm.product_id" required class="w-full border rounded p-1.5 text-xs dark:bg-gray-900">
+                    <option v-for="p in productList" :key="p.id" :value="p.id">{{ p.ProductTemplate?.name || p.default_code }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-2xs mb-1">Jumlah Kebutuhan</label>
+                  <input type="number" v-model.number="tenderForm.quantity" required class="w-full border rounded p-1.5 text-xs dark:bg-gray-900" />
+                </div>
+                <div>
+                  <label class="block text-2xs mb-1">Estimasi Harga Satuan (HPS)</label>
+                  <input type="number" v-model.number="tenderForm.est_price" required class="w-full border rounded p-1.5 text-xs dark:bg-gray-900" />
+                </div>
+                <div>
+                  <label class="block text-2xs mb-1">Batas Waktu Penawaran</label>
+                  <input type="date" v-model="tenderForm.date_end" required class="w-full border rounded p-1.5 text-xs dark:bg-gray-900" />
+                </div>
+              </div>
+              <div class="flex justify-end gap-2 pt-2">
+                <button type="submit" :disabled="isSubmittingTender" class="px-4 py-1.5 bg-purple-600 text-white rounded text-xs font-bold">
+                  {{ isSubmittingTender ? 'Menerbitkan...' : 'Kirim Undangan Tender ke Seluruh Vendor' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+  
   </AdminLayout>
 </template>
 
@@ -1152,6 +1286,83 @@ const deleteOrder = async (po: IPurchaseOrderDto) => {
 }
 
 // Export CSV
+
+import { http as api } from '@/services/http'
+import { useRouter } from 'vue-router'
+
+// Tender States
+const isTenderModalOpen = ref(false)
+const isSubmittingTender = ref(false)
+const router = useRouter()
+const tenders = ref<any[]>([])
+const selectedTender = ref<any>(null)
+
+const openLandedCostModal = (po?: any) => {
+  router.push("/supply_chain/inventory")
+}
+const tenderForm = ref<{
+  title: string
+  date_end: string
+  product_id: number
+  quantity: number
+  est_price: number
+  vendor_ids: number[]
+}>({
+  title: '',
+  date_end: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+  product_id: 1,
+  quantity: 100,
+  est_price: 50000,
+  vendor_ids: []
+})
+
+const openTenderModal = async () => {
+  isTenderModalOpen.value = true
+  await fetchTenders()
+}
+
+const fetchTenders = async () => {
+  try {
+    const { data } = await api.get('/supply_chain/purchase/purchaserequisition')
+    tenders.value = data.data || []
+    if (tenders.value.length > 0 && !selectedTender.value) {
+      selectedTender.value = tenders.value[0]
+    }
+  } catch (e) {}
+}
+
+const selectTender = (t: any) => {
+  selectedTender.value = t
+}
+
+const submitCreateTender = async () => {
+  isSubmittingTender.value = true
+  try {
+    const vIds = vendorList.value.map(v => v.id).slice(0, 3)
+    tenderForm.value.vendor_ids = vIds.length ? vIds : [1]
+    await api.post('/supply_chain/purchase/tender', tenderForm.value)
+    alert('Tender pengadaan berhasil diterbitkan dan RFQ dikirim ke multi-vendor!')
+    await fetchTenders()
+    refreshAll()
+  } catch (err: any) {
+    alert('Gagal membuat tender: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isSubmittingTender.value = false
+  }
+}
+
+const chooseWinner = async (tenderId: any, poId: any) => {
+  if (!confirm('Sahkan vendor ini sebagai pemenang tender lelang?')) return
+  try {
+    await api.post(`/supply_chain/purchase/tender/${tenderId}/select-winner`, { purchase_order_id: poId })
+    alert('Selamat! Vendor terpilih resmi sebagai pemenang tender dan PO disahkan.')
+    await fetchTenders()
+    refreshAll()
+  } catch (err: any) {
+    alert('Gagal memilih pemenang: ' + (err.response?.data?.message || err.message))
+  }
+}
+
 const exportCsv = () => {
   if (purchaseOrders.value.length === 0) return
   const headers = ['No PO', 'Tanggal', 'Vendor', 'Jumlah Item', 'Subtotal', 'PPN', 'Total', 'Status']

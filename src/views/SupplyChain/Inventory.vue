@@ -64,6 +64,28 @@
             Transfer Antar-Gudang
           </button>
 
+          <!-- Landed Cost Button -->
+          <button
+            @click="openLandedCostModal()"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-300 dark:border-indigo-700/60 bg-indigo-50 dark:bg-indigo-950/40 px-3.5 py-2 text-xs font-semibold text-indigo-800 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition"
+          >
+            <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M2 17l10 5 10-5M2 12l10 5 10-5M2 7l10 5 10-5" />
+            </svg>
+            Landed Cost (HPP Impor)
+          </button>
+
+          <!-- Reordering Rules Button -->
+          <button
+            @click="openOrderpointModal()"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition"
+          >
+            <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Aturan Reordering (Min-Max)
+          </button>
+
           <!-- Export CSV -->
           <button
             @click="exportCsv"
@@ -876,6 +898,133 @@
         </div>
       </div>
     </Teleport>
+  
+    <!-- MODAL LANDED COST -->
+    <Teleport to="body">
+      <div v-if="isLandedCostModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div class="w-full max-w-lg rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col">
+          <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
+            <div class="flex items-center gap-3">
+              <span class="p-2.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+              </span>
+              <div>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">Alokasi Biaya Landed Cost</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Alokasikan biaya logistik, asuransi, dan bea cukai ke HPP persediaan</p>
+              </div>
+            </div>
+            <button @click="isLandedCostModalOpen = false" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 transition">✕</button>
+          </div>
+          <form @submit.prevent="submitLandedCost" class="p-6 space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">ID Surat Jalan / Penerimaan (Stock Picking ID) <span class="text-rose-500">*</span></label>
+              <input type="number" v-model.number="landedCostForm.picking_id" required class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" placeholder="cth. 1" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Metode Alokasi Biaya <span class="text-rose-500">*</span></label>
+              <div class="relative">
+                <select v-model="landedCostForm.split_method" class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                  <option value="equal">Rata (Equal Split)</option>
+                  <option value="by_quantity">Berdasarkan Kuantitas Barang (Per Unit)</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg></div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Total Biaya Tambahan Riil (Rp) <span class="text-rose-500">*</span></label>
+              <input type="number" v-model.number="landedCostForm.amount" required class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" placeholder="cth. 2500000" />
+            </div>
+            <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 -mx-6 -mb-6 mt-6 flex items-center justify-end gap-3 bg-gray-50/50 dark:bg-gray-800/50">
+              <button type="button" @click="isLandedCostModalOpen = false" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition">Batal</button>
+              <button type="submit" :disabled="isSubmittingLC" class="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-5 py-2 text-xs font-medium text-white shadow-sm hover:bg-purple-700 transition disabled:opacity-50">
+                <svg v-if="isSubmittingLC" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-opacity="0.25" /><path d="M12 2a10 10 0 0 1 10 10" /></svg>
+                {{ isSubmittingLC ? 'Memproses...' : 'Terapkan ke HPP Stok' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- MODAL REORDERING RULES (ORDERPOINTS) -->
+    <Teleport to="body">
+      <div v-if="isOrderpointModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div class="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800">
+          <div class="flex items-center justify-between border-b pb-3 dark:border-gray-700">
+            <div>
+              <h3 class="text-base font-bold text-gray-900 dark:text-white">Aturan Min-Max Reordering Stok</h3>
+              <p class="text-2xs text-gray-400">Otomatisasi pengadaan saat stok menyentuh batas minimum</p>
+            </div>
+            <button @click="isOrderpointModalOpen = false" class="text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+
+          <div class="mt-4 flex gap-2 justify-between items-center">
+            <button @click="triggerAutoReplenish" :disabled="isTriggeringReplenish" class="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded flex items-center gap-1">
+              ⚡ Jalankan Auto-Replenish Sekarang
+            </button>
+            <span class="text-2xs text-gray-500">Total Aturan: {{ orderpoints.length }}</span>
+          </div>
+
+          <div class="mt-3 overflow-x-auto max-h-56 border rounded">
+            <table class="min-w-full text-xs text-left">
+              <thead class="bg-gray-50 dark:bg-gray-900 border-b">
+                <tr>
+                  <th class="p-2">Kode</th>
+                  <th class="p-2">Produk</th>
+                  <th class="p-2">Gudang</th>
+                  <th class="p-2">Min Qty</th>
+                  <th class="p-2">Max Qty</th>
+                  <th class="p-2 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="orderpoints.length === 0"><td colspan="6" class="p-4 text-center text-gray-400">Belum ada aturan reordering.</td></tr>
+                <tr v-for="op in orderpoints" :key="op.id" class="border-b">
+                  <td class="p-2 font-mono font-bold text-emerald-600">{{ op.name }}</td>
+                  <td class="p-2">{{ op.product?.ProductTemplate?.name || op.product?.default_code || ('SKU #' + op.product_id) }}</td>
+                  <td class="p-2">{{ op.warehouse?.name || 'Gudang' }}</td>
+                  <td class="p-2 font-bold text-amber-600">{{ op.product_min_qty }}</td>
+                  <td class="p-2 font-bold text-emerald-600">{{ op.product_max_qty }}</td>
+                  <td class="p-2 text-right">
+                    <button @click="deleteOrderpoint(op.id)" class="text-rose-500 hover:underline">Hapus</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <form @submit.prevent="submitCreateOrderpoint" class="mt-4 border-t pt-3 space-y-3 dark:border-gray-700">
+            <h4 class="text-xs font-bold text-gray-800 dark:text-white">+ Tambah Aturan Min-Max Baru</h4>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-2xs mb-1">Pilih Produk</label>
+                <select v-model="orderpointForm.product_id" required class="w-full border rounded p-1.5 text-xs dark:bg-gray-900">
+                  <option v-for="p in products" :key="p.id" :value="p.id">{{ getProductName(p) }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-2xs mb-1">Pilih Gudang</label>
+                <select v-model="orderpointForm.warehouse_id" required class="w-full border rounded p-1.5 text-xs dark:bg-gray-900">
+                  <option v-for="wh in warehouseList" :key="wh.id" :value="wh.id">{{ wh.name }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-2xs mb-1">Batas Minimum (Min Qty)</label>
+                <input type="number" v-model.number="orderpointForm.product_min_qty" required class="w-full border rounded p-1.5 text-xs dark:bg-gray-900" />
+              </div>
+              <div>
+                <label class="block text-2xs mb-1">Target Maksimum (Max Qty)</label>
+                <input type="number" v-model.number="orderpointForm.product_max_qty" required class="w-full border rounded p-1.5 text-xs dark:bg-gray-900" />
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="submit" class="px-4 py-1.5 bg-emerald-600 text-white rounded text-xs font-bold">Simpan Aturan</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+  
   </AdminLayout>
 </template>
 
@@ -1251,6 +1400,84 @@ const openDetailModal = (item: IProductDto) => {
 }
 
 // Export CSV
+
+import { http as api } from '@/services/http'
+
+// Landed Cost & Reordering States
+const isLandedCostModalOpen = ref(false)
+const isSubmittingLC = ref(false)
+const landedCostForm = ref({ picking_id: 1, split_method: 'equal', amount: 0 })
+
+const isOrderpointModalOpen = ref(false)
+const orderpoints = ref<any[]>([])
+const isTriggeringReplenish = ref(false)
+const orderpointForm = ref({ product_id: 1, warehouse_id: 1, product_min_qty: 10, product_max_qty: 100, qty_multiple: 1 })
+
+const openLandedCostModal = () => {
+  landedCostForm.value = { picking_id: 1, split_method: 'equal', amount: 500000 }
+  isLandedCostModalOpen.value = true
+}
+
+const submitLandedCost = async () => {
+  isSubmittingLC.value = true
+  try {
+    await api.post('/supply_chain/inventory/landedcost', {
+      picking_id: landedCostForm.value.picking_id,
+      costs: [{ product_id: products.value[0]?.id || 1, split_method: landedCostForm.value.split_method, amount: landedCostForm.value.amount }]
+    })
+    alert('Landed Cost berhasil diaplikasikan ke Valuasi Stok!')
+    isLandedCostModalOpen.value = false
+    refreshAll()
+  } catch (err: any) {
+    alert('Gagal memproses Landed Cost: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isSubmittingLC.value = false
+  }
+}
+
+const openOrderpointModal = async () => {
+  isOrderpointModalOpen.value = true
+  await fetchOrderpoints()
+}
+
+const fetchOrderpoints = async () => {
+  try {
+    const { data } = await api.get('/supply_chain/inventory/orderpoint')
+    orderpoints.value = data.data || []
+  } catch (e) {}
+}
+
+const submitCreateOrderpoint = async () => {
+  try {
+    await api.post('/supply_chain/inventory/orderpoint', orderpointForm.value)
+    alert('Aturan Reordering berhasil disimpan!')
+    await fetchOrderpoints()
+  } catch (err: any) {
+    alert('Gagal menyimpan aturan: ' + (err.response?.data?.message || err.message))
+  }
+}
+
+const deleteOrderpoint = async (id: number | string) => {
+  if (!confirm('Hapus aturan ini?')) return
+  try {
+    await api.delete(`/supply_chain/inventory/orderpoint/${id}`)
+    await fetchOrderpoints()
+  } catch (e) {}
+}
+
+const triggerAutoReplenish = async () => {
+  isTriggeringReplenish.value = true
+  try {
+    const { data } = await api.post('/supply_chain/inventory/orderpoint/run')
+    const res = data.data
+    alert(`Auto-replenishment selesai! Diperiksa: ${res.orderpoints_checked} aturan, Draf PO Dibuat: ${res.draft_pos_created} (${res.generated_po_names.join(', ') || 'Semua stok aman'})`)
+  } catch (e) {
+    alert('Gagal menjalankan auto-replenish')
+  } finally {
+    isTriggeringReplenish.value = false
+  }
+}
+
 const exportCsv = () => {
   if (products.value.length === 0) return
   const headers = ['ID', 'SKU', 'Barcode', 'Nama Produk', 'Kategori', 'Satuan', 'On Hand', 'Reserved', 'Free to Use', 'HPP', 'Total Valuasi']

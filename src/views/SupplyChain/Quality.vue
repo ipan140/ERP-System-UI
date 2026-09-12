@@ -501,9 +501,10 @@
       </div>
 
       <!-- MODAL 1: Buat Pemeriksaan QC Baru -->
+      <Teleport to="body">
       <div
         v-if="isCreateCheckModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-xs overflow-y-auto"
+        class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm backdrop-blur-xs overflow-y-auto"
       >
         <div class="relative w-full max-w-lg rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl border border-gray-100 dark:border-gray-700 space-y-5">
           <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
@@ -513,7 +514,7 @@
               </span>
               Buat Lembar Pemeriksaan QC
             </h3>
-            <button @click="isCreateCheckModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg">&times;</button>
+            <button @click="isCreateCheckModalOpen = false" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 transition">✕</button>
           </div>
 
           <form @submit.prevent="submitCreateCheck" class="space-y-4">
@@ -606,11 +607,13 @@
           </form>
         </div>
       </div>
+    </Teleport>
 
       <!-- MODAL 2: Proses / Evaluasi QC (Pass/Fail) -->
+      <Teleport to="body">
       <div
         v-if="isProcessModalOpen && activeCheck"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-xs overflow-y-auto"
+        class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm backdrop-blur-xs overflow-y-auto"
       >
         <div class="relative w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl border border-gray-100 dark:border-gray-700 space-y-5">
           <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
@@ -620,7 +623,7 @@
               </span>
               Evaluasi Hasil Uji Mutu (QC)
             </h3>
-            <button @click="isProcessModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg">&times;</button>
+            <button @click="isProcessModalOpen = false" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 transition">✕</button>
           </div>
 
           <div class="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl space-y-1.5 text-xs">
@@ -724,11 +727,13 @@
           </form>
         </div>
       </div>
+    </Teleport>
 
       <!-- MODAL 3: Buat Titik Mutu Baru (Quality Point) -->
+      <Teleport to="body">
       <div
         v-if="isCreatePointModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-xs overflow-y-auto"
+        class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm backdrop-blur-xs overflow-y-auto"
       >
         <div class="relative w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl border border-gray-100 dark:border-gray-700 space-y-5">
           <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
@@ -738,7 +743,7 @@
               </span>
               Tambah Titik Kendali Mutu
             </h3>
-            <button @click="isCreatePointModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg">&times;</button>
+            <button @click="isCreatePointModalOpen = false" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 transition">✕</button>
           </div>
 
           <form @submit.prevent="submitCreatePoint" class="space-y-4">
@@ -831,11 +836,13 @@
           </form>
         </div>
       </div>
+    </Teleport>
 
       <!-- MODAL 4: Detail Pemeriksaan QC -->
+      <Teleport to="body">
       <div
         v-if="isDetailModalOpen && activeCheck"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-xs overflow-y-auto"
+        class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm backdrop-blur-xs overflow-y-auto"
       >
         <div class="relative w-full max-w-lg rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl border border-gray-100 dark:border-gray-700 space-y-4">
           <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
@@ -845,7 +852,7 @@
               </span>
               Rincian Dokumen Mutu #{{ activeCheck.id }}
             </h3>
-            <button @click="isDetailModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg">&times;</button>
+            <button @click="isDetailModalOpen = false" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 transition">✕</button>
           </div>
 
           <div class="space-y-3 text-xs">
@@ -901,7 +908,7 @@
           </div>
         </div>
       </div>
-
+    </Teleport>
     </div>
   </AdminLayout>
 </template>

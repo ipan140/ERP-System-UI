@@ -60,6 +60,7 @@ export interface IMrpWorkcenterDto {
   id?: number;
   name?: string;
   time_efficiency?: number;
+  oeeSummary?: any;
 }
 
 export interface IMrpWorkorderDto {
