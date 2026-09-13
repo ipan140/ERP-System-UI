@@ -73,19 +73,28 @@ const currentUser = ref({
   avatar: ''
 })
 
-onMounted(() => {
+const loadUser = () => {
   try {
     const userStr = localStorage.getItem('user')
     if (userStr) {
       const user = JSON.parse(userStr)
-      currentUser.value.name = user.name || user.email || currentUser.value.name
+      currentUser.value.name = user.name || user.email || 'Super Admin'
       currentUser.value.firstName = currentUser.value.name.split(' ')[0]
       currentUser.value.email = user.email || currentUser.value.email
-      currentUser.value.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.value.name)}&background=random`
+      currentUser.value.avatar = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.value.name)}&background=random`
     }
   } catch (e) {
     console.error('Failed to parse user', e)
   }
+}
+
+onMounted(() => {
+  loadUser()
+  window.addEventListener('user-profile-updated', loadUser)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('user-profile-updated', loadUser)
 })
 
 const menuItems = [

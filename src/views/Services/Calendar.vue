@@ -1,12 +1,65 @@
 <template>
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
+
+    <!-- Module Header Banner & Category Legend -->
+    <div class="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs">
+      <div>
+        <h2 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <span class="p-1.5 rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/40 dark:text-teal-400 text-sm">🛠️</span>
+          Kalender Layanan, Proyek & Servis Lapangan (Services & Field Tasks Calendar)
+        </h2>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+          Jadwal kunjungan teknisi lapangan (Field Service), sprint planning tim proyek, milestone delivery, dan evaluasi tiket SLA.
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-1.5 text-xs">
+        <button
+          @click="activeCategoryFilter = 'ALL'"
+          class="px-2.5 py-1 rounded-lg font-bold border transition flex items-center gap-1 cursor-pointer"
+          :class="activeCategoryFilter === 'ALL' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 border-transparent shadow-xs' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'"
+        >
+          Semua ({{ events.length }})
+        </button>
+        <button
+          v-for="cat in moduleCategories"
+          :key="cat.id"
+          @click="activeCategoryFilter = cat.name"
+          class="px-2.5 py-1 rounded-lg font-bold border transition flex items-center gap-1 cursor-pointer"
+          :class="[
+            activeCategoryFilter === cat.name ? 'ring-2 ring-brand-500 shadow-xs' : 'opacity-85 hover:opacity-100',
+            getCategoryBadgeClass(cat.color)
+          ]"
+        >
+          <span>{{ cat.icon || '📌' }}</span>
+          <span>{{ cat.name }}</span>
+        </button>
+        <button
+          @click="isCategoryModalOpen = true"
+          class="px-3 py-1 rounded-lg bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/50 text-brand-700 dark:text-brand-300 font-bold border border-brand-200 dark:border-brand-800 transition flex items-center gap-1 ml-1 cursor-pointer shadow-2xs"
+          title="Tambah / Edit Kategori & Warna"
+        >
+          <span>⚙️</span>
+          <span>Kelola Kategori</span>
+        </button>
+      </div>
+    </div>
+
     <div
       class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
     >
       <div class="custom-calendar">
         <FullCalendar ref="calendarRef" class="min-h-screen" :options="calendarOptions" />
       </div>
+
+      <!-- Category Management Modal -->
+      <CalendarCategoryManagerModal
+        v-if="isCategoryModalOpen"
+        :moduleName="resModel"
+        :moduleTitle="currentPageTitle"
+        @close="isCategoryModalOpen = false"
+        @categories-updated="onCategoriesUpdated"
+      />
 
       <!-- Modal -->
       <Modal v-if="isOpen" @close="closeModal">
@@ -17,48 +70,67 @@
             <h5
               class="mb-2 font-semibold text-gray-800 modal-title text-theme-xl dark:text-white/90 lg:text-2xl"
             >
-              {{ selectedEvent ? 'Edit Event' : 'Add Event' }}
+              {{ selectedEvent ? 'Edit Tugas & Layanan' : 'Tambah Tugas & Layanan' }}
             </h5>
             <p class="text-sm text-gray-500 dark:text-gray-400">
-              Plan your next big moment: schedule or edit an event to stay on track
+              Jadwalkan kunjungan teknisi, sesi perencanaan sprint kerja, pencapaian fase milestone, atau evaluasi SLA helpdesk.
             </p>
 
             <div class="mt-8">
               <div>
                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Event Title
+                  Judul Tugas / Layanan
                 </label>
                 <input
                   v-model="eventTitle"
                   type="text"
+                  placeholder="Contoh: Kunjungan Instalasi Server / Sprint Planning Q2"
                   class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                 />
               </div>
 
                 <div class="mt-4">
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Description</label>
-                  <textarea v-model="eventDescription" class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800" rows="3"></textarea>
+                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Deskripsi Tugas & Catatan Pekerjaan</label>
+                  <textarea v-model="eventDescription" placeholder="Rincian scope pekerjaan, nomor tiket helpdesk, daftar teknisi yang ditugaskan" class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800" rows="3"></textarea>
                 </div>
                 <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Location</label>
-                    <input v-model="eventLocation" type="text" class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800" />
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Lokasi / On-Site Client</label>
+                    <input v-model="eventLocation" placeholder="Gedung Cyber 2 Lt. 10 / Ruang Servis" type="text" class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800" />
                   </div>
                   <div>
-                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Meeting URL</label>
-                    <input v-model="eventMeetingUrl" type="url" class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800" />
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Tautan Tiket / Koordinasi</label>
+                    <input v-model="eventMeetingUrl" placeholder="https://helpdesk.perusahaan.com/ticket/981" type="url" class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800" />
                   </div>
                 </div>
                 <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Event Type</label>
-                    <input v-model="eventType" type="text" class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800" />
+                    <div class="flex items-center justify-between mb-1.5">
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Kategori Layanan</label>
+                      <button
+                        type="button"
+                        @click="isCategoryModalOpen = true"
+                        class="text-xs font-semibold text-brand-600 hover:underline"
+                      >
+                        + Kelola
+                      </button>
+                    </div>
+                    <select
+                      v-model="eventType"
+                      @change="onCategoryChange"
+                      class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+                    >
+                      <option value="">Pilih Kategori</option>
+                      <option v-for="cat in moduleCategories" :key="cat.id" :value="cat.name">
+                        {{ cat.icon || '📌' }} {{ cat.name }}
+                      </option>
+                    </select>
                   </div>
                   <div>
-                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Visibility</label>
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Visibilitas</label>
                     <select v-model="eventVisibility" class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800">
-                      <option value="private">Private</option>
-                      <option value="public">Public</option>
+                      <option value="private">Privat (Hanya Tim Layanan)</option>
+                      <option value="public">Publik (Seluruh Organisasi)</option>
                     </select>
                   </div>
                 </div>
@@ -150,19 +222,30 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import CalendarCategoryManagerModal from '@/components/common/CalendarCategoryManagerModal.vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import Modal from '@/components/ui/Modal.vue'
-import { fetchEvents, createEvent, updateEvent, deleteEvent } from '@/services/calendar.service'
+import {
+  fetchEvents,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  fetchCategories
+} from '@/services/calendar.service'
 
 const currentPageTitle = ref('Kalender Layanan')
 const calendarRef = ref(null)
 const isOpen = ref(false)
+const isCategoryModalOpen = ref(false)
+const moduleCategories = ref([])
+const activeCategoryFilter = ref('ALL')
+
 const selectedEvent = ref(null)
 const eventTitle = ref('')
 const eventAllDay = ref(false)
@@ -177,38 +260,147 @@ const eventLevel = ref('primary')
 const events = ref([])
 
 const calendarsEvents = [
-  { value: 'danger', label: 'Urgent' },
-  { value: 'warning', label: 'Penting' },
-  { value: 'primary', label: 'Normal' },
-  { value: 'success', label: 'Info' }
+  { value: 'primary', label: 'Biru (Primary)' },
+  { value: 'success', label: 'Hijau (Success)' },
+  { value: 'warning', label: 'Kuning (Warning)' },
+  { value: 'danger', label: 'Merah (Urgent)' },
+  { value: 'purple', label: 'Ungu (Purple)' },
+  { value: 'cyan', label: 'Cyan (Light Blue)' },
+  { value: 'indigo', label: 'Indigo (Dark Blue)' },
+  { value: 'orange', label: 'Oranye (Orange)' }
 ]
 
-const resModel = 'Services';
+const getCategoryBadgeClass = (color) => {
+  switch (color) {
+    case 'danger': return 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
+    case 'warning':
+    case 'orange': return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
+    case 'success': return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+    case 'purple': return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800'
+    case 'cyan': return 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-800'
+    case 'indigo': return 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800'
+    case 'primary':
+    default: return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+  }
+}
+
+const resModel = 'Services'
+
+const loadCategories = async () => {
+  try {
+    moduleCategories.value = await fetchCategories(resModel)
+  } catch (err) {
+    console.error('Failed to load categories', err)
+  }
+}
+
+const onCategoriesUpdated = (newCats) => {
+  moduleCategories.value = newCats
+}
+
+const onCategoryChange = () => {
+  const selected = moduleCategories.value.find(c => c.name === eventType.value)
+  if (selected && selected.color) {
+    eventLevel.value = selected.color
+  }
+}
+
+const displayedEvents = computed(() => {
+  if (activeCategoryFilter.value === 'ALL') {
+    return events.value
+  }
+  return events.value.filter(e => e.extendedProps?.event_type === activeCategoryFilter.value)
+})
 const loadEvents = async () => {
   try {
     const data = await fetchEvents(resModel);
-    events.value = data.map(e => ({
-      id: e.id.toString(),
-      title: e.title,
-      start: e.start,
-      end: e.end ? e.end : '',
-      allDay: e.allDay,
-      extendedProps: { 
-        calendar: e.color || 'primary',
-        description: e.description,
-        location: e.location,
-        meeting_url: e.meeting_url,
-        event_type: e.event_type,
-        visibility: e.visibility
-      }
-    }));
+    if (data && data.length > 0) {
+      events.value = data.map(e => ({
+        id: e.id.toString(),
+        title: e.title,
+        start: e.start,
+        end: e.end ? e.end : '',
+        allDay: e.allDay,
+        extendedProps: { 
+          calendar: e.color || 'primary',
+          description: e.description,
+          location: e.location,
+          meeting_url: e.meeting_url,
+          event_type: e.event_type,
+          visibility: e.visibility
+        }
+      }));
+    } else {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      events.value = [
+        {
+          id: 'srv-1',
+          title: '🛠️ Field Service: Kunjungan Instalasi Server Cabang Bandung',
+          start: `${y}-${m}-09T09:00:00`,
+          end: `${y}-${m}-09T15:00:00`,
+          allDay: false,
+          extendedProps: {
+            calendar: 'warning',
+            event_type: 'Kunjungan Lapangan (Field Service)',
+            description: 'Instalasi rack server, switch manageable, dan konfigurasi VPN inter-branch',
+            location: 'Kantor Cabang Bandung, Jawa Barat',
+            visibility: 'public'
+          }
+        },
+        {
+          id: 'srv-2',
+          title: '⏳ Sprint Planning & Backlog Refinement Sprint 14',
+          start: `${y}-${m}-13T10:00:00`,
+          end: `${y}-${m}-13T12:00:00`,
+          allDay: false,
+          extendedProps: {
+            calendar: 'primary',
+            event_type: 'Sprint Planning',
+            description: 'Estimasi story point modul HRIS Payroll TER dan alokasi sprint developer',
+            location: 'Ruang Scrum / GMeet',
+            meeting_url: 'https://meet.google.com/sprint-planning',
+            visibility: 'public'
+          }
+        },
+        {
+          id: 'srv-3',
+          title: '🎯 Project Milestone: Go-Live Fase 1 Sistem ERP',
+          start: `${y}-${m}-24T10:00:00`,
+          allDay: false,
+          extendedProps: {
+            calendar: 'success',
+            event_type: 'Milestone & Delivery',
+            description: 'Serah terima resmi dan cut-over production sistem ERP ke tim klien',
+            location: 'Auditorium Klien Lt. 3',
+            visibility: 'public'
+          }
+        },
+        {
+          id: 'srv-4',
+          title: '🎫 Weekly SLA Incident & Helpdesk Escalation Review',
+          start: `${y}-${m}-27T16:00:00`,
+          end: `${y}-${m}-27T17:30:00`,
+          allDay: false,
+          extendedProps: {
+            calendar: 'danger',
+            event_type: 'Evaluasi Tiket SLA',
+            description: 'Evaluasi tiket kategori Critical & High agar respon SLA tidak melewati batas waktu 2 jam',
+            location: 'Ruang Rapat Support',
+            visibility: 'private'
+          }
+        }
+      ];
+    }
   } catch (err) {
     console.error('Failed to load events', err);
   }
 }
 
 onMounted(() => {
-  loadEvents();
+  loadEvents()
+  loadCategories()
 })
 
 const openModal = () => {
@@ -235,9 +427,9 @@ const resetModalFields = () => {
 }
 
 const formatDateTimeLocal = (str) => {
-  if (!str) return '';
-  if (str.length === 10) return str + 'T00:00';
-  return str.substring(0, 16);
+  if (!str) return ''
+  if (str.length === 10) return str + 'T00:00'
+  return str.substring(0, 16)
 }
 
 const handleDateSelect = (selectInfo) => {
@@ -277,43 +469,47 @@ const handleAddOrUpdateEvent = async () => {
       color: eventLevel.value,
       res_model: resModel,
       allDay: eventAllDay.value
-    };
+    }
     
     if (selectedEvent.value) {
-      await updateEvent(selectedEvent.value.id, payload);
+      await updateEvent(selectedEvent.value.id, payload)
     } else {
-      await createEvent(payload);
+      await createEvent(payload)
     }
-    await loadEvents();
-    closeModal();
+    await loadEvents()
+    closeModal()
   } catch (err) {
-    console.error('Failed to save event', err);
-    alert('Gagal menyimpan event');
+    console.error('Failed to save event', err)
+    alert('Gagal menyimpan event')
   }
 }
 
 const handleDeleteEvent = async () => {
   if (selectedEvent.value) {
     try {
-      await deleteEvent(selectedEvent.value.id);
-      await loadEvents();
-      closeModal();
+      await deleteEvent(selectedEvent.value.id)
+      await loadEvents()
+      closeModal()
     } catch (err) {
-      console.error('Failed to delete event', err);
-      alert('Gagal menghapus event');
+      console.error('Failed to delete event', err)
+      alert('Gagal menghapus event')
     }
   }
 }
 
 const renderEventContent = (eventInfo) => {
   const colorMap = {
-    danger: 'bg-error-500 text-white border border-error-600',
-    warning: 'bg-orange-500 text-white border border-orange-600',
+    danger: 'bg-rose-500 text-white border border-rose-600',
+    warning: 'bg-amber-500 text-white border border-amber-600',
+    orange: 'bg-orange-500 text-white border border-orange-600',
     primary: 'bg-brand-500 text-white border border-brand-600',
-    success: 'bg-success-500 text-white border border-success-600'
-  };
-  const evtColor = eventInfo.event.extendedProps.calendar ? eventInfo.event.extendedProps.calendar.toLowerCase() : 'primary';
-  const colorClass = colorMap[evtColor] || colorMap.primary;
+    success: 'bg-emerald-500 text-white border border-emerald-600',
+    purple: 'bg-purple-600 text-white border border-purple-700',
+    cyan: 'bg-cyan-600 text-white border border-cyan-700',
+    indigo: 'bg-indigo-600 text-white border border-indigo-700'
+  }
+  const evtColor = eventInfo.event.extendedProps.calendar ? eventInfo.event.extendedProps.calendar.toLowerCase() : 'primary'
+  const colorClass = colorMap[evtColor] || colorMap.primary
   
   return {
     html: `
@@ -321,7 +517,7 @@ const renderEventContent = (eventInfo) => {
         ${eventInfo.timeText ? `<span class="mr-1.5 opacity-90 whitespace-nowrap">${eventInfo.timeText}</span>` : ''}
         <span class="truncate whitespace-nowrap">${eventInfo.event.title}</span>
       </div>
-    `,
+    `
   }
 }
 
@@ -331,9 +527,9 @@ const calendarOptions = reactive({
   headerToolbar: {
     left: 'prev,next addEventButton',
     center: 'title',
-    right: 'dayGridMonth,timeGridWeek',
+    right: 'dayGridMonth,timeGridWeek'
   },
-  events: events,
+  events: displayedEvents,
   selectable: true,
   eventTimeFormat: {
     hour: '2-digit',
@@ -351,9 +547,9 @@ const calendarOptions = reactive({
   customButtons: {
     addEventButton: {
       text: 'Add Event +',
-      click: openModal,
-    },
-  },
+      click: openModal
+    }
+  }
 })
 </script>
 
