@@ -217,7 +217,7 @@
           
           <div class="flex justify-end gap-3 pt-5 mt-5 border-t border-gray-100 dark:border-gray-700">
             <a 
-              :href="`http://localhost:8080/api/finance/sign/${viewData.id}/preview`" 
+              :href="`/api/finance/sign/${viewData.id}/preview`" 
               target="_blank" 
               class="px-5 py-2 text-sm font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/40 rounded-lg flex items-center gap-2 transition-colors"
             >

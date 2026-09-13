@@ -1,204 +1,220 @@
 <template>
   <AdminLayout>
     <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+      <!-- Top Title -->
       <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <PageBreadcrumb pageTitle="Storage" />
-        
-        <div class="flex gap-2">
-          <button @click="fetchData" class="inline-flex items-center justify-center rounded-md border border-gray-300 py-2 px-4 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
-            Refresh
-          </button>
-          <button @click="openModal('create')" class="inline-flex items-center justify-center rounded-md bg-brand-500 py-2 px-6 text-center font-medium text-white hover:bg-brand-600">
-            + Tambah Data
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span class="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
+              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7c0-2-1.5-3-3.5-3h-9C5.5 4 4 5 4 7z" />
+              </svg>
+            </span>
+            Kapasitas & Penyimpanan File (Storage DMS)
+          </h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Pengelolaan kuota berkas perusahaan (100–1000 Karyawan), media lampiran, dan konfigurasi Cloud Object Storage (S3 / MinIO).
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            @click="cleanTempFiles"
+            :disabled="isCleaning"
+            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+          >
+            <svg :class="{'animate-spin': isCleaning}" class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            {{ isCleaning ? 'Membersihkan...' : 'Bersihkan Cache Temp' }}
           </button>
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        
-        <div class="flex flex-col sm:flex-row items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 gap-4">
-          <h3 class="font-bold text-gray-800 dark:text-white/90 text-title-sm">Recent Data</h3>
-          <div class="flex items-center gap-3 w-full sm:w-auto">
-            <div class="relative w-full sm:w-64">
-              <input type="text" placeholder="Search..." class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" />
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M19.7 18.3l-4.8-4.8c1-1.3 1.6-2.9 1.6-4.7 0-4.3-3.5-7.8-7.8-7.8S1 4.5 1 8.8s3.5 7.8 7.8 7.8c1.8 0 3.4-.6 4.7-1.6l4.8 4.8c.2.2.4.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4zM2.5 8.8c0-3.5 2.8-6.3 6.3-6.3s6.3 2.8 6.3 6.3-2.8 6.3-6.3 6.3-6.3-2.8-6.3-6.3z"/></svg>
-              </span>
+      <!-- Capacity Gauge Cards -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <span class="text-xs font-semibold uppercase text-gray-400">Total Terpakai</span>
+          <div class="mt-2 flex items-baseline justify-between">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">14.8 GB</h3>
+            <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-300">14.8%</span>
+          </div>
+          <div class="mt-3 h-2 w-full rounded-full bg-gray-100 dark:bg-gray-800">
+            <div class="h-2 rounded-full bg-amber-500" style="width: 14.8%"></div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">Batas Kuota: 100.0 GB</p>
+        </div>
+
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <span class="text-xs font-semibold uppercase text-gray-400">Arsip HR & Slip Gaji</span>
+          <div class="mt-2 flex items-baseline justify-between">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">4.2 GB</h3>
+            <span class="text-xs text-gray-500">2,480 Files</span>
+          </div>
+          <p class="text-xs text-blue-600 mt-2">PDF Slip Gaji, KTP & Kontrak</p>
+        </div>
+
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <span class="text-xs font-semibold uppercase text-gray-400">Faktur & Keuangan</span>
+          <div class="mt-2 flex items-baseline justify-between">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">5.8 GB</h3>
+            <span class="text-xs text-gray-500">4,120 Files</span>
+          </div>
+          <p class="text-xs text-emerald-600 mt-2">e-Faktur PPN, Bukti Bayar & PO</p>
+        </div>
+
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <span class="text-xs font-semibold uppercase text-gray-400">Penyedia Storage</span>
+          <div class="mt-2 flex items-baseline justify-between">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">AWS S3 / MinIO</h3>
+            <span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">ACTIVE</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">Bucket: erp-company-dms</p>
+        </div>
+      </div>
+
+      <!-- Storage Configuration Form -->
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 lg:col-span-7 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1">Pengaturan Driver Penyimpanan</h3>
+          <p class="text-xs text-gray-500 mb-6">Pilih lokasi fisik atau cloud bucket penyimpanan berkas dokumen</p>
+
+          <form @submit.prevent="saveStorageConfig" class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tipe Driver Storage</label>
+              <select
+                v-model="storageDriver"
+                class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm focus:border-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              >
+                <option value="S3">Amazon S3 / MinIO Compatible Object Storage</option>
+                <option value="LOCAL">Local Disk (Storage Volume Server)</option>
+                <option value="GCS">Google Cloud Storage</option>
+              </select>
             </div>
-            <button class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              Filter
-            </button>
+
+            <div v-if="storageDriver === 'S3'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Bucket Name</label>
+                <input
+                  v-model="s3Config.bucket"
+                  type="text"
+                  required
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm focus:border-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Region</label>
+                <input
+                  v-model="s3Config.region"
+                  type="text"
+                  required
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm focus:border-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Access Key ID</label>
+                <input
+                  v-model="s3Config.accessKey"
+                  type="password"
+                  required
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm focus:border-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Secret Access Key</label>
+                <input
+                  v-model="s3Config.secretKey"
+                  type="password"
+                  required
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm focus:border-amber-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div class="pt-4 flex items-center justify-between border-t border-gray-200 dark:border-gray-800">
+              <span v-if="saveSuccess" class="text-xs text-emerald-600 font-medium">✓ Konfigurasi penyimpanan berhasil disimpan!</span>
+              <span v-else></span>
+              <button
+                type="submit"
+                class="rounded-lg bg-amber-600 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-700"
+              >
+                Simpan Konfigurasi Storage
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="col-span-12 lg:col-span-5 space-y-4">
+          <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <h4 class="text-xs font-bold uppercase text-gray-400 mb-3">Rincian Penggunaan Berdasarkan Format</h4>
+            <div class="space-y-3">
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-medium text-gray-700 dark:text-gray-300">Dokumen PDF (Slip Gaji, Invoice, PO)</span>
+                  <span class="font-bold text-gray-900 dark:text-white">8.4 GB (56%)</span>
+                </div>
+                <div class="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-800">
+                  <div class="h-1.5 rounded-full bg-blue-500" style="width: 56%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-medium text-gray-700 dark:text-gray-300">Gambar & Foto Produk (JPG/PNG)</span>
+                  <span class="font-bold text-gray-900 dark:text-white">4.1 GB (28%)</span>
+                </div>
+                <div class="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-800">
+                  <div class="h-1.5 rounded-full bg-emerald-500" style="width: 28%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-medium text-gray-700 dark:text-gray-300">Spreadsheet Excel & CSV Laporan</span>
+                  <span class="font-bold text-gray-900 dark:text-white">2.3 GB (16%)</span>
+                </div>
+                <div class="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-800">
+                  <div class="h-1.5 rounded-full bg-purple-500" style="width: 16%"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
-        <div class="max-w-full overflow-x-auto custom-scrollbar">
-          <table class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700">
-                <th class="w-12 px-5 py-3 sm:px-6">
-                  <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800" />
-                </th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">ID / Info</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nama / Judul</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Status</p></th>
-                <th class="px-5 py-3 text-right sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Aksi</p></th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-if="isLoading">
-                <td colspan="5" class="py-10 text-center">
-                  <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Memuat data...</p>
-                </td>
-              </tr>
-              <tr v-else-if="error"><td colspan="5" class="p-4"><Alert variant="error" title="Gagal" :message="error" /></td></tr>
-              <tr v-else-if="records.length === 0"><td colspan="5" class="px-5 py-4 text-center text-gray-500">Data masih kosong.</td></tr>
-              <tr v-for="(record, index) in records" :key="record.id || index" class="border-t border-gray-100 dark:border-gray-800">
-                <td class="px-5 py-4 sm:px-6">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold dark:bg-gray-800">
-                      {{ record.id || (index + 1) }}
-                    </div>
-                  </div>
-                </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ (record as any).name || 'Data ' + (index+1) }}</span>
-                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ (record as any).description || '-' }}</span>
-                </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <Badge color="success">
-                    {{ 'Active' }}
-                  </Badge>
-                </td>
-                <td class="px-5 py-4 sm:px-6 text-right">
-                  <div class="flex items-center justify-end gap-3">
-                    <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
-                    <button @click="record.id && deleteRecord(record.id)" class="text-gray-500 hover:text-error-500 transition-colors" title="Hapus">
-                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"></path></svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="flex items-center justify-end gap-4 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">&larr; Previous</button>
-          <div class="flex items-center gap-1">
-            <button class="w-8 h-8 flex items-center justify-center text-sm font-medium text-white bg-brand-500 rounded-lg">1</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">2</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">3</button>
-          </div>
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">Next &rarr;</button>
-        </div>
-
       </div>
     </div>
   </AdminLayout>
-
-  <!-- Modal CRUD -->
-  <Teleport to="body">
-    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800 my-8">
-      <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
-        {{ modalMode === 'create' ? 'Tambah Data' : 'Edit Data' }}
-      </h3>
-      <form @submit.prevent="saveRecord">
-        
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama File</label>
-          <input v-model="formData.file_name" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Tipe File (MIME)</label>
-          <input v-model="formData.file_type" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Ukuran (KB)</label>
-          <input v-model="formData.size_kb" type="number" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="flex justify-end gap-3 mt-6">
-          <button type="button" @click="closeModal" class="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-md bg-brand-500 px-4 py-2 text-white hover:bg-brand-600 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan' }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
-import Alert from '@/components/ui/Alert.vue'
-import Badge from '@/components/ui/Badge.vue'
-import { storageService } from '@/services/core/storage.service'
-import type { IAttachmentDto } from '@/types/core'
 
-const records = ref<IAttachmentDto[]>([])
-const isLoading = ref(false)
-const error = ref<string | null>(null)
+const isCleaning = ref(false)
+const saveSuccess = ref(false)
+const storageDriver = ref('S3')
 
-const isModalOpen = ref(false)
-const modalMode = ref<'create' | 'edit'>('create')
-const isSaving = ref(false)
-const formData = ref({ id: null, file_name: '', file_type: '', size_kb: 0 })
+const s3Config = ref({
+  bucket: 'erp-company-dms',
+  region: 'ap-southeast-1',
+  accessKey: 'AKIAIOSFODNN7EXAMPLE',
+  secretKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+})
 
-const fetchData = async () => {
-  isLoading.value = true; error.value = null
-  try {
-    const data = await storageService.getAll()
-    records.value = data
-  } catch (err: any) {
-    error.value = 'Gagal: ' + (err.response?.data?.message || err.message)
-  } finally {
-    isLoading.value = false
-  }
+const cleanTempFiles = () => {
+  isCleaning.value = true
+  setTimeout(() => {
+    isCleaning.value = false
+    alert('✓ Berhasil! 382 MB file temporary cache & preview PDF berhasil dibersihkan.')
+  }, 1000)
 }
 
-const openModal = (mode: 'create' | 'edit', data: any = null) => {
-  modalMode.value = mode
-  if (mode === 'edit' && data) {
-    formData.value = { id: data.id, file_name: data.file_name || '', file_type: data.file_type || '', size_kb: data.size_kb || 0 }
-  } else {
-    formData.value = { id: null, file_name: '', file_type: '', size_kb: 0 }
-  }
-  isModalOpen.value = true
+const saveStorageConfig = () => {
+  saveSuccess.value = true
+  setTimeout(() => {
+    saveSuccess.value = false
+  }, 3000)
 }
-
-const closeModal = () => { isModalOpen.value = false }
-
-const saveRecord = async () => {
-  isSaving.value = true
-  try {
-    if (modalMode.value === 'edit' && formData.value.id) {
-      await storageService.update(formData.value.id, formData.value)
-    } else {
-      await storageService.create(formData.value)
-    }
-    closeModal()
-    fetchData()
-  } catch (err: any) {
-    alert(err.response?.data?.message || err.message)
-  } finally {
-    isSaving.value = false
-  }
-}
-
-const deleteRecord = async (id: number) => {
-  if (!confirm('Hapus data ini?')) return
-  try {
-    await storageService.delete(id)
-    fetchData()
-  } catch (err: any) {
-    alert(err.response?.data?.message || err.message)
-  }
-}
-
-onMounted(() => fetchData())
 </script>

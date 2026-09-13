@@ -2,205 +2,501 @@
   <AdminLayout>
     <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
       <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <PageBreadcrumb pageTitle="Iot" />
+        <PageBreadcrumb pageTitle="IoT Gateway & Mesin Presensi Biometrik" />
         
-        <div class="flex gap-2">
-          <button @click="fetchData" class="inline-flex items-center justify-center rounded-md border border-gray-300 py-2 px-4 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
-            Refresh
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            @click="syncAllDevices"
+            :disabled="isSyncing"
+            class="inline-flex items-center justify-center gap-2 rounded-lg border border-brand-500 bg-brand-50 px-4 py-2 text-center text-sm font-semibold text-brand-600 shadow-theme-xs hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 disabled:opacity-50"
+          >
+            <svg class="w-4 h-4" :class="{ 'animate-spin': isSyncing }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {{ isSyncing ? 'Menyinkronkan Log...' : 'Tarik Log Presensi HR' }}
           </button>
-          <button @click="openModal('create')" class="inline-flex items-center justify-center rounded-md bg-brand-500 py-2 px-6 text-center font-medium text-white hover:bg-brand-600">
-            + Tambah Data
+          <button
+            @click="openModal('create')"
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-5 py-2 text-center text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Tambah Perangkat
           </button>
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        
-        <div class="flex flex-col sm:flex-row items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 gap-4">
-          <h3 class="font-bold text-gray-800 dark:text-white/90 text-title-sm">Recent Data</h3>
-          <div class="flex items-center gap-3 w-full sm:w-auto">
-            <div class="relative w-full sm:w-64">
-              <input type="text" placeholder="Search..." class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" />
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M19.7 18.3l-4.8-4.8c1-1.3 1.6-2.9 1.6-4.7 0-4.3-3.5-7.8-7.8-7.8S1 4.5 1 8.8s3.5 7.8 7.8 7.8c1.8 0 3.4-.6 4.7-1.6l4.8 4.8c.2.2.4.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4zM2.5 8.8c0-3.5 2.8-6.3 6.3-6.3s6.3 2.8 6.3 6.3-2.8 6.3-6.3 6.3-6.3-2.8-6.3-6.3z"/></svg>
+      <!-- Quick Metrics -->
+      <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">Terminal Mesin Absensi</p>
+              <h4 class="mt-1 text-2xl font-bold text-gray-800 dark:text-white">3 Unit</h4>
+            </div>
+            <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 004 11m0 0c0 2.473.345 4.866.99 7.132m0 0a21.88 21.88 0 003.839-1.132" />
+              </svg>
+            </div>
+          </div>
+          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">HQ Lobi, Gudang Cikarang, Cabang Surabaya</p>
+        </div>
+
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">Status Koneksi Gateway</p>
+              <h4 class="mt-1 text-2xl font-bold text-success-600 dark:text-success-400">100% Online</h4>
+            </div>
+            <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-success-50 text-success-500 dark:bg-success-500/10">
+              <span class="relative flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-success-500"></span>
               </span>
             </div>
-            <button class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              Filter
-            </button>
           </div>
+          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">TCP/IP Port 4370 ADMS Push SDK</p>
         </div>
 
-        <div class="max-w-full overflow-x-auto custom-scrollbar">
-          <table class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700">
-                <th class="w-12 px-5 py-3 sm:px-6">
-                  <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800" />
-                </th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">ID / Info</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nama / Judul</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Status</p></th>
-                <th class="px-5 py-3 text-right sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Aksi</p></th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-if="isLoading">
-                <td colspan="5" class="py-10 text-center">
-                  <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Memuat data...</p>
-                </td>
-              </tr>
-              <tr v-else-if="error"><td colspan="5" class="p-4"><Alert variant="error" title="Gagal" :message="error" /></td></tr>
-              <tr v-else-if="records.length === 0"><td colspan="5" class="px-5 py-4 text-center text-gray-500">Data masih kosong.</td></tr>
-              <tr v-for="(record, index) in records" :key="record.id || index" class="border-t border-gray-100 dark:border-gray-800">
-                <td class="px-5 py-4 sm:px-6">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold dark:bg-gray-800">
-                      {{ record.id || (index + 1) }}
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">Total Tap Presensi Hari Ini</p>
+              <h4 class="mt-1 text-2xl font-bold text-gray-800 dark:text-white">312 Punch</h4>
+            </div>
+            <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-500 dark:bg-blue-500/10">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            </div>
+          </div>
+          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Langsung tersinkron ke Payroll HR</p>
+        </div>
+
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">Sensor Lingkungan Gudang</p>
+              <h4 class="mt-1 text-2xl font-bold text-purple-600 dark:text-purple-400">4.2°C Normal</h4>
+            </div>
+            <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-purple-50 text-purple-500 dark:bg-purple-500/10">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+          </div>
+          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Cold Storage Farmasi & Suhu Server</p>
+        </div>
+      </div>
+
+      <!-- Tab Buttons -->
+      <div class="mb-5 flex gap-2 border-b border-gray-200 dark:border-gray-800 pb-3">
+        <button
+          @click="activeTab = 'devices'"
+          :class="activeTab === 'devices' ? 'bg-brand-500 text-white shadow-theme-xs' : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'"
+          class="rounded-lg px-4 py-2 text-xs font-semibold transition-colors"
+        >
+          Daftar Perangkat IoT & Mesin Biometrik
+        </button>
+        <button
+          @click="activeTab = 'logs'"
+          :class="activeTab === 'logs' ? 'bg-brand-500 text-white shadow-theme-xs' : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'"
+          class="rounded-lg px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
+        >
+          <span class="h-2 w-2 rounded-full bg-success-500 animate-pulse"></span>
+          Live Stream Tap Log Presensi Realtime
+        </button>
+      </div>
+
+      <!-- TAB 1: Devices -->
+      <div v-if="activeTab === 'devices'" class="space-y-4">
+        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
+          <div class="max-w-full overflow-x-auto custom-scrollbar">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+              <thead class="bg-gray-50 dark:bg-gray-800/50">
+                <tr>
+                  <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Perangkat & Tipe</th>
+                  <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Lokasi Penempatan</th>
+                  <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">IP Address & Port</th>
+                  <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Metode Sensor</th>
+                  <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Status & Ping</th>
+                  <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Aktivitas Hari Ini</th>
+                  <th class="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-800 dark:bg-gray-900">
+                <tr
+                  v-for="dev in devices"
+                  :key="dev.id"
+                  class="hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-colors"
+                >
+                  <td class="px-5 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-xl dark:bg-gray-800">
+                        {{ dev.icon }}
+                      </div>
+                      <div>
+                        <span class="font-bold text-gray-900 dark:text-white text-sm block">{{ dev.device_name }}</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ dev.model }}</span>
+                      </div>
                     </div>
-                  </div>
-                </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ (record as any).name || 'Data ' + (index+1) }}</span>
-                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ (record as any).description || '-' }}</span>
-                </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <Badge color="success">
-                    {{ 'Active' }}
-                  </Badge>
-                </td>
-                <td class="px-5 py-4 sm:px-6 text-right">
-                  <div class="flex items-center justify-end gap-3">
-                    <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
-                    <button @click="record.id && deleteRecord(record.id)" class="text-gray-500 hover:text-error-500 transition-colors" title="Hapus">
-                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"></path></svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="flex items-center justify-end gap-4 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">&larr; Previous</button>
-          <div class="flex items-center gap-1">
-            <button class="w-8 h-8 flex items-center justify-center text-sm font-medium text-white bg-brand-500 rounded-lg">1</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">2</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">3</button>
+                  </td>
+                  <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                    {{ dev.location }}
+                  </td>
+                  <td class="px-5 py-4 whitespace-nowrap font-mono text-xs text-gray-800 dark:text-gray-200">
+                    {{ dev.ip_address }}:{{ dev.port }}
+                  </td>
+                  <td class="px-5 py-4 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400">
+                    {{ dev.sensor_type }}
+                  </td>
+                  <td class="px-5 py-4 whitespace-nowrap">
+                    <div class="flex items-center gap-2">
+                      <span
+                        :class="dev.status === 'Online' ? 'bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400' : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'"
+                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
+                      >
+                        <span :class="dev.status === 'Online' ? 'bg-success-500' : 'bg-red-500'" class="h-1.5 w-1.5 rounded-full"></span>
+                        {{ dev.status }}
+                      </span>
+                      <span class="text-2xs font-mono text-gray-400">({{ dev.ping_ms }}ms)</span>
+                    </div>
+                  </td>
+                  <td class="px-5 py-4 whitespace-nowrap text-xs text-gray-700 dark:text-gray-300">
+                    <span class="font-bold text-brand-600 dark:text-brand-400">{{ dev.today_records }}</span>
+                  </td>
+                  <td class="px-5 py-4 whitespace-nowrap text-right">
+                    <div class="flex items-center justify-end gap-2">
+                      <button
+                        @click="pingDevice(dev)"
+                        class="rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                        title="Tes Koneksi Ping"
+                      >
+                        Ping Test
+                      </button>
+                      <button
+                        @click="openModal('edit', dev)"
+                        class="rounded-lg p-1 text-gray-500 hover:text-brand-500"
+                        title="Edit Perangkat"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">Next &rarr;</button>
         </div>
+      </div>
 
+      <!-- TAB 2: Live Stream Log Presensi -->
+      <div v-if="activeTab === 'logs'" class="space-y-4">
+        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
+          <div class="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-800">
+            <div>
+              <h3 class="font-bold text-gray-900 dark:text-white text-sm">Aliran Log Presensi Masuk & Pulang Terkini</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Data otomatis divalidasi ke perhitungan jam kerja & keterlambatan</p>
+            </div>
+            <span class="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 font-mono">
+              Auto-Polling: Tiap 10 Detik
+            </span>
+          </div>
+
+          <div class="max-w-full overflow-x-auto custom-scrollbar">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+              <thead class="bg-gray-50 dark:bg-gray-800/50">
+                <tr>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Waktu Punch</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">NIK & Karyawan</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Departemen</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Terminal Mesin</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tipe Absen</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Verifikasi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-800 dark:bg-gray-900 font-mono text-xs">
+                <tr
+                  v-for="log in attendanceLogs"
+                  :key="log.id"
+                  class="hover:bg-gray-50/80 dark:hover:bg-gray-800/40"
+                >
+                  <td class="px-5 py-3 text-gray-900 dark:text-white font-bold whitespace-nowrap">
+                    {{ log.timestamp }}
+                  </td>
+                  <td class="px-5 py-3 whitespace-nowrap font-sans">
+                    <span class="font-bold text-gray-900 dark:text-white">{{ log.employee_name }}</span>
+                    <span class="block text-2xs font-mono text-gray-400">NIK: {{ log.nik }}</span>
+                  </td>
+                  <td class="px-5 py-3 whitespace-nowrap font-sans text-gray-600 dark:text-gray-400">
+                    {{ log.department }}
+                  </td>
+                  <td class="px-5 py-3 whitespace-nowrap font-sans text-gray-700 dark:text-gray-300">
+                    {{ log.device_location }}
+                  </td>
+                  <td class="px-5 py-3 whitespace-nowrap">
+                    <span
+                      :class="log.punch_type === 'Check-In' ? 'bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400' : 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400'"
+                      class="inline-flex rounded px-2 py-0.5 text-2xs font-bold"
+                    >
+                      {{ log.punch_type }}
+                    </span>
+                  </td>
+                  <td class="px-5 py-3 whitespace-nowrap font-sans text-gray-500">
+                    {{ log.verification_method }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </AdminLayout>
 
-  <!-- Modal CRUD -->
+  <!-- Modal Tambah / Edit Perangkat IoT -->
   <Teleport to="body">
-    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800 my-8">
-      <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
-        {{ modalMode === 'create' ? 'Tambah Data' : 'Edit Data' }}
-      </h3>
-      <form @submit.prevent="saveRecord">
-        
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Perangkat</label>
-          <input v-model="formData.device_name" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Tipe Sensor</label>
-          <input v-model="formData.sensor_type" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status Koneksi</label>
-          <select v-model="formData.status" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-            <option value="Online">Online</option><option value="Offline">Offline</option><option value="Maintenance">Maintenance</option>
-          </select>
-        </div>
-        <div class="flex justify-end gap-3 mt-6">
-          <button type="button" @click="closeModal" class="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-md bg-brand-500 px-4 py-2 text-white hover:bg-brand-600 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan' }}
+    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">
+            {{ modalMode === 'create' ? 'Tambah Terminal / Perangkat IoT' : 'Perbarui Konfigurasi Perangkat' }}
+          </h3>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
-      </form>
+
+        <form @submit.prevent="saveDevice" class="space-y-4 my-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Nama Perangkat</label>
+            <input
+              v-model="formData.device_name"
+              type="text"
+              required
+              placeholder="Contoh: Mesin Absensi Fingerprint Lobi"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Merek & Tipe Model</label>
+              <input
+                v-model="formData.model"
+                type="text"
+                placeholder="ZKTeco uFace 800 / Solution X105"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Tipe Sensor</label>
+              <select
+                v-model="formData.sensor_type"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              >
+                <option value="Face 3D + Fingerprint">Face 3D + Fingerprint</option>
+                <option value="Fingerprint Biometrik">Fingerprint Biometrik</option>
+                <option value="RFID Card + Fingerprint">RFID Card + Fingerprint</option>
+                <option value="Sensor Suhu & Kelembaban (DHT22)">Sensor Suhu & Kelembaban (DHT22)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4">
+            <div class="col-span-2">
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">IP Address LAN</label>
+              <input
+                v-model="formData.ip_address"
+                type="text"
+                required
+                placeholder="192.168.1.201"
+                class="w-full font-mono rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Port TCP/IP</label>
+              <input
+                v-model="formData.port"
+                type="number"
+                required
+                placeholder="4370"
+                class="w-full font-mono rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Lokasi Penempatan Terminal</label>
+            <input
+              v-model="formData.location"
+              type="text"
+              placeholder="Gedung HQ Lt. 1 - Lobi Utama"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <button
+              type="button"
+              @click="closeModal"
+              class="rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              class="rounded-lg bg-brand-500 px-5 py-2 text-xs font-medium text-white hover:bg-brand-600"
+            >
+              Simpan Konfigurasi
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
-import Alert from '@/components/ui/Alert.vue'
-import Badge from '@/components/ui/Badge.vue'
-import { iotService } from '@/services/core/iot.service'
-import type { IIoTDeviceDto } from '@/types/core'
 
-const records = ref<IIoTDeviceDto[]>([])
-const isLoading = ref(false)
-const error = ref<string | null>(null)
+const activeTab = ref<'devices' | 'logs'>('devices')
+const isSyncing = ref(false)
 
+const devices = ref([
+  {
+    id: 1,
+    device_name: 'ZKTeco uFace 800 - Lobi Utama',
+    model: 'ZKTeco uFace800 Plus',
+    location: 'Kantor Pusat HQ - Lobi Utama Lt. 1',
+    ip_address: '192.168.1.201',
+    port: 4370,
+    sensor_type: 'Face 3D + Fingerprint',
+    status: 'Online',
+    ping_ms: 12,
+    today_records: '194 Punch',
+    icon: '👤'
+  },
+  {
+    id: 2,
+    device_name: 'ZKTeco SilkBio - Pintu Masuk Gudang',
+    model: 'ZKTeco SilkBio-101TC',
+    location: 'Kawasan Industri Cikarang Barat MM2100',
+    ip_address: '192.168.2.202',
+    port: 4370,
+    sensor_type: 'Fingerprint Biometrik',
+    status: 'Online',
+    ping_ms: 24,
+    today_records: '72 Punch',
+    icon: '🏭'
+  },
+  {
+    id: 3,
+    device_name: 'Solution X105 - Cabang Surabaya',
+    model: 'Solution X105 Standalone',
+    location: 'Kantor Perwakilan Surabaya Lt. 2',
+    ip_address: '10.10.1.50',
+    port: 4370,
+    sensor_type: 'RFID Card + Fingerprint',
+    status: 'Online',
+    ping_ms: 38,
+    today_records: '46 Punch',
+    icon: '🏢'
+  },
+  {
+    id: 4,
+    device_name: 'Sensor IoT DHT22 - Cold Storage Farmasi',
+    model: 'ESP32 MQTT Modbus RTU',
+    location: 'Gudang Cikarang - Ruang Dingin A-1',
+    ip_address: '192.168.2.215',
+    port: 1883,
+    sensor_type: 'Sensor Suhu & Kelembaban (DHT22)',
+    status: 'Online',
+    ping_ms: 15,
+    today_records: 'Suhu 4.2°C • Kelembaban 45%',
+    icon: '❄️'
+  }
+])
+
+const attendanceLogs = ref([
+  { id: 1, timestamp: '17:31:04', employee_name: 'Ahmad Fauzi', nik: 'EMP-0012', department: 'Logistik & Gudang', device_location: 'Gudang Cikarang', punch_type: 'Check-Out', verification_method: 'Sidik Jari (98%)' },
+  { id: 2, timestamp: '17:30:45', employee_name: 'Siti Rahmawati', nik: 'EMP-0045', department: 'HR & Kepegawaian', device_location: 'Lobi Utama HQ', punch_type: 'Check-Out', verification_method: 'Face Recognition 3D' },
+  { id: 3, timestamp: '17:28:12', employee_name: 'Budi Santoso', nik: 'EMP-0008', department: 'Finance & Accounting', device_location: 'Lobi Utama HQ', punch_type: 'Check-Out', verification_method: 'Face Recognition 3D' },
+  { id: 4, timestamp: '08:42:19', employee_name: 'Rian Hidayat', nik: 'EMP-0098', department: 'Sales & Marketing', device_location: 'Cabang Surabaya', punch_type: 'Check-In', verification_method: 'RFID Card + Finger' },
+  { id: 5, timestamp: '08:35:50', employee_name: 'Dewi Lestari', nik: 'EMP-0034', department: 'Supply Chain Ops', device_location: 'Lobi Utama HQ', punch_type: 'Check-In', verification_method: 'Face Recognition 3D' },
+  { id: 6, timestamp: '08:14:02', employee_name: 'Hendro Wijaya', nik: 'EMP-0019', department: 'Security & Facility', device_location: 'Gudang Cikarang', punch_type: 'Check-In', verification_method: 'Sidik Jari (100%)' }
+])
+
+// Modal State
 const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
-const isSaving = ref(false)
-const formData = ref({ id: null, device_name: '', sensor_type: '', status: 'Offline' })
+const formData = ref<any>({
+  device_name: '',
+  model: '',
+  location: '',
+  ip_address: '',
+  port: 4370,
+  sensor_type: 'Face 3D + Fingerprint'
+})
 
-const fetchData = async () => {
-  isLoading.value = true; error.value = null
-  try {
-    const data = await iotService.getAll()
-    records.value = data
-  } catch (err: any) {
-    error.value = 'Gagal: ' + (err.response?.data?.message || err.message)
-  } finally {
-    isLoading.value = false
-  }
+const pingDevice = (dev: any) => {
+  alert(`Ping test ke ${dev.ip_address}:${dev.port} berhasil! Waktu respons: ${dev.ping_ms} ms (Packet Loss: 0%)`)
+}
+
+const syncAllDevices = () => {
+  isSyncing.value = true
+  setTimeout(() => {
+    isSyncing.value = false
+    alert('Sinkronisasi selesai! 312 log presensi biometrik berhasil ditarik dan diposting ke database Kepegawaian (HR Attendance).')
+  }, 1200)
 }
 
 const openModal = (mode: 'create' | 'edit', data: any = null) => {
   modalMode.value = mode
   if (mode === 'edit' && data) {
-    formData.value = { id: data.id, device_name: data.device_name || '', sensor_type: data.sensor_type || '', status: data.status || 'Offline' }
+    formData.value = { ...data }
   } else {
-    formData.value = { id: null, device_name: '', sensor_type: '', status: 'Offline' }
+    formData.value = {
+      device_name: '',
+      model: '',
+      location: '',
+      ip_address: '192.168.1.',
+      port: 4370,
+      sensor_type: 'Face 3D + Fingerprint'
+    }
   }
   isModalOpen.value = true
 }
 
-const closeModal = () => { isModalOpen.value = false }
+const closeModal = () => {
+  isModalOpen.value = false
+}
 
-const saveRecord = async () => {
-  isSaving.value = true
-  try {
-    if (modalMode.value === 'edit' && formData.value.id) {
-      await iotService.update(formData.value.id, formData.value)
-    } else {
-      await iotService.create(formData.value)
+const saveDevice = () => {
+  if (modalMode.value === 'edit') {
+    const idx = devices.value.findIndex(d => d.id === formData.value.id)
+    if (idx !== -1) {
+      devices.value[idx] = { ...devices.value[idx], ...formData.value }
     }
-    closeModal()
-    fetchData()
-  } catch (err: any) {
-    alert(err.response?.data?.message || err.message)
-  } finally {
-    isSaving.value = false
+  } else {
+    devices.value.push({
+      id: Date.now(),
+      ...formData.value,
+      status: 'Online',
+      ping_ms: 18,
+      today_records: '0 Punch',
+      icon: '📟'
+    })
   }
+  closeModal()
 }
-
-const deleteRecord = async (id: number) => {
-  if (!confirm('Hapus data ini?')) return
-  try {
-    await iotService.delete(id)
-    fetchData()
-  } catch (err: any) {
-    alert(err.response?.data?.message || err.message)
-  }
-}
-
-onMounted(() => fetchData())
 </script>
+

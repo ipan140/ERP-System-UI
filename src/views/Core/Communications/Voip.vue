@@ -1,204 +1,172 @@
 <template>
   <AdminLayout>
     <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+      <!-- Top Title -->
       <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <PageBreadcrumb pageTitle="Voip" />
-        
-        <div class="flex gap-2">
-          <button @click="fetchData" class="inline-flex items-center justify-center rounded-md border border-gray-300 py-2 px-4 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
-            Refresh
-          </button>
-          <button @click="openModal('create')" class="inline-flex items-center justify-center rounded-md bg-brand-500 py-2 px-6 text-center font-medium text-white hover:bg-brand-600">
-            + Tambah Data
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span class="p-2 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">
+              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+            </span>
+            VoIP & IP-PBX Telephony System
+          </h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Manajemen ekstensi telepon kantor internal, SIP Server trunk, dan integrasi panggilan pelanggan.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            @click="isDialerOpen = true"
+            class="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-teal-700"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+            Buka Softphone Dialer
           </button>
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        
-        <div class="flex flex-col sm:flex-row items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 gap-4">
-          <h3 class="font-bold text-gray-800 dark:text-white/90 text-title-sm">Recent Data</h3>
-          <div class="flex items-center gap-3 w-full sm:w-auto">
-            <div class="relative w-full sm:w-64">
-              <input type="text" placeholder="Search..." class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" />
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M19.7 18.3l-4.8-4.8c1-1.3 1.6-2.9 1.6-4.7 0-4.3-3.5-7.8-7.8-7.8S1 4.5 1 8.8s3.5 7.8 7.8 7.8c1.8 0 3.4-.6 4.7-1.6l4.8 4.8c.2.2.4.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4zM2.5 8.8c0-3.5 2.8-6.3 6.3-6.3s6.3 2.8 6.3 6.3-2.8 6.3-6.3 6.3-6.3-2.8-6.3-6.3z"/></svg>
-              </span>
-            </div>
-            <button class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              Filter
-            </button>
-          </div>
+      <!-- PBX Server Info Cards -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <span class="text-xs font-medium text-gray-500">SIP Trunk Server</span>
+          <h4 class="text-lg font-bold text-gray-900 dark:text-white mt-1">sip.company.local</h4>
+          <p class="text-xs text-emerald-600 font-semibold mt-1">✓ REGISTERED (Port 5060 UDP/TLS)</p>
         </div>
 
-        <div class="max-w-full overflow-x-auto custom-scrollbar">
-          <table class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700">
-                <th class="w-12 px-5 py-3 sm:px-6">
-                  <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800" />
-                </th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">ID / Info</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nama / Judul</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Status</p></th>
-                <th class="px-5 py-3 text-right sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Aksi</p></th>
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <span class="text-xs font-medium text-gray-500">Ekstensi Aktif</span>
+          <h4 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ extensions.length }} Unit</h4>
+          <p class="text-xs text-teal-600 mt-1">Multi-Line SIP Phone</p>
+        </div>
+
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <span class="text-xs font-medium text-gray-500">Protokol Audio WebRTC</span>
+          <h4 class="text-lg font-bold text-gray-900 dark:text-white mt-1">Opus & G.711a</h4>
+          <p class="text-xs text-emerald-600 font-semibold mt-1">HD Voice Encryption</p>
+        </div>
+
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <span class="text-xs font-medium text-gray-500">Perekam Panggilan Otomatis</span>
+          <h4 class="text-lg font-bold text-gray-900 dark:text-white mt-1">Aktif (100%)</h4>
+          <p class="text-xs text-gray-400 mt-1">Disimpan di Storage DMS</p>
+        </div>
+      </div>
+
+      <!-- Extension Directory Table -->
+      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 mb-6">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <h3 class="font-bold text-sm text-gray-900 dark:text-white">Daftar Ekstensi Internal Kantor</h3>
+          <span class="text-xs text-gray-400">100–1000 Pegawai Ready</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-gray-50 uppercase text-gray-500 dark:bg-gray-800 dark:text-gray-400 font-semibold">
+              <tr>
+                <th class="px-5 py-3">Ekstensi</th>
+                <th class="px-5 py-3">Departemen / Pengguna</th>
+                <th class="px-5 py-3">Tipe Perangkat</th>
+                <th class="px-5 py-3">IP Address Perangkat</th>
+                <th class="px-5 py-3">Status Saluran</th>
+                <th class="px-5 py-3 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-if="isLoading">
-                <td colspan="5" class="py-10 text-center">
-                  <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Memuat data...</p>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+              <tr v-for="ext in extensions" :key="ext.ext" class="hover:bg-gray-50/50 dark:hover:bg-gray-800/40">
+                <td class="px-5 py-3.5 font-mono text-base font-bold text-teal-600 dark:text-teal-400">{{ ext.ext }}</td>
+                <td class="px-5 py-3.5">
+                  <div class="font-medium text-gray-900 dark:text-white text-xs">{{ ext.user }}</div>
+                  <div class="text-[11px] text-gray-400">{{ ext.dept }}</div>
                 </td>
-              </tr>
-              <tr v-else-if="error"><td colspan="5" class="p-4"><Alert variant="error" title="Gagal" :message="error" /></td></tr>
-              <tr v-else-if="records.length === 0"><td colspan="5" class="px-5 py-4 text-center text-gray-500">Data masih kosong.</td></tr>
-              <tr v-for="(record, index) in records" :key="record.id || index" class="border-t border-gray-100 dark:border-gray-800">
-                <td class="px-5 py-4 sm:px-6">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold dark:bg-gray-800">
-                      {{ record.id || (index + 1) }}
-                    </div>
-                  </div>
+                <td class="px-5 py-3.5 text-gray-600 dark:text-gray-300">{{ ext.device }}</td>
+                <td class="px-5 py-3.5 font-mono text-gray-500">{{ ext.ip }}</td>
+                <td class="px-5 py-3.5">
+                  <span class="rounded-full px-2.5 py-0.5 text-[10px] font-bold" :class="ext.status === 'AVAILABLE' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'">
+                    {{ ext.status }}
+                  </span>
                 </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ (record as any).name || 'Data ' + (index+1) }}</span>
-                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ (record as any).description || '-' }}</span>
-                </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <Badge color="success">
-                    {{ 'Active' }}
-                  </Badge>
-                </td>
-                <td class="px-5 py-4 sm:px-6 text-right">
-                  <div class="flex items-center justify-end gap-3">
-                    <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
-                    <button @click="record.id && deleteRecord(record.id)" class="text-gray-500 hover:text-error-500 transition-colors" title="Hapus">
-                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"></path></svg>
-                    </button>
-                  </div>
+                <td class="px-5 py-3.5 text-right whitespace-nowrap">
+                  <button
+                    @click="callExtension(ext.ext)"
+                    class="rounded-md bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-100 dark:bg-teal-950 dark:text-teal-300"
+                  >
+                    Hubungi 📞
+                  </button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-
-        <div class="flex items-center justify-end gap-4 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">&larr; Previous</button>
-          <div class="flex items-center gap-1">
-            <button class="w-8 h-8 flex items-center justify-center text-sm font-medium text-white bg-brand-500 rounded-lg">1</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">2</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">3</button>
-          </div>
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">Next &rarr;</button>
-        </div>
-
       </div>
     </div>
-  </AdminLayout>
 
-  <!-- Modal CRUD -->
-  <Teleport to="body">
-    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800 my-8">
-      <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
-        {{ modalMode === 'create' ? 'Tambah Data' : 'Edit Data' }}
-      </h3>
-      <form @submit.prevent="saveRecord">
-        
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">ID Penelepon</label>
-          <input v-model="formData.caller_id" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+    <!-- Softphone Dialer Modal -->
+    <Teleport to="body">
+      <div v-if="isDialerOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <div class="w-full max-w-xs rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-center">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-gray-900 dark:text-white">WebRTC Dialer</h3>
+            <button @click="isDialerOpen = false" class="text-gray-400 hover:text-gray-600">&times;</button>
+          </div>
+
+          <div class="mb-4 rounded-xl bg-gray-100 p-3 dark:bg-gray-800">
+            <p class="text-xs text-gray-400">Nomor Tujuan</p>
+            <h2 class="text-2xl font-mono font-bold text-gray-900 dark:text-white mt-1">{{ dialNumber || '...' }}</h2>
+            <p class="text-[11px] text-teal-600 font-medium mt-1">{{ callStatus }}</p>
+          </div>
+
+          <!-- Keypad -->
+          <div class="grid grid-cols-3 gap-2 mb-4">
+            <button v-for="n in ['1','2','3','4','5','6','7','8','9','*','0','#']" :key="n" @click="dialNumber += n" class="h-12 rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 font-bold text-base text-gray-800 dark:text-gray-200">
+              {{ n }}
+            </button>
+          </div>
+
+          <div class="flex gap-2">
+            <button @click="dialNumber = ''" class="flex-1 rounded-xl border border-gray-200 py-2.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300">
+              Hapus
+            </button>
+            <button @click="startCall" class="flex-1 rounded-xl bg-emerald-600 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-emerald-700">
+              Panggil
+            </button>
+          </div>
         </div>
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">ID Penerima</label>
-          <input v-model="formData.receiver_id" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Durasi (Menit)</label>
-          <input v-model="formData.duration" type="number" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="flex justify-end gap-3 mt-6">
-          <button type="button" @click="closeModal" class="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-md bg-brand-500 px-4 py-2 text-white hover:bg-brand-600 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan' }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-  </Teleport>
+      </div>
+    </Teleport>
+  </AdminLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
-import Alert from '@/components/ui/Alert.vue'
-import Badge from '@/components/ui/Badge.vue'
-import { voipService } from '@/services/core/voip.service'
-import type { ICallRecordDto } from '@/types/core'
 
-const records = ref<ICallRecordDto[]>([])
-const isLoading = ref(false)
-const error = ref<string | null>(null)
+const isDialerOpen = ref(false)
+const dialNumber = ref('')
+const callStatus = ref('Siap Melakukan Panggilan')
 
-const isModalOpen = ref(false)
-const modalMode = ref<'create' | 'edit'>('create')
-const isSaving = ref(false)
-const formData = ref({ id: null, caller_id: '', receiver_id: '', duration: 0 })
+const extensions = ref([
+  { ext: '101', user: 'Siti Aminah', dept: 'Human Resources & General Affairs', device: 'Yealink T46U SIP', ip: '192.168.10.101', status: 'AVAILABLE' },
+  { ext: '102', user: 'Budi Santoso', dept: 'Finance & Accounting', device: 'Grandstream GXP2170', ip: '192.168.10.102', status: 'AVAILABLE' },
+  { ext: '103', user: 'Joko Prabowo', dept: 'Supply Chain & Warehouse Cikarang', device: 'Fanvil X4U Industrial', ip: '192.168.20.103', status: 'ON CALL' },
+  { ext: '104', user: 'Rina Kusuma', dept: 'Sales & Marketing Enterprise', device: 'WebRTC Softphone Desktop', ip: '192.168.10.104', status: 'AVAILABLE' },
+  { ext: '201', user: 'Helpdesk Support Tier-1', dept: 'Customer Service & IT Support', device: 'Call Center Queue SIP', ip: '192.168.10.201', status: 'AVAILABLE' },
+])
 
-const fetchData = async () => {
-  isLoading.value = true; error.value = null
-  try {
-    const data = await voipService.getAll()
-    records.value = data
-  } catch (err: any) {
-    error.value = 'Gagal: ' + (err.response?.data?.message || err.message)
-  } finally {
-    isLoading.value = false
-  }
+const callExtension = (ext: string) => {
+  dialNumber.value = ext
+  isDialerOpen.value = true
 }
 
-const openModal = (mode: 'create' | 'edit', data: any = null) => {
-  modalMode.value = mode
-  if (mode === 'edit' && data) {
-    formData.value = { id: data.id, caller_id: data.caller_id || '', receiver_id: data.receiver_id || '', duration: data.duration || 0 }
-  } else {
-    formData.value = { id: null, caller_id: '', receiver_id: '', duration: 0 }
-  }
-  isModalOpen.value = true
+const startCall = () => {
+  if (!dialNumber.value) return
+  callStatus.value = `Menghubungi Ekstensi ${dialNumber.value}...`
+  setTimeout(() => {
+    callStatus.value = `Tersambung (00:03) - Audio HD Clear`
+  }, 1500)
 }
-
-const closeModal = () => { isModalOpen.value = false }
-
-const saveRecord = async () => {
-  isSaving.value = true
-  try {
-    if (modalMode.value === 'edit' && formData.value.id) {
-      await voipService.update(formData.value.id, formData.value)
-    } else {
-      await voipService.create(formData.value)
-    }
-    closeModal()
-    fetchData()
-  } catch (err: any) {
-    alert(err.response?.data?.message || err.message)
-  } finally {
-    isSaving.value = false
-  }
-}
-
-const deleteRecord = async (id: number) => {
-  if (!confirm('Hapus data ini?')) return
-  try {
-    await voipService.delete(id)
-    fetchData()
-  } catch (err: any) {
-    alert(err.response?.data?.message || err.message)
-  }
-}
-
-onMounted(() => fetchData())
 </script>

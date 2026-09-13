@@ -563,7 +563,7 @@ const showWebhookModal = (survey: ISurveyDto) => {
 
 const webhookUrl = computed(() => {
   if (!selectedWebhookSurvey.value?.id) return ''
-  const base = window.location.origin.replace(':5173', ':8080')
+  const base = window.location.origin.replace(':5173', ':7070')
   return `${base}/api/public/surveys/${selectedWebhookSurvey.value.id}/webhook-gform`
 })
 

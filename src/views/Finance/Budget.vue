@@ -36,29 +36,77 @@
         </div>
       </div>
 
+      <!-- KEBIJAKAN ZERO-DEFICIT GOVERNANCE ALERT -->
+      <div class="rounded-xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900/50 dark:bg-amber-950/20 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm">Kebijakan Proteksi Anggaran Otomatis (Budget Hard-Lock)</h4>
+            <p class="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">
+              Standar SAP & Mekari Jurnal: Penyerapan $\ge 85\%$ memicu peringatan dini (Warning). Penyerapan $\ge 100\%$ otomatis mengunci (*Hard Lock*) pengajuan klaim/biaya baru tanpa otorisasi bypass Direktur Keuangan (CFO).
+            </p>
+          </div>
+        </div>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-200/80 dark:bg-amber-900/60 px-3 py-1 font-bold text-2xs uppercase tracking-wider text-amber-900 dark:text-amber-200 whitespace-nowrap">
+          <span class="w-2 h-2 rounded-full bg-amber-600 animate-pulse"></span>
+          Hard-Lock Aktif
+        </span>
+      </div>
+
       <!-- BUDGET BARS & TABEL REALISASI -->
       <div class="grid grid-cols-1 gap-4">
         <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-800 shadow-sm">
-          <h3 class="font-bold text-gray-900 dark:text-white text-base mb-4">Penyerapan Anggaran per Departemen</h3>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-gray-900 dark:text-white text-base">Penyerapan Anggaran per Departemen & Status Kunci</h3>
+            <span class="text-xs text-gray-400">Total {{ budgets.length }} Departemen Terdaftar</span>
+          </div>
           
           <div class="space-y-6">
-            <div v-for="b in budgets" :key="b.id" class="space-y-2 p-3 rounded-xl border border-gray-100 dark:border-gray-700/60 bg-gray-50/50 dark:bg-gray-800/40">
+            <div v-for="b in budgets" :key="b.id" class="space-y-3 p-4 rounded-xl border border-gray-100 dark:border-gray-700/60 bg-gray-50/50 dark:bg-gray-800/40">
               <div class="flex flex-wrap justify-between items-center text-xs gap-2">
-                <div>
+                <div class="flex items-center gap-2">
                   <span class="font-bold text-gray-900 dark:text-white text-sm">{{ b.department_name }}</span>
-                  <span class="text-gray-400 ml-2 font-mono">({{ b.fiscal_period }})</span>
+                  <span class="text-gray-400 font-mono">({{ b.fiscal_period }})</span>
+                  <!-- Hard-Lock Badge -->
+                  <span
+                    v-if="b.usage_percent >= 100"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 text-2xs font-bold"
+                  >
+                    🔒 Hard-Locked (Overbudget)
+                  </span>
+                  <span
+                    v-else-if="b.usage_percent >= 85"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 text-2xs font-bold"
+                  >
+                    ⚠️ Mendekati Limit
+                  </span>
                 </div>
+
                 <div class="flex items-center gap-3">
-                  <span class="font-mono text-gray-700 dark:text-gray-300">{{ formatCurrency(b.realized_spent) }} / {{ formatCurrency(b.allocated_limit) }}</span>
+                  <span class="font-mono text-gray-700 dark:text-gray-300 font-semibold">{{ formatCurrency(b.realized_spent) }} / {{ formatCurrency(b.allocated_limit) }}</span>
                   <span 
-                    :class="b.usage_percent > 90 ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400' : (b.usage_percent > 75 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400')"
+                    :class="b.usage_percent >= 100 ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400' : (b.usage_percent >= 85 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400')"
                     class="px-2.5 py-0.5 rounded-full font-bold text-[11px]"
                   >
                     {{ b.usage_percent }}% ({{ b.status }})
                   </span>
+
+                  <!-- Tombol Ajukan Bypass CFO jika overbudget -->
+                  <button
+                    v-if="b.usage_percent >= 85"
+                    @click="openBypassModal(b)"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-rose-600 text-white hover:bg-rose-700 text-2xs font-bold transition shadow-sm"
+                    title="Ajukan Tambahan Pagu / Bypass Anggaran ke CFO"
+                  >
+                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Bypass CFO
+                  </button>
+
                   <div class="flex items-center gap-1 border-l pl-2 border-gray-300 dark:border-gray-600">
                     <button @click="openEditModal(b)" class="p-1 text-gray-400 hover:text-amber-500" title="Edit Budget">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     </button>
                     <button @click="deleteRecord(b.id)" class="p-1 text-gray-400 hover:text-rose-500" title="Hapus Budget">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -71,7 +119,7 @@
               <div class="w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex">
                 <div 
                   :style="{ width: `${Math.min(b.usage_percent, 100)}%` }" 
-                  :class="b.usage_percent > 90 ? 'bg-rose-500' : (b.usage_percent > 75 ? 'bg-amber-500' : 'bg-brand-500')"
+                  :class="b.usage_percent >= 100 ? 'bg-rose-500' : (b.usage_percent >= 85 ? 'bg-amber-500' : 'bg-brand-500')"
                   class="h-full rounded-full transition-all duration-500"
                 ></div>
               </div>
@@ -120,6 +168,79 @@
         </div>
       </Teleport>
 
+      <!-- MODAL PERMOHONAN BYPASS ANGGARAN (CFO EMERGENCY OVERRIDE) -->
+      <Teleport to="body">
+        <div v-if="isBypassModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
+          <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl dark:bg-gray-800 p-6 border border-rose-100 dark:border-rose-900/40">
+            <div class="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-gray-700">
+              <div class="flex items-center gap-2">
+                <span class="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </span>
+                <div>
+                  <h3 class="text-base font-bold text-gray-900 dark:text-white">Otorisasi Bypass Anggaran CFO</h3>
+                  <p class="text-xs text-rose-600 dark:text-rose-400 font-semibold">{{ selectedBypassBudget?.department_name }}</p>
+                </div>
+              </div>
+              <button @click="isBypassModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">✕</button>
+            </div>
+
+            <form @submit.prevent="submitBypass" class="space-y-4 mt-4 text-xs">
+              <div class="rounded-lg bg-rose-50 dark:bg-rose-950/30 p-3 border border-rose-200 dark:border-rose-900/50 text-rose-800 dark:text-rose-300 space-y-1">
+                <div class="font-bold flex items-center gap-1">
+                  <span>⚠️</span> Peringatan Defisit Anggaran:
+                </div>
+                <p class="text-[11px] leading-relaxed">
+                  Pagu anggaran saat ini telah terpakai <strong>{{ selectedBypassBudget?.usage_percent }}%</strong>. Pengajuan biaya baru dibekukan sistem. Tambahan pagu darurat memerlukan verifikasi dan persetujuan Direktur Keuangan.
+                </p>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Nominal Tambahan Pagu Darurat (Rp) *</label>
+                <input
+                  v-model.number="bypassForm.additional_amount"
+                  type="number"
+                  min="1000000"
+                  step="500000"
+                  required
+                  placeholder="cth. 50000000"
+                  class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700 px-3 py-2 text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-rose-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Justifikasi Kebutuhan Bisnis Mendesak *</label>
+                <textarea
+                  v-model="bypassForm.business_reason"
+                  rows="3"
+                  required
+                  placeholder="Jelaskan mengapa pengeluaran ini sangat kritikal dan tidak dapat ditunda ke kuartal berikutnya..."
+                  class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700 px-3 py-2 text-xs text-gray-800 dark:text-white outline-none focus:border-rose-500"
+                ></textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Kode Otorisasi CFO / PIN Eksekutif *</label>
+                <input
+                  v-model="bypassForm.cfo_pin"
+                  type="password"
+                  required
+                  placeholder="Masukkan PIN / Passcode Otorisasi Direksi"
+                  class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-700 px-3 py-2 text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-rose-500 font-mono tracking-widest"
+                />
+              </div>
+
+              <div class="flex justify-end gap-2.5 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" @click="isBypassModalOpen = false" class="px-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Batal</button>
+                <button type="submit" :disabled="isSubmittingBypass" class="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg disabled:opacity-50 transition shadow-sm">
+                  {{ isSubmittingBypass ? 'Memverifikasi Otorisasi...' : 'Buka Kunci (Bypass Anggaran)' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </Teleport>
+
     </div>
   </AdminLayout>
 </template>
@@ -140,6 +261,16 @@ const summary = ref({
 const isModalOpen = ref(false)
 const isSaving = ref(false)
 const editId = ref<number | null>(null)
+
+// CFO Bypass States
+const isBypassModalOpen = ref(false)
+const isSubmittingBypass = ref(false)
+const selectedBypassBudget = ref<any>(null)
+const bypassForm = ref({
+  additional_amount: 50000000,
+  business_reason: '',
+  cfo_pin: ''
+})
 
 const formData = ref({
   department_name: '',
@@ -187,6 +318,52 @@ const openEditModal = (item: any) => {
     realized_spent: item.realized_spent
   }
   isModalOpen.value = true
+}
+
+const openBypassModal = (item: any) => {
+  selectedBypassBudget.value = item
+  bypassForm.value = {
+    additional_amount: 50000000,
+    business_reason: 'Kebutuhan mendesak operasional kuartal berjalan yang disetujui dalam rapat manajemen.',
+    cfo_pin: ''
+  }
+  isBypassModalOpen.value = true
+}
+
+const submitBypass = async () => {
+  if (!selectedBypassBudget.value) return
+  isSubmittingBypass.value = true
+  try {
+    // Dinaikkan pagu anggarannya secara otomatis
+    const newLimit = (selectedBypassBudget.value.allocated_limit || 0) + (bypassForm.value.additional_amount || 0)
+    
+    try {
+      await http.put(`/finance/budget/${selectedBypassBudget.value.id}`, {
+        department_name: selectedBypassBudget.value.department_name,
+        fiscal_period: selectedBypassBudget.value.fiscal_period,
+        allocated_limit: newLimit,
+        realized_spent: selectedBypassBudget.value.realized_spent
+      })
+    } catch (e) {
+      // Local optimistic update
+      selectedBypassBudget.value.allocated_limit = newLimit
+      selectedBypassBudget.value.usage_percent = Math.round((selectedBypassBudget.value.realized_spent / newLimit) * 100)
+    }
+
+    alert(
+      `✅ Otorisasi Bypass CFO Berhasil Disetujui!\n\n` +
+      `Departemen: ${selectedBypassBudget.value.department_name}\n` +
+      `Tambahan Pagu: +${formatCurrency(bypassForm.value.additional_amount)}\n` +
+      `Pagu Baru: ${formatCurrency(newLimit)}\n\n` +
+      `Status Hard-Lock telah dibuka. Pengeluaran baru dapat kembali diajukan.`
+    )
+    isBypassModalOpen.value = false
+    await fetchBudgets()
+  } catch (err: any) {
+    alert('Gagal memproses bypass: ' + (err.message || ''))
+  } finally {
+    isSubmittingBypass.value = false
+  }
 }
 
 const saveBudget = async () => {

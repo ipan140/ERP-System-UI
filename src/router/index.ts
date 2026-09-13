@@ -29,6 +29,18 @@ const router = createRouter({
       redirect: '/core/dashboard',
     },
     {
+      path: '/core/dashboard',
+      name: 'CoreDashboard',
+      component: () => import('../views/Core/Dashboard.vue'),
+      meta: { title: 'Dashboard Pengaturan & Sistem' },
+    },
+    {
+      path: '/sys/audit',
+      name: 'AuditLogs',
+      component: () => import('../views/Core/Access/AuditLogs.vue'),
+      meta: { title: 'Jejak Audit Sistem' },
+    },
+    {
       path: '/core/countries',
       name: 'Countries',
       component: () => import('../views/Core/MasterData/Countries.vue'),

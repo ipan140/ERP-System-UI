@@ -1,202 +1,202 @@
 <template>
   <AdminLayout>
-    <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
-      <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <PageBreadcrumb pageTitle="Discuss" />
-        
-        <div class="flex gap-2">
-          <button @click="fetchData" class="inline-flex items-center justify-center rounded-md border border-gray-300 py-2 px-4 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
-            Refresh
-          </button>
-          <button @click="openModal('create')" class="inline-flex items-center justify-center rounded-md bg-brand-500 py-2 px-6 text-center font-medium text-white hover:bg-brand-600">
-            + Tambah Data
-          </button>
+    <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 h-[calc(100vh-100px)] flex flex-col">
+      <!-- Top Title -->
+      <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span class="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </span>
+            Enterprise Discuss (Saluran Komunikasi Internal)
+          </h2>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Kolaborasi pesan instan terpusat antar departemen (100–1000 Karyawan) berstandar Odoo Discuss.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+            <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            WebSocket Online
+          </span>
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        
-        <div class="flex flex-col sm:flex-row items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 gap-4">
-          <h3 class="font-bold text-gray-800 dark:text-white/90 text-title-sm">Recent Data</h3>
-          <div class="flex items-center gap-3 w-full sm:w-auto">
-            <div class="relative w-full sm:w-64">
-              <input type="text" placeholder="Search..." class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" />
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M19.7 18.3l-4.8-4.8c1-1.3 1.6-2.9 1.6-4.7 0-4.3-3.5-7.8-7.8-7.8S1 4.5 1 8.8s3.5 7.8 7.8 7.8c1.8 0 3.4-.6 4.7-1.6l4.8 4.8c.2.2.4.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4zM2.5 8.8c0-3.5 2.8-6.3 6.3-6.3s6.3 2.8 6.3 6.3-2.8 6.3-6.3 6.3-6.3-2.8-6.3-6.3z"/></svg>
-              </span>
+      <!-- Main Chat Layout: Left Channels + Right Message Stream -->
+      <div class="flex-1 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 flex">
+        <!-- Sidebar Channels -->
+        <div class="w-64 sm:w-72 border-r border-gray-200 dark:border-gray-800 flex flex-col bg-gray-50/50 dark:bg-gray-900/50">
+          <div class="p-4 border-b border-gray-200 dark:border-gray-800">
+            <input
+              v-model="channelSearch"
+              type="text"
+              placeholder="Cari saluran / karyawan..."
+              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+
+          <div class="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar">
+            <!-- Public Channels -->
+            <div>
+              <p class="text-[11px] font-bold uppercase text-gray-400 px-2 mb-1.5">Saluran Publik (#)</p>
+              <div class="space-y-1">
+                <button
+                  v-for="ch in publicChannels"
+                  :key="ch.id"
+                  @click="activeChannel = ch"
+                  class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors text-left"
+                  :class="activeChannel.id === ch.id ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'"
+                >
+                  <span class="truncate font-semibold"># {{ ch.name }}</span>
+                  <span v-if="ch.unread" class="h-5 w-5 rounded-full bg-indigo-600 text-[10px] text-white flex items-center justify-center font-bold">
+                    {{ ch.unread }}
+                  </span>
+                </button>
+              </div>
             </div>
-            <button class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              Filter
-            </button>
+
+            <!-- Direct Messages -->
+            <div>
+              <p class="text-[11px] font-bold uppercase text-gray-400 px-2 mb-1.5">Pesan Langsung (@)</p>
+              <div class="space-y-1">
+                <button
+                  v-for="dm in directMessages"
+                  :key="dm.id"
+                  @click="activeChannel = dm"
+                  class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors text-left"
+                  :class="activeChannel.id === dm.id ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'"
+                >
+                  <span class="relative flex h-2 w-2">
+                    <span :class="dm.online ? 'bg-emerald-500' : 'bg-gray-400'" class="h-2 w-2 rounded-full"></span>
+                  </span>
+                  <span class="truncate">{{ dm.name }}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="max-w-full overflow-x-auto custom-scrollbar">
-          <table class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700">
-                <th class="w-12 px-5 py-3 sm:px-6">
-                  <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800" />
-                </th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">ID / Info</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nama / Judul</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Status</p></th>
-                <th class="px-5 py-3 text-right sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Aksi</p></th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-if="isLoading">
-                <td colspan="5" class="py-10 text-center">
-                  <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Memuat data...</p>
-                </td>
-              </tr>
-              <tr v-else-if="error"><td colspan="5" class="p-4"><Alert variant="error" title="Gagal" :message="error" /></td></tr>
-              <tr v-else-if="records.length === 0"><td colspan="5" class="px-5 py-4 text-center text-gray-500">Data masih kosong.</td></tr>
-              <tr v-for="(record, index) in records" :key="record.id || index" class="border-t border-gray-100 dark:border-gray-800">
-                <td class="px-5 py-4 sm:px-6">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold dark:bg-gray-800">
-                      {{ record.id || (index + 1) }}
-                    </div>
-                  </div>
-                </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ (record as any).name || 'Data ' + (index+1) }}</span>
-                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ (record as any).description || '-' }}</span>
-                </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <Badge color="success">
-                    {{ 'Active' }}
-                  </Badge>
-                </td>
-                <td class="px-5 py-4 sm:px-6 text-right">
-                  <div class="flex items-center justify-end gap-3">
-                    <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
-                    <button @click="record.id && deleteRecord(record.id)" class="text-gray-500 hover:text-error-500 transition-colors" title="Hapus">
-                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"></path></svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="flex items-center justify-end gap-4 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">&larr; Previous</button>
-          <div class="flex items-center gap-1">
-            <button class="w-8 h-8 flex items-center justify-center text-sm font-medium text-white bg-brand-500 rounded-lg">1</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">2</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">3</button>
+        <!-- Chat Area -->
+        <div class="flex-1 flex flex-col bg-white dark:bg-gray-900">
+          <!-- Active Channel Header -->
+          <div class="px-6 py-3.5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                <span>{{ activeChannel.name.startsWith('#') ? activeChannel.name : '@ ' + activeChannel.name }}</span>
+                <span class="text-[11px] font-normal text-gray-400">• {{ activeChannel.members || '248 Anggota' }}</span>
+              </h3>
+              <p class="text-[11px] text-gray-500">{{ activeChannel.topic || 'Forum diskusi resmi korporat' }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-400 font-mono">Enkripsi E2E Aktif</span>
+            </div>
           </div>
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">Next &rarr;</button>
-        </div>
 
+          <!-- Messages Stream -->
+          <div class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+            <div
+              v-for="msg in activeMessages"
+              :key="msg.id"
+              class="flex items-start gap-3 group"
+            >
+              <div class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold shrink-0" :class="msg.isMe ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'">
+                {{ msg.sender.substring(0, 2).toUpperCase() }}
+              </div>
+              <div class="flex-1">
+                <div class="flex items-baseline gap-2">
+                  <span class="text-xs font-bold text-gray-900 dark:text-white">{{ msg.sender }}</span>
+                  <span class="text-[10px] text-gray-400">{{ msg.time }}</span>
+                </div>
+                <div class="mt-1 text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/60 p-3 rounded-xl rounded-tl-none inline-block max-w-xl leading-relaxed">
+                  {{ msg.text }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Send Input Bar -->
+          <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+            <form @submit.prevent="sendMessage" class="flex items-center gap-2">
+              <input
+                v-model="newMessage"
+                type="text"
+                placeholder="Tulis pesan ke saluran ini..."
+                class="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-xs focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+              <button
+                type="submit"
+                :disabled="!newMessage.trim()"
+                class="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-40"
+              >
+                Kirim
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   </AdminLayout>
-
-  <!-- Modal CRUD -->
-  <Teleport to="body">
-    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800 my-8">
-      <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
-        {{ modalMode === 'create' ? 'Tambah Data' : 'Edit Data' }}
-      </h3>
-      <form @submit.prevent="saveRecord">
-        
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Channel / Topik</label>
-          <input v-model="formData.channel_name" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Tipe Channel</label>
-          <select v-model="formData.channel_type" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-            <option value="Public">Public</option><option value="Private">Private</option><option value="Direct">Direct</option>
-          </select>
-        </div>
-        <div class="flex justify-end gap-3 mt-6">
-          <button type="button" @click="closeModal" class="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-md bg-brand-500 px-4 py-2 text-white hover:bg-brand-600 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan' }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
-import Alert from '@/components/ui/Alert.vue'
-import Badge from '@/components/ui/Badge.vue'
-import { discussService } from '@/services/core/discuss.service'
-import type { IChannelDto } from '@/types/core'
 
-const records = ref<IChannelDto[]>([])
-const isLoading = ref(false)
-const error = ref<string | null>(null)
+const channelSearch = ref('')
+const newMessage = ref('')
 
-const isModalOpen = ref(false)
-const modalMode = ref<'create' | 'edit'>('create')
-const isSaving = ref(false)
-const formData = ref({ id: null, channel_name: '', channel_type: 'Public' })
+const publicChannels = ref([
+  { id: 'ch_general', name: 'general', members: '248 Anggota', topic: 'Pengumuman umum seluruh karyawan perusahaan', unread: 0 },
+  { id: 'ch_hr', name: 'pengumuman-hrd', members: '248 Anggota', topic: 'Informasi cuti bersama, benefit BPJS, dan slip gaji', unread: 2 },
+  { id: 'ch_finance', name: 'finance-budgeting', members: '18 Anggota', topic: 'Koordinasi penutupan buku akhir bulan & perpajakan', unread: 0 },
+  { id: 'ch_warehouse', name: 'warehouse-cikarang', members: '34 Anggota', topic: 'Laporan barang masuk inbound & mutasi rak', unread: 0 },
+  { id: 'ch_sales', name: 'sales-champions', members: '52 Anggota', topic: 'Target closing kuartal III & diskon approval', unread: 1 },
+])
 
-const fetchData = async () => {
-  isLoading.value = true; error.value = null
-  try {
-    const data = await discussService.getAll()
-    records.value = data
-  } catch (err: any) {
-    error.value = 'Gagal: ' + (err.response?.data?.message || err.message)
-  } finally {
-    isLoading.value = false
+const directMessages = ref([
+  { id: 'dm_hr_lead', name: 'Siti Aminah (HR Specialist)', online: true, members: 'Direct Message', topic: 'Obrolan pribadi' },
+  { id: 'dm_finance_head', name: 'Budi Santoso (Finance Manager)', online: true, members: 'Direct Message', topic: 'Obrolan pribadi' },
+  { id: 'dm_director', name: 'Ahmad Fauzi (Direktur)', online: false, members: 'Direct Message', topic: 'Obrolan pribadi' },
+])
+
+const activeChannel = ref(publicChannels.value[0])
+
+const messagesMap = ref<Record<string, any[]>>({
+  ch_general: [
+    { id: 1, sender: 'Ahmad Fauzi (Direktur)', text: 'Selamat pagi rekan-rekan. Terima kasih atas kerja keras seluruh tim pada kuartal ini.', time: '08:30 WIB', isMe: false },
+    { id: 2, sender: 'HR Specialist', text: 'Pengingat: Batas akhir klaim pengobatan bulan September adalah besok pukul 17:00 WIB.', time: '09:15 WIB', isMe: false },
+    { id: 3, sender: 'Saya (Superadmin)', text: 'Server sistem ERP telah diperbarui ke versi Enterprise v2.5.0. Semua modul normal.', time: '10:00 WIB', isMe: true },
+  ],
+  ch_hr: [
+    { id: 1, sender: 'HR Specialist', text: 'Batch slip gaji periode September 2026 telah diposting dan dikirimkan via email/WhatsApp.', time: '10:05 WIB', isMe: false },
+  ],
+  ch_finance: [
+    { id: 1, sender: 'Finance Manager', text: 'Rekonsiliasi bank BCA dan Mandiri sudah sinkron 100%. File e-Faktur PPN siap lapor.', time: '11:20 WIB', isMe: false },
+  ],
+})
+
+const activeMessages = computed(() => {
+  return messagesMap.value[activeChannel.value.id] || [
+    { id: 1, sender: 'Sistem', text: 'Belum ada riwayat pesan di percakapan ini. Mulailah menyapa!', time: 'Sekarang', isMe: false },
+  ]
+})
+
+const sendMessage = () => {
+  if (!newMessage.value.trim()) return
+  if (!messagesMap.value[activeChannel.value.id]) {
+    messagesMap.value[activeChannel.value.id] = []
   }
+  const now = new Date()
+  messagesMap.value[activeChannel.value.id].push({
+    id: Date.now(),
+    sender: 'Saya (Superadmin)',
+    text: newMessage.value.trim(),
+    time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB',
+    isMe: true,
+  })
+  newMessage.value = ''
 }
-
-const openModal = (mode: 'create' | 'edit', data: any = null) => {
-  modalMode.value = mode
-  if (mode === 'edit' && data) {
-    formData.value = { id: data.id, channel_name: data.channel_name || '', channel_type: data.channel_type || 'Public' }
-  } else {
-    formData.value = { id: null, channel_name: '', channel_type: 'Public' }
-  }
-  isModalOpen.value = true
-}
-
-const closeModal = () => { isModalOpen.value = false }
-
-const saveRecord = async () => {
-  isSaving.value = true
-  try {
-    if (modalMode.value === 'edit' && formData.value.id) {
-      await discussService.update(formData.value.id, formData.value)
-    } else {
-      await discussService.create(formData.value)
-    }
-    closeModal()
-    fetchData()
-  } catch (err: any) {
-    alert(err.response?.data?.message || err.message)
-  } finally {
-    isSaving.value = false
-  }
-}
-
-const deleteRecord = async (id: number) => {
-  if (!confirm('Hapus data ini?')) return
-  try {
-    await discussService.delete(id)
-    fetchData()
-  } catch (err: any) {
-    alert(err.response?.data?.message || err.message)
-  }
-}
-
-onMounted(() => fetchData())
 </script>

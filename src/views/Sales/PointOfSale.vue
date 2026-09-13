@@ -22,6 +22,15 @@
             <span class="text-gray-700 dark:text-gray-300">Sesi Aktif: Kasir Utama (Terminal #01)</span>
           </div>
 
+          <!-- Tutup Shift Button (Z-Report) -->
+          <button
+            @click="openCloseShiftModal"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 dark:border-rose-800 dark:bg-rose-950/40 text-xs font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition shadow-xs"
+            title="Tutup Sesi Kasir & Rekonsiliasi Laci Kas Z-Report"
+          >
+            🔒 Tutup Shift (Z-Report)
+          </button>
+
           <!-- Switch View Toggle -->
           <div class="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-800 text-xs font-semibold">
             <button
@@ -502,6 +511,310 @@
           </div>
         </div>
       </div>
+
+      <!-- ========================================================================= -->
+      <!-- MODAL REKONSILIASI TUTUP SHIFT KASIR (Z-REPORT)                           -->
+      <!-- ========================================================================= -->
+      <div
+        v-if="isCloseShiftModalOpen"
+        class="fixed inset-0 z-99999 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto"
+      >
+        <div class="relative w-full max-w-2xl rounded-2xl bg-white dark:bg-gray-900 shadow-2xl p-6 space-y-5 my-8 max-h-[90vh] overflow-y-auto custom-scrollbar border border-gray-100 dark:border-gray-800">
+          <!-- Header Modal -->
+          <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
+            <div class="flex items-center gap-2.5">
+              <span class="p-2 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 text-lg">
+                🔒
+              </span>
+              <div>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">
+                  Tutup Shift Kasir & Rekonsiliasi Laci Kas (Z-Report)
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  Standar Odoo POS: Hitung fisik uang tunai di laci untuk mendeteksi selisih omset sebelum tutup kasir.
+                </p>
+              </div>
+            </div>
+            <button
+              @click="isCloseShiftModalOpen = false"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg p-1 rounded-lg"
+            >
+              ✕
+            </button>
+          </div>
+
+          <!-- Session Metadata Bar -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl text-xs">
+            <div>
+              <span class="text-gray-400 block text-[10px] uppercase font-bold">Terminal ID</span>
+              <span class="font-bold text-gray-800 dark:text-gray-200 font-mono">{{ shiftData.terminalId }}</span>
+            </div>
+            <div>
+              <span class="text-gray-400 block text-[10px] uppercase font-bold">Nama Kasir</span>
+              <span class="font-bold text-gray-800 dark:text-gray-200">{{ shiftData.cashierName }}</span>
+            </div>
+            <div>
+              <span class="text-gray-400 block text-[10px] uppercase font-bold">Buka Shift</span>
+              <span class="font-bold text-gray-800 dark:text-gray-200">{{ shiftData.openTime }}</span>
+            </div>
+            <div>
+              <span class="text-gray-400 block text-[10px] uppercase font-bold">Tutup Shift</span>
+              <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ shiftData.closeTime }}</span>
+            </div>
+          </div>
+
+          <!-- Summary Matrix (Sistem vs Ekspektasi) -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
+              <span class="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Modal Awal Kasir</span>
+              <div class="text-base font-black font-mono text-gray-900 dark:text-white mt-1">
+                Rp {{ formatCurrency(shiftData.openingCash) }}
+              </div>
+              <span class="text-[10px] text-gray-400">Float tunai pagi</span>
+            </div>
+
+            <div class="p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
+              <span class="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Total Omset Sistem</span>
+              <div class="text-base font-black font-mono text-emerald-600 dark:text-emerald-400 mt-1">
+                Rp {{ formatCurrency(totalSystemOmset) }}
+              </div>
+              <span class="text-[10px] text-gray-400">Tunai + QRIS + Debit</span>
+            </div>
+
+            <div class="p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
+              <span class="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Target Tunai di Laci</span>
+              <div class="text-base font-black font-mono text-brand-600 dark:text-brand-400 mt-1">
+                Rp {{ formatCurrency(expectedCashInDrawer) }}
+              </div>
+              <span class="text-[10px] text-gray-400">Modal Awal + Penjualan Tunai</span>
+            </div>
+          </div>
+
+          <!-- Breakdown Metode Pembayaran Sistem -->
+          <div class="p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40 text-xs space-y-1.5">
+            <div class="font-bold text-gray-700 dark:text-gray-300 mb-1 flex justify-between">
+              <span>Rincian Pembayaran Masuk Sistem:</span>
+              <span>{{ shiftData.totalTransactions }} Transaksi</span>
+            </div>
+            <div class="flex justify-between text-gray-600 dark:text-gray-400">
+              <span>💵 Pembayaran Tunai (Cash):</span>
+              <span class="font-mono font-semibold">Rp {{ formatCurrency(shiftData.cashSales) }}</span>
+            </div>
+            <div class="flex justify-between text-gray-600 dark:text-gray-400">
+              <span>📱 QRIS Dinamis (GoPay/OVO/ShopeePay):</span>
+              <span class="font-mono font-semibold">Rp {{ formatCurrency(shiftData.qrisSales) }}</span>
+            </div>
+            <div class="flex justify-between text-gray-600 dark:text-gray-400">
+              <span>💳 Kartu Debit / EDC Mandiri & BCA:</span>
+              <span class="font-mono font-semibold">Rp {{ formatCurrency(shiftData.debitSales) }}</span>
+            </div>
+          </div>
+
+          <!-- Kalkulator Uang Fisik Laci (Cash Denominations) -->
+          <div class="border border-gray-200 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-800/60 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-gray-900 dark:text-white flex items-center gap-1.5">
+                <span>🧮</span>
+                <span>Penghitungan Uang Fisik di Laci Kasir (Cash Count):</span>
+              </span>
+              <span class="text-xs font-mono font-black text-brand-600 dark:text-brand-400">
+                Fisik: Rp {{ formatCurrency(totalActualCash) }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400">Rp 100.000 (Lembar)</label>
+                <input v-model.number="denominations.c100k" type="number" min="0" class="w-full mt-1 px-2 py-1 text-xs border rounded bg-white dark:bg-gray-800 font-mono font-bold dark:border-gray-600 dark:text-white" />
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400">Rp 50.000 (Lembar)</label>
+                <input v-model.number="denominations.c50k" type="number" min="0" class="w-full mt-1 px-2 py-1 text-xs border rounded bg-white dark:bg-gray-800 font-mono font-bold dark:border-gray-600 dark:text-white" />
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400">Rp 20.000 (Lembar)</label>
+                <input v-model.number="denominations.c20k" type="number" min="0" class="w-full mt-1 px-2 py-1 text-xs border rounded bg-white dark:bg-gray-800 font-mono font-bold dark:border-gray-600 dark:text-white" />
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400">Rp 10.000 (Lembar)</label>
+                <input v-model.number="denominations.c10k" type="number" min="0" class="w-full mt-1 px-2 py-1 text-xs border rounded bg-white dark:bg-gray-800 font-mono font-bold dark:border-gray-600 dark:text-white" />
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400">Rp 5.000 (Lembar)</label>
+                <input v-model.number="denominations.c5k" type="number" min="0" class="w-full mt-1 px-2 py-1 text-xs border rounded bg-white dark:bg-gray-800 font-mono font-bold dark:border-gray-600 dark:text-white" />
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400">Rp 2.000 (Lembar)</label>
+                <input v-model.number="denominations.c2k" type="number" min="0" class="w-full mt-1 px-2 py-1 text-xs border rounded bg-white dark:bg-gray-800 font-mono font-bold dark:border-gray-600 dark:text-white" />
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400">Rp 1.000 (Lembar)</label>
+                <input v-model.number="denominations.c1k" type="number" min="0" class="w-full mt-1 px-2 py-1 text-xs border rounded bg-white dark:bg-gray-800 font-mono font-bold dark:border-gray-600 dark:text-white" />
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400">Uang Koin / Logam (Rp)</label>
+                <input v-model.number="denominations.coins" type="number" min="0" step="500" class="w-full mt-1 px-2 py-1 text-xs border rounded bg-white dark:bg-gray-800 font-mono font-bold dark:border-gray-600 dark:text-white" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Hasil Rekonsiliasi & Variance Banner -->
+          <div
+            class="p-4 rounded-xl border transition-all"
+            :class="cashVariance === 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200' : cashVariance > 0 ? 'bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 text-amber-800 dark:text-amber-200' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800 text-rose-800 dark:text-rose-200'"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold block">
+                  {{ cashVariance === 0 ? '✓ Kas Seimbang Sempurna (Balance)' : cashVariance > 0 ? '⚠️ Kas Surplus (Lebih)' : '⚠️ Kas Defisit (Selisih Kurang)' }}
+                </span>
+                <p class="text-[11px] mt-0.5 opacity-80">
+                  {{ cashVariance === 0 ? 'Total fisik uang di laci kasir cocok 100% dengan pencatatan sistem penjualan.' : 'Terdapat perbedaan antara uang fisik di laci dengan omset tunai sistem.' }}
+                </p>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] uppercase font-bold block opacity-70">Selisih Kas (Variance)</span>
+                <span class="text-lg font-black font-mono">
+                  {{ cashVariance >= 0 ? '+' : '' }}Rp {{ formatCurrency(cashVariance) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Catatan / Serah Terima Shift -->
+          <div>
+            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+              Catatan Kasir / Serah Terima Kas
+            </label>
+            <textarea
+              v-model="shiftData.notes"
+              rows="2"
+              placeholder="Contoh: Seluruh transaksi shift pagi telah selesai. Kas diserahterimakan ke Supervisor Toko."
+              class="w-full rounded-xl border border-gray-300 bg-white p-2 text-xs dark:border-gray-700 dark:bg-gray-800 dark:text-white outline-none focus:border-brand-500"
+            ></textarea>
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <button
+              @click="isCloseShiftModalOpen = false"
+              class="rounded-xl px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              Kembali ke Kasir
+            </button>
+            <button
+              @click="finalizeCloseShift"
+              class="rounded-xl bg-rose-600 hover:bg-rose-700 px-5 py-2 text-xs font-bold text-white shadow-sm transition flex items-center gap-1.5"
+            >
+              🔒 Konfirmasi Tutup Shift & Cetak Z-Report
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- MODAL CETAK THERMAL Z-REPORT RESMI                                        -->
+      <!-- ========================================================================= -->
+      <div
+        v-if="isZReportModalOpen"
+        class="fixed inset-0 z-99999 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto"
+      >
+        <div class="relative w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 shadow-2xl p-5 space-y-4 my-8 border border-gray-100 dark:border-gray-800">
+          <div class="flex items-center justify-between border-b pb-2 dark:border-gray-800">
+            <h3 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-1.5">
+              <span>🧾</span>
+              <span>Laporan Z-Report Kasir</span>
+            </h3>
+            <button @click="isZReportModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+              ✕
+            </button>
+          </div>
+
+          <!-- Struk Thermal Container -->
+          <div id="pos-thermal-zreport" class="bg-white p-4 font-mono text-black text-xs space-y-2 border border-dashed border-gray-300 rounded-lg shadow-inner">
+            <div class="text-center space-y-0.5">
+              <h4 class="font-black text-sm uppercase">PT. NUSANTARA PRIMA SOLUSINDO</h4>
+              <p class="text-[10px]">LAPORAN PENUTUPAN KASIR (Z-REPORT)</p>
+              <p class="text-[9px] text-gray-500">Terminal: {{ shiftData.terminalId }} | Kasir: {{ shiftData.cashierName }}</p>
+              <p class="text-[9px] text-gray-500">Buka: {{ shiftData.openTime }} | Tutup: {{ shiftData.closeTime }}</p>
+            </div>
+
+            <div class="border-t border-dashed border-gray-400 my-1"></div>
+
+            <div class="space-y-1 text-[11px]">
+              <div class="flex justify-between">
+                <span>Modal Awal Kas:</span>
+                <span>Rp {{ formatCurrency(shiftData.openingCash) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Penjualan Tunai:</span>
+                <span>Rp {{ formatCurrency(shiftData.cashSales) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Penjualan QRIS:</span>
+                <span>Rp {{ formatCurrency(shiftData.qrisSales) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Penjualan EDC:</span>
+                <span>Rp {{ formatCurrency(shiftData.debitSales) }}</span>
+              </div>
+              <div class="flex justify-between font-bold border-t border-gray-300 pt-1">
+                <span>TOTAL OMSET SHIFT:</span>
+                <span>Rp {{ formatCurrency(totalSystemOmset) }}</span>
+              </div>
+            </div>
+
+            <div class="border-t border-dashed border-gray-400 my-1"></div>
+
+            <div class="space-y-1 text-[11px]">
+              <div class="flex justify-between">
+                <span>Target Uang Fisik:</span>
+                <span>Rp {{ formatCurrency(expectedCashInDrawer) }}</span>
+              </div>
+              <div class="flex justify-between font-bold">
+                <span>Fisik Laci Terhitung:</span>
+                <span>Rp {{ formatCurrency(totalActualCash) }}</span>
+              </div>
+              <div class="flex justify-between font-black pt-1 border-t border-gray-300" :class="cashVariance >= 0 ? 'text-emerald-700' : 'text-rose-700'">
+                <span>SELISIH KAS:</span>
+                <span>{{ cashVariance >= 0 ? '+' : '' }}Rp {{ formatCurrency(cashVariance) }}</span>
+              </div>
+            </div>
+
+            <div class="border-t border-dashed border-gray-400 my-2"></div>
+
+            <div class="grid grid-cols-2 text-center text-[9px] pt-2 pb-1 gap-2">
+              <div>
+                <p>Kasir Bertugas,</p>
+                <div class="h-10"></div>
+                <p class="font-bold">({{ shiftData.cashierName.split(' ')[0] }})</p>
+              </div>
+              <div>
+                <p>Supervisor Toko,</p>
+                <div class="h-10"></div>
+                <p class="font-bold">(Store Lead)</p>
+              </div>
+            </div>
+            <p class="text-center text-[8px] text-gray-500 pt-1">*** END OF Z-REPORT TRANSMISSION ***</p>
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex gap-2 pt-2">
+            <button
+              @click="triggerZReportPrint"
+              class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition"
+            >
+              🖨️ Cetak Struk Z-Report
+            </button>
+            <button
+              @click="isZReportModalOpen = false"
+              class="px-4 py-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+            >
+              Selesai
+            </button>
+          </div>
+        </div>
+      </div>
     </Teleport>
   </AdminLayout>
 </template>
@@ -734,6 +1047,77 @@ const formatDateTime = (dateStr: string | undefined) => {
   }
 }
 
+// =========================================================================
+// FITUR ENTERPRISE: TUTUP SHIFT KASIR & REKONSILIASI LACI KAS (Z-REPORT)
+// =========================================================================
+const isCloseShiftModalOpen = ref(false)
+const isZReportModalOpen = ref(false)
+
+const shiftData = ref({
+  terminalId: 'POS-TERM-01',
+  cashierName: 'Ahmad Fauzi (Kasir Utama)',
+  openTime: '08:00 WIB',
+  closeTime: '21:00 WIB',
+  openingCash: 500000,
+  cashSales: 3450000,
+  qrisSales: 2100000,
+  debitSales: 1850000,
+  totalTransactions: 28,
+  notes: ''
+})
+
+// Denominasi pecahan fisik uang tunai laci kas
+const denominations = ref({
+  c100k: 25, // 25 x 100.000 = 2.500.000
+  c50k: 20,  // 20 x 50.000 = 1.000.000
+  c20k: 15,  // 15 x 20.000 = 300.000
+  c10k: 10,  // 10 x 10.000 = 100.000
+  c5k: 6,    // 6 x 5.000 = 30.000
+  c2k: 7,    // 7 x 2.000 = 14.000
+  c1k: 6,    // 6 x 1.000 = 6.000
+  coins: 0   // Koin
+})
+
+const totalActualCash = computed(() => {
+  const d = denominations.value
+  return (
+    (Number(d.c100k) || 0) * 100000 +
+    (Number(d.c50k) || 0) * 50000 +
+    (Number(d.c20k) || 0) * 20000 +
+    (Number(d.c10k) || 0) * 10000 +
+    (Number(d.c5k) || 0) * 5000 +
+    (Number(d.c2k) || 0) * 2000 +
+    (Number(d.c1k) || 0) * 1000 +
+    (Number(d.coins) || 0)
+  )
+})
+
+const totalSystemOmset = computed(() => {
+  return shiftData.value.cashSales + shiftData.value.qrisSales + shiftData.value.debitSales
+})
+
+const expectedCashInDrawer = computed(() => {
+  return shiftData.value.openingCash + shiftData.value.cashSales
+})
+
+const cashVariance = computed(() => {
+  return totalActualCash.value - expectedCashInDrawer.value
+})
+
+const openCloseShiftModal = () => {
+  shiftData.value.closeTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
+  isCloseShiftModalOpen.value = true
+}
+
+const finalizeCloseShift = () => {
+  isCloseShiftModalOpen.value = false
+  isZReportModalOpen.value = true
+}
+
+const triggerZReportPrint = () => {
+  window.print()
+}
+
 onMounted(() => {
   fetchHistory()
 })
@@ -744,10 +1128,11 @@ onMounted(() => {
   body * {
     visibility: hidden;
   }
-  #pos-thermal-receipt, #pos-thermal-receipt * {
+  #pos-thermal-receipt, #pos-thermal-receipt *,
+  #pos-thermal-zreport, #pos-thermal-zreport * {
     visibility: visible;
   }
-  #pos-thermal-receipt {
+  #pos-thermal-receipt, #pos-thermal-zreport {
     position: absolute;
     left: 0;
     top: 0;

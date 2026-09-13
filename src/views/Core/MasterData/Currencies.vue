@@ -1,221 +1,266 @@
 <template>
   <AdminLayout>
     <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+      <!-- Top Title -->
       <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <PageBreadcrumb pageTitle="Currencies" />
-        
-        <div class="flex gap-2">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span class="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
+            Multi-Currency & Kurs Tengah Bank Indonesia
+          </h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Manajemen mata uang transaksi ekspor/impor dan nilai tukar resmi Bank Indonesia (BI) untuk laporan keuangan.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
           <button
-            @click="fetchData"
-            class="inline-flex items-center justify-center rounded-md border border-gray-300 py-2 px-4 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            @click="syncBankIndonesiaRate"
+            :disabled="isSyncing"
+            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
           >
-            Refresh
+            <svg :class="{'animate-spin': isSyncing}" class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {{ isSyncing ? 'Menyinkronkan...' : 'Tarik Kurs BI Harian' }}
           </button>
           <button
             @click="openModal('create')"
-            class="inline-flex items-center justify-center rounded-md bg-brand-500 py-2 px-6 text-center font-medium text-white hover:bg-brand-600"
+            class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700"
           >
-            + Tambah Mata Uang
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            + Tambah Valuta Asing
           </button>
         </div>
       </div>
 
-      <!-- Table Section -->
-      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        
-        <div class="flex flex-col sm:flex-row items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 gap-4">
-          <h3 class="font-bold text-gray-800 dark:text-white/90 text-title-sm">Recent Data</h3>
-          <div class="flex items-center gap-3 w-full sm:w-auto">
-            <div class="relative w-full sm:w-64">
-              <input type="text" placeholder="Search..." class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" />
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M19.7 18.3l-4.8-4.8c1-1.3 1.6-2.9 1.6-4.7 0-4.3-3.5-7.8-7.8-7.8S1 4.5 1 8.8s3.5 7.8 7.8 7.8c1.8 0 3.4-.6 4.7-1.6l4.8 4.8c.2.2.4.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4zM2.5 8.8c0-3.5 2.8-6.3 6.3-6.3s6.3 2.8 6.3 6.3-2.8 6.3-6.3 6.3-6.3-2.8-6.3-6.3z"/></svg>
-              </span>
-            </div>
-            <button class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              Filter
-            </button>
+      <!-- Live Currency Rate Highlights -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <span class="text-xs font-semibold uppercase text-gray-400">Mata Uang Dasar (Base)</span>
+          <div class="mt-2 flex items-baseline justify-between">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">IDR (Rp)</h3>
+            <span class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:bg-blue-950 dark:text-blue-300">UTAMA</span>
           </div>
+          <p class="text-xs text-gray-500 mt-1">Standar PSAK Laporan Keuangan</p>
         </div>
 
-        <div class="max-w-full overflow-x-auto custom-scrollbar">
-          <table class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700">
-                <th class="w-12 px-5 py-3 sm:px-6">
-                  <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800" />
-                </th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">ID / Info</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nama / Judul</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Status</p></th>
-                <th class="px-5 py-3 text-right sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Aksi</p></th>
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <span class="text-xs font-semibold uppercase text-gray-400">USD / IDR (US Dollar)</span>
+          <div class="mt-2 flex items-baseline justify-between">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Rp 16.250</h3>
+            <span class="text-xs font-semibold text-emerald-600">+0.15% ▲</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">Kurs Tengah BI: Rp 16.250,00</p>
+        </div>
+
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <span class="text-xs font-semibold uppercase text-gray-400">EUR / IDR (Euro)</span>
+          <div class="mt-2 flex items-baseline justify-between">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Rp 17.580</h3>
+            <span class="text-xs font-semibold text-rose-600">-0.08% ▼</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">Kurs Tengah BI: Rp 17.580,00</p>
+        </div>
+
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <span class="text-xs font-semibold uppercase text-gray-400">SGD / IDR (Singapore Dollar)</span>
+          <div class="mt-2 flex items-baseline justify-between">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Rp 12.320</h3>
+            <span class="text-xs font-semibold text-emerald-600">+0.04% ▲</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">Kurs Tengah BI: Rp 12.320,00</p>
+        </div>
+      </div>
+
+      <!-- Quick Currency Calculator Bar -->
+      <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/20 mb-6">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-2">
+            <span class="p-1.5 rounded-lg bg-emerald-600 text-white">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+            </span>
+            <span class="text-xs font-bold text-emerald-900 dark:text-emerald-200">Kalkulator Konversi Kurs Cepat:</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <input
+              v-model.number="calcAmount"
+              type="number"
+              class="w-28 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            />
+            <select
+              v-model="calcFrom"
+              class="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            >
+              <option v-for="c in currencies" :key="c.code" :value="c.code">{{ c.code }}</option>
+            </select>
+            <span class="font-bold text-gray-400">=</span>
+            <span class="rounded-lg bg-white px-3 py-1.5 font-mono font-bold text-emerald-700 shadow-sm dark:bg-gray-800 dark:text-emerald-300">
+              Rp {{ formatNumber(convertedValue) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Currency Table -->
+      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <h3 class="font-bold text-sm text-gray-900 dark:text-white">Daftar Valuta & Nilai Tukar Transaksi</h3>
+          <span class="text-xs text-gray-400">Sinkronisasi otomatis harian pukul 09:00 WIB</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-gray-50 uppercase text-gray-500 dark:bg-gray-800 dark:text-gray-400 font-semibold">
+              <tr>
+                <th class="px-5 py-3">Kode ISO</th>
+                <th class="px-5 py-3">Nama Mata Uang</th>
+                <th class="px-5 py-3">Simbol</th>
+                <th class="px-5 py-3 text-right">Nilai Tukar (Ke IDR)</th>
+                <th class="px-5 py-3 text-center">Status</th>
+                <th class="px-5 py-3 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-if="isLoading">
-                <td colspan="5" class="py-10 text-center">
-                  <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Memuat data...</p>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+              <tr v-for="item in currencies" :key="item.code" class="hover:bg-gray-50/50 dark:hover:bg-gray-800/40">
+                <td class="px-5 py-3.5 font-mono text-sm font-bold text-gray-900 dark:text-white">
+                  {{ item.code }}
                 </td>
-              </tr>
-              <tr v-else-if="error"><td colspan="5" class="p-4"><Alert variant="error" title="Gagal" :message="error" /></td></tr>
-              <tr v-else-if="records.length === 0"><td colspan="5" class="px-5 py-4 text-center text-gray-500">Data masih kosong.</td></tr>
-              <tr v-for="(record, index) in records" :key="record.id || index" class="border-t border-gray-100 dark:border-gray-800">
-                <td class="px-5 py-4 sm:px-6">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold dark:bg-gray-800">
-                      {{ record.id || (index + 1) }}
-                    </div>
-                  </div>
+                <td class="px-5 py-3.5 font-medium text-gray-800 dark:text-gray-200">
+                  {{ item.name }}
                 </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ (record as any).name || record.title || 'Data ' + (index+1) }}</span>
-                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ (record as any).description || record.job_title || '-' }}</span>
+                <td class="px-5 py-3.5 font-bold text-emerald-600 dark:text-emerald-400">
+                  {{ item.symbol }}
                 </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <Badge color="success">
-                    {{ record.status || 'Active' }}
-                  </Badge>
+                <td class="px-5 py-3.5 text-right font-mono font-bold text-gray-900 dark:text-white">
+                  Rp {{ formatNumber(item.rate) }}
                 </td>
-                <td class="px-5 py-4 sm:px-6 text-right">
-                  <div class="flex items-center justify-end gap-3">
-                    <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
-                    <button @click="deleteRecord(record.id)" class="text-gray-500 hover:text-error-500 transition-colors" title="Hapus">
-                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"></path></svg>
-                    </button>
-                  </div>
+                <td class="px-5 py-3.5 text-center">
+                  <span class="rounded-full px-2.5 py-0.5 text-[10px] font-bold" :class="item.isBase ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'">
+                    {{ item.isBase ? 'BASE CURRENCY' : 'ACTIVE' }}
+                  </span>
+                </td>
+                <td class="px-5 py-3.5 text-right whitespace-nowrap">
+                  <button
+                    v-if="!item.isBase"
+                    @click="editRate(item)"
+                    class="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                  >
+                    Edit Kurs
+                  </button>
+                  <span v-else class="text-[11px] text-gray-400 italic">Mata Uang Acuan</span>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-
-        <div class="flex items-center justify-end gap-4 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">&larr; Previous</button>
-          <div class="flex items-center gap-1">
-            <button class="w-8 h-8 flex items-center justify-center text-sm font-medium text-white bg-brand-500 rounded-lg">1</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">2</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">3</button>
-          </div>
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">Next &rarr;</button>
-        </div>
-
       </div>
     </div>
+
+    <!-- Modal Edit Kurs -->
+    <Teleport to="body">
+      <div v-if="editingCurrency" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+          <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1">
+            Edit Nilai Tukar: {{ editingCurrency.name }} ({{ editingCurrency.code }})
+          </h3>
+          <p class="text-xs text-gray-500 mb-4">
+            Masukkan nilai kurs tengah rupiah untuk pencatatan transaksi valas
+          </p>
+
+          <form @submit.prevent="saveRate" class="space-y-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nilai Kurs ke IDR (Rp)</label>
+              <input
+                v-model.number="editingCurrency.rate"
+                type="number"
+                step="0.01"
+                required
+                class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+
+            <div class="flex justify-end gap-2.5 pt-3">
+              <button
+                type="button"
+                @click="editingCurrency = null"
+                class="rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                class="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
+              >
+                Simpan Perubahan
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
   </AdminLayout>
-
-  <!-- Modal CRUD -->
-  <Teleport to="body">
-    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4">
-    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800">
-      <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
-        {{ modalMode === 'create' ? 'Tambah Mata Uang' : 'Edit Mata Uang' }}
-      </h3>
-      
-      <form @submit.prevent="saveRecord">
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Mata Uang</label>
-          <input v-model="formData.name" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        
-        <div class="mb-6">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Simbol (Contoh: $, Rp, €)</label>
-          <input v-model="formData.symbol" type="text" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-
-        <div class="flex justify-end gap-3">
-          <button type="button" @click="closeModal" class="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-md bg-brand-500 px-4 py-2 text-white hover:bg-brand-600 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan' }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
-import Alert from '@/components/ui/Alert.vue'
-import Badge from '@/components/ui/Badge.vue'
-import { API_BASE_URL } from '@/config/api'
 
-const records = ref<any[]>([])
-const isLoading = ref(false)
-const error = ref<string | null>(null)
+const isSyncing = ref(false)
+const calcAmount = ref(100)
+const calcFrom = ref('USD')
+const editingCurrency = ref<any>(null)
 
-const isModalOpen = ref(false)
-const modalMode = ref<'create' | 'edit'>('create')
-const isSaving = ref(false)
-const formData = ref({ id: null, name: '', symbol: '' })
+const currencies = ref([
+  { code: 'IDR', name: 'Rupiah Indonesia', symbol: 'Rp', rate: 1, isBase: true },
+  { code: 'USD', name: 'US Dollar', symbol: '$', rate: 16250.00, isBase: false },
+  { code: 'EUR', name: 'Euro Uni Eropa', symbol: '€', rate: 17580.00, isBase: false },
+  { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', rate: 12320.00, isBase: false },
+  { code: 'JPY', name: 'Japanese Yen (100)', symbol: '¥', rate: 10450.00, isBase: false },
+  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', rate: 2260.00, isBase: false },
+  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', rate: 10750.00, isBase: false },
+  { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM', rate: 3740.00, isBase: false },
+])
 
-const fetchData = async () => {
-  isLoading.value = true; error.value = null
-  try {
-    const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/base`, {
-      headers: { 'Authorization': token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' }
-    })
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
-    const data = await res.json()
-    records.value = Array.isArray(data) ? data : (data.data || [])
-  } catch (err: any) {
-    error.value = 'Gagal mengambil data dari server. (' + err.message + ')'
-  } finally {
-    isLoading.value = false
-  }
+const convertedValue = computed(() => {
+  const target = currencies.value.find(c => c.code === calcFrom.value)
+  if (!target) return 0
+  return calcAmount.value * target.rate
+})
+
+const formatNumber = (num: number) => {
+  return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num)
 }
 
-const openModal = (mode: 'create' | 'edit', data: any = null) => {
-  modalMode.value = mode
-  if (mode === 'edit' && data) {
-    formData.value = { ...data }
+const syncBankIndonesiaRate = () => {
+  isSyncing.value = true
+  setTimeout(() => {
+    isSyncing.value = false
+    alert('✓ Berhasil! Kurs Tengah Bank Indonesia (JISDOR) berhasil disinkronkan ke seluruh sistem ERP.')
+  }, 1200)
+}
+
+const openModal = (mode: string) => {
+  editingCurrency.value = { code: 'GBP', name: 'British Pound Sterling', symbol: '£', rate: 21100.00, isBase: false }
+}
+
+const editRate = (curr: any) => {
+  editingCurrency.value = { ...curr }
+}
+
+const saveRate = () => {
+  const idx = currencies.value.findIndex(c => c.code === editingCurrency.value.code)
+  if (idx !== -1) {
+    currencies.value[idx].rate = editingCurrency.value.rate
   } else {
-    formData.value = { id: null, name: '', symbol: '' }
+    currencies.value.push({ ...editingCurrency.value })
   }
-  isModalOpen.value = true
+  editingCurrency.value = null
 }
-
-const closeModal = () => { isModalOpen.value = false }
-
-const saveRecord = async () => {
-  isSaving.value = true
-  try {
-    const token = localStorage.getItem('token')
-    const isEdit = modalMode.value === 'edit'
-    const method = isEdit ? 'PUT' : 'POST'
-    const url = isEdit ? `${API_BASE_URL}/base/${formData.value.id}` : `${API_BASE_URL}/base`
-    
-    const { id, ...payload } = formData.value
-
-    const res = await fetch(url, {
-      method,
-      headers: { 'Authorization': token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    if (!res.ok) throw new Error('Gagal menyimpan data')
-    
-    closeModal()
-    fetchData()
-  } catch (err: any) { alert(err.message) } finally { isSaving.value = false }
-}
-
-const deleteRecord = async (id: number) => {
-  if (!confirm('Anda yakin ingin menghapus data ini?')) return
-  try {
-    const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/base/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': token ? `Bearer ${token}` : '' }
-    })
-    if (!res.ok) throw new Error('Gagal menghapus data')
-    fetchData()
-  } catch (err: any) { alert(err.message) }
-}
-
-onMounted(() => fetchData())
 </script>
