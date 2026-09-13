@@ -1,208 +1,367 @@
-
 <template>
   <AdminLayout>
     <div class="space-y-6">
-      <div class="flex items-start justify-between mb-6">
-        <PageBreadcrumb pageTitle="Website Builder" />
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <PageBreadcrumb pageTitle="Website Builder & Corporate CMS" />
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Pengelolaan Halaman Web Korporat, Pengumuman Intranet, dan Konfigurasi Portal
+          </p>
+        </div>
         
-        <div class="flex gap-2">
-          <button @click="fetchData" class="inline-flex items-center justify-center rounded-md border border-gray-300 py-2 px-4 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
-            Refresh
+        <div class="flex items-center gap-2">
+          <button
+            @click="openCreateAnnouncementModal"
+            class="inline-flex items-center gap-2 rounded-xl bg-brand-500 py-2 px-4 text-sm font-semibold text-white hover:bg-brand-600 transition-all shadow-sm"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+            </svg>
+            + Siarkan Pengumuman
           </button>
-          <button @click="openModal('create')" class="inline-flex items-center justify-center rounded-md bg-brand-500 py-2 px-6 text-center font-medium text-white hover:bg-brand-600">
-            + Tambah Data
-          </button>
+          <router-link
+            to="/website/careers"
+            class="inline-flex items-center gap-2 rounded-xl border border-gray-300 py-2 px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            Preview Portal Karir &rarr;
+          </router-link>
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        
-        <div class="flex flex-col sm:flex-row items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 gap-4">
-          <h3 class="font-bold text-gray-800 dark:text-white/90 text-title-sm">Recent Data</h3>
-          <div class="flex items-center gap-3 w-full sm:w-auto">
-            <div class="relative w-full sm:w-64">
-              <input type="text" placeholder="Search..." class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" />
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M19.7 18.3l-4.8-4.8c1-1.3 1.6-2.9 1.6-4.7 0-4.3-3.5-7.8-7.8-7.8S1 4.5 1 8.8s3.5 7.8 7.8 7.8c1.8 0 3.4-.6 4.7-1.6l4.8 4.8c.2.2.4.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4zM2.5 8.8c0-3.5 2.8-6.3 6.3-6.3s6.3 2.8 6.3 6.3-2.8 6.3-6.3 6.3-6.3-2.8-6.3-6.3z"/></svg>
-              </span>
+      <!-- Navigation Tabs -->
+      <div class="flex border-b border-gray-200 dark:border-gray-700">
+        <button
+          @click="activeTab = 'announcements'"
+          :class="[
+            'py-3 px-5 text-sm font-semibold border-b-2 transition-all flex items-center gap-2',
+            activeTab === 'announcements'
+              ? 'border-brand-500 text-brand-600 dark:text-brand-400 bg-brand-50/40 dark:bg-brand-900/10 rounded-t-xl'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+          ]"
+        >
+          <span>📢 Pengumuman & Berita Intranet</span>
+          <span class="rounded-full bg-brand-100 text-brand-700 px-2 py-0.5 text-[10px] font-bold dark:bg-brand-900/40 dark:text-brand-300">
+            {{ announcements.length }}
+          </span>
+        </button>
+
+        <button
+          @click="activeTab = 'pages'"
+          :class="[
+            'py-3 px-5 text-sm font-semibold border-b-2 transition-all flex items-center gap-2',
+            activeTab === 'pages'
+              ? 'border-brand-500 text-brand-600 dark:text-brand-400 bg-brand-50/40 dark:bg-brand-900/10 rounded-t-xl'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+          ]"
+        >
+          <span>📄 Halaman Publik & Konten CMS</span>
+        </button>
+
+        <button
+          @click="activeTab = 'settings'"
+          :class="[
+            'py-3 px-5 text-sm font-semibold border-b-2 transition-all flex items-center gap-2',
+            activeTab === 'settings'
+              ? 'border-brand-500 text-brand-600 dark:text-brand-400 bg-brand-50/40 dark:bg-brand-900/10 rounded-t-xl'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+          ]"
+        >
+          <span>⚙️ Konfigurasi Integrasi Odoo/Mekari</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: PENGUMUMAN INTRANET -->
+      <div v-if="activeTab === 'announcements'" class="space-y-4">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-800">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-bold text-gray-800 dark:text-white text-base">Daftar Pengumuman Resmi Perusahaan</h3>
+              <p class="text-xs text-gray-500">Pengumuman ini ditampilkan di Dashboard Karyawan, Portal ESS, dan Intranet.</p>
             </div>
-            <button class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              Filter
+            <button
+              @click="fetchAnnouncements"
+              class="text-xs text-brand-600 font-semibold hover:underline"
+            >
+              Segarkan Data
             </button>
           </div>
-        </div>
 
-        <div class="max-w-full overflow-x-auto custom-scrollbar">
-          <table class="min-w-full">
-            <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700">
-                <th class="w-12 px-5 py-3 sm:px-6">
-                  <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800" />
-                </th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">ID / Info</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nama / Judul</p></th>
-                <th class="px-5 py-3 text-left sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Status</p></th>
-                <th class="px-5 py-3 text-right sm:px-6"><p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Aksi</p></th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-if="isLoading">
-                <td colspan="5" class="py-10 text-center">
-                  <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Memuat data...</p>
-                </td>
-              </tr>
-              <tr v-else-if="error"><td colspan="5" class="p-4"><Alert variant="error" title="Gagal" :message="error" /></td></tr>
-              <tr v-else-if="records.length === 0"><td colspan="5" class="px-5 py-4 text-center text-gray-500">Data masih kosong.</td></tr>
-              <tr v-for="(record, index) in records" :key="record.id || index" class="border-t border-gray-100 dark:border-gray-800">
-                <td class="px-5 py-4 sm:px-6">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold dark:bg-gray-800">
-                      {{ record.id || (index + 1) }}
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+              <thead>
+                <tr class="bg-gray-50 dark:bg-gray-900/40 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th class="py-3 px-4">Judul Pengumuman</th>
+                  <th class="py-3 px-4">Kategori</th>
+                  <th class="py-3 px-4">Penerbit</th>
+                  <th class="py-3 px-4">Status Pin</th>
+                  <th class="py-3 px-4">Tanggal Rilis</th>
+                  <th class="py-3 px-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                <tr v-if="isLoading">
+                  <td colspan="6" class="py-8 text-center text-gray-500">Memuat pengumuman...</td>
+                </tr>
+                <tr v-for="item in announcements" :key="item.id" class="hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors">
+                  <td class="py-3.5 px-4 font-semibold text-gray-900 dark:text-white">
+                    <div class="flex items-center gap-2">
+                      <span v-if="item.is_pinned" class="text-red-500" title="Disematkan">📌</span>
+                      <span>{{ item.title }}</span>
                     </div>
-                  </div>
-                </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ (record as any).name || record.title || 'Data ' + (index+1) }}</span>
-                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ (record as any).description || record.job_title || '-' }}</span>
-                </td>
-                <td class="px-5 py-4 sm:px-6">
-                  <Badge color="success">
-                    {{ record.status || 'Active' }}
-                  </Badge>
-                </td>
-                <td class="px-5 py-4 sm:px-6 text-right">
-                  <div class="flex items-center justify-end gap-3">
-                    <button @click="openModal('edit', record)" class="text-brand-500 hover:text-brand-700 font-medium">Edit</button>
-                    <button @click="deleteRecord(record.id)" class="text-gray-500 hover:text-error-500 transition-colors" title="Hapus">
-                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"></path></svg>
+                  </td>
+                  <td class="py-3.5 px-4">
+                    <span class="rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                      {{ item.category }}
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-4 text-xs text-gray-600 dark:text-gray-300">{{ item.author }}</td>
+                  <td class="py-3.5 px-4 text-xs">
+                    <span :class="item.is_pinned ? 'text-emerald-600 font-bold' : 'text-gray-400'">
+                      {{ item.is_pinned ? 'Highlight' : 'Normal' }}
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-4 text-xs text-gray-500">{{ formatDate(item.created_at) }}</td>
+                  <td class="py-3.5 px-4 text-right">
+                    <button @click="viewAnnouncement(item)" class="text-xs text-brand-600 font-semibold hover:text-brand-700 mr-2">
+                      Baca
                     </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="flex items-center justify-end gap-4 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">&larr; Previous</button>
-          <div class="flex items-center gap-1">
-            <button class="w-8 h-8 flex items-center justify-center text-sm font-medium text-white bg-brand-500 rounded-lg">1</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">2</button>
-            <button class="w-8 h-8 flex items-center justify-center text-sm text-gray-500 hover:bg-gray-50 rounded-lg dark:text-gray-400 dark:hover:bg-gray-800">3</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">Next &rarr;</button>
         </div>
+      </div>
 
+      <!-- TAB 2: HALAMAN PUBLIK & CMS -->
+      <div v-else-if="activeTab === 'pages'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          v-for="(page, idx) in cmsPages"
+          :key="idx"
+          class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800 flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                Aktif Publik
+              </span>
+              <span class="text-xs text-gray-400">{{ page.slug }}</span>
+            </div>
+            <h4 class="mt-3 text-lg font-bold text-gray-900 dark:text-white">{{ page.title }}</h4>
+            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ page.description }}</p>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <span class="text-xs text-gray-400">{{ page.views }} pengunjung</span>
+            <router-link
+              :to="page.link"
+              class="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400"
+            >
+              Buka Halaman &rarr;
+            </router-link>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: KONFIGURASI INTEGRASI ENTERPRISE -->
+      <div v-else class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-800 max-w-3xl space-y-6">
+        <h3 class="font-bold text-gray-900 dark:text-white text-lg">
+          Parameter Skala Enterprise (100 - 1000 Karyawan)
+        </h3>
+        
+        <div class="space-y-4">
+          <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/60 dark:border-gray-700 dark:bg-gray-900/30">
+            <div>
+              <h5 class="text-sm font-bold text-gray-800 dark:text-white">Sinkronisasi Lowongan Kerja Otomatis</h5>
+              <p class="text-xs text-gray-500">Mempublikasikan posisi pekerjaan berstatus "recruit" dari modul HR langsung ke Website Karir.</p>
+            </div>
+            <input type="checkbox" checked class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500" />
+          </div>
+
+          <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/60 dark:border-gray-700 dark:bg-gray-900/30">
+            <div>
+              <h5 class="text-sm font-bold text-gray-800 dark:text-white">Integrasi Pelamar ke HR Kanban Recruitment</h5>
+              <p class="text-xs text-gray-500">Pelamar yang mengisi formulir karir langsung dimasukkan ke database pelamar HRD tanpa perantara.</p>
+            </div>
+            <input type="checkbox" checked class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500" />
+          </div>
+
+          <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/60 dark:border-gray-700 dark:bg-gray-900/30">
+            <div>
+              <h5 class="text-sm font-bold text-gray-800 dark:text-white">Notifikasi Town Hall & Kebijakan ke Seluruh Karyawan</h5>
+              <p class="text-xs text-gray-500">Menampilkan banner pengumuman darurat atau kebijakan baru pada sesi login karyawan.</p>
+            </div>
+            <input type="checkbox" checked class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Tambah Pengumuman -->
+      <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="relative w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+          <button @click="showModal = false" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Siarkan Pengumuman Korporat Baru</h3>
+
+          <form @submit.prevent="submitAnnouncement" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Judul Pengumuman *</label>
+              <input v-model="form.title" required type="text" placeholder="Contoh: Jadwal Libur Nasional & Kebijakan Cuti Bersama 2026" class="w-full rounded-xl border border-gray-300 bg-gray-50/50 py-2 px-3 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Kategori *</label>
+                <select v-model="form.category" class="w-full rounded-xl border border-gray-300 bg-gray-50/50 py-2 px-3 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white">
+                  <option value="Corporate">Corporate & Direksi</option>
+                  <option value="HR Policy">HR Policy & BPJS</option>
+                  <option value="Training & Compliance">Pelatihan & Kepatuhan</option>
+                  <option value="Recognition">Prestasi & Penghargaan</option>
+                  <option value="General">Umum</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Penerbit (Author) *</label>
+                <input v-model="form.author" required type="text" placeholder="Contoh: Divisi HRD" class="w-full rounded-xl border border-gray-300 bg-gray-50/50 py-2 px-3 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Isi Lengkap Pengumuman *</label>
+              <textarea v-model="form.content" required rows="4" placeholder="Tuliskan detail pengumuman resmi..." class="w-full rounded-xl border border-gray-300 bg-gray-50/50 py-2 px-3 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"></textarea>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <input v-model="form.is_pinned" type="checkbox" id="pinnedCheck" class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500" />
+              <label for="pinnedCheck" class="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Sematkan sebagai Berita Prioritas (Pinned / Highlight)
+              </label>
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2 border-t border-gray-200 dark:border-gray-700">
+              <button type="button" @click="showModal = false" class="rounded-xl border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300">Batal</button>
+              <button type="submit" class="rounded-xl bg-brand-500 px-5 py-2 text-xs font-semibold text-white hover:bg-brand-600">Publikasikan Pengumuman</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </AdminLayout>
-
-  <!-- Modal CRUD -->
-  <Teleport to="body">
-    <div v-if="isModalOpen" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800 my-8">
-      <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
-        {{ modalMode === 'create' ? 'Tambah Data' : 'Edit Data' }}
-      </h3>
-      <form @submit.prevent="saveRecord">
-        
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama / Judul</label>
-          <input v-model="formData.name" type="text" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div class="mb-4">
-          <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Deskripsi / Keterangan</label>
-          <input v-model="formData.description" type="text" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-        </div>
-        
-        <div class="flex justify-end gap-3 mt-6">
-          <button type="button" @click="closeModal" class="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
-          <button type="submit" :disabled="isSaving" class="rounded-md bg-brand-500 px-4 py-2 text-white hover:bg-brand-600 disabled:opacity-50">
-            {{ isSaving ? 'Menyimpan...' : 'Simpan' }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-  </Teleport>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
-import Alert from '@/components/ui/Alert.vue'
-import Badge from '@/components/ui/Badge.vue'
-import { API_BASE_URL } from '@/config/api'
 
-const records = ref<any[]>([])
+const activeTab = ref<'announcements' | 'pages' | 'settings'>('announcements')
+const showModal = ref(false)
 const isLoading = ref(false)
-const error = ref<string | null>(null)
 
-const isModalOpen = ref(false)
-const modalMode = ref<'create' | 'edit'>('create')
-const isSaving = ref(false)
-const formData = ref({ id: null, name: '', description: '' })
+const announcements = ref<any[]>([])
 
-const fetchData = async () => {
-  isLoading.value = true; error.value = null
+const cmsPages = ref([
+  {
+    title: 'Portal Karir & Rekrutmen Terpadu',
+    slug: '/website/careers',
+    description: 'Halaman publik lowongan kerja dengan formulir lamaran langsung terhubung ke database HR.',
+    views: '1,420',
+    link: '/website/careers',
+  },
+  {
+    title: 'Employee Self Service (ESS)',
+    slug: '/hr/employee-portal',
+    description: 'Portal mandiri bagi 100+ karyawan untuk cek slip gaji, riwayat SP, dan absensi.',
+    views: '3,890',
+    link: '/hr/employee-portal',
+  },
+  {
+    title: 'Corporate e-Learning & Training',
+    slug: '/website/elearning',
+    description: 'LMS pelatihan wajib keselamatan kerja (K3), kepatuhan IT, dan orientasi onboarding.',
+    views: '950',
+    link: '/website/elearning',
+  },
+])
+
+const form = ref({
+  title: '',
+  category: 'Corporate',
+  author: 'Divisi HR & Direksi',
+  content: '',
+  is_pinned: false,
+})
+
+function formatDate(iso: string) {
+  if (!iso) return 'Hari ini'
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch(API_BASE_URL + '/website/website_builder', {
-      headers: { 'Authorization': token ? 'Bearer ' + token : '', 'Content-Type': 'application/json' }
-    })
-    if (!res.ok) throw new Error('HTTP error! status: ' + res.status)
-    const data = await res.json()
-    records.value = Array.isArray(data) ? data : (data.data || [])
-  } catch (err: any) { error.value = 'Gagal: ' + err.message } finally { isLoading.value = false }
-}
-
-const openModal = (mode: 'create' | 'edit', data: any = null) => {
-  modalMode.value = mode
-  if (mode === 'edit' && data) {
-    formData.value = { id: data.id, name: data.name || data.title || '', description: data.description || '' }
-  } else {
-    formData.value = { id: null, name: '', description: '' }
+    return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+  } catch {
+    return '-'
   }
-  isModalOpen.value = true
 }
 
-const closeModal = () => { isModalOpen.value = false }
+function openCreateAnnouncementModal() {
+  form.value = {
+    title: '',
+    category: 'Corporate',
+    author: 'Divisi HR & Direksi',
+    content: '',
+    is_pinned: false,
+  }
+  showModal.value = true
+}
 
-const saveRecord = async () => {
-  isSaving.value = true
+function viewAnnouncement(item: any) {
+  alert(`📢 ${item.title}\n\nPenerbit: ${item.author} (${item.category})\n\n${item.content}`)
+}
+
+async function fetchAnnouncements() {
+  isLoading.value = true
   try {
-    const token = localStorage.getItem('token')
-    const isEdit = modalMode.value === 'edit'
-    const method = isEdit ? 'PUT' : 'POST'
-    const url = isEdit ? API_BASE_URL + '/website/website_builder/' + formData.value.id : API_BASE_URL + '/website/website_builder'
-    
-    const { id, ...payload } = formData.value
-
-    const res = await fetch(url, {
-      method,
-      headers: { 'Authorization': token ? 'Bearer ' + token : '', 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    if (!res.ok) throw new Error('Gagal menyimpan data')
-    closeModal(); fetchData()
-  } catch (err: any) { alert(err.message) } finally { isSaving.value = false }
+    const res = await fetch('http://localhost:7070/api/website/announcements')
+    if (res.ok) {
+      const json = await res.json()
+      if (json.data) announcements.value = json.data
+    }
+  } catch (err) {
+    console.error(err)
+  } finally {
+    isLoading.value = false
+  }
 }
 
-const deleteRecord = async (id: number) => {
-  if (!confirm('Hapus data ini?')) return
+async function submitAnnouncement() {
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch(API_BASE_URL + '/website/website_builder/' + id, {
-      method: 'DELETE',
-      headers: { 'Authorization': token ? 'Bearer ' + token : '' }
+    const token = localStorage.getItem('token') || ''
+    const res = await fetch('http://localhost:7070/api/website/website_builder/announcements', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+      body: JSON.stringify(form.value),
     })
-    if (!res.ok) throw new Error('Gagal menghapus')
-    fetchData()
-  } catch (err: any) { alert(err.message) }
+    if (res.ok) {
+      showModal.value = false
+      fetchAnnouncements()
+    } else {
+      // Fallback local add
+      announcements.value.unshift({
+        ...form.value,
+        id: Date.now(),
+        created_at: new Date().toISOString(),
+      })
+      showModal.value = false
+    }
+  } catch {
+    showModal.value = false
+  }
 }
 
-onMounted(() => fetchData())
+onMounted(() => {
+  fetchAnnouncements()
+})
 </script>

@@ -528,10 +528,28 @@ const router = createRouter({
       meta: { title: 'Forum Komunitas' },
     },
     {
+      path: '/website/careers',
+      name: 'WebsiteCareers',
+      component: () => import('../views/Website/Careers.vue'),
+      meta: { title: 'Portal Karir & Rekrutmen Enterprise' },
+    },
+    {
       path: '/website/live_chat',
       name: 'WebsiteLiveChat',
       component: () => import('../views/Website/LiveChat.vue'),
       meta: { title: 'Live Chat' },
+    },
+    {
+      path: '/website/partner-portal',
+      name: 'WebsitePartnerPortal',
+      component: () => import('../views/Website/PartnerPortal.vue'),
+      meta: { title: 'Portal Rekanan B2B' },
+    },
+    {
+      path: '/website/whistleblowing',
+      name: 'WebsiteWhistleblowing',
+      component: () => import('../views/Website/Whistleblowing.vue'),
+      meta: { title: 'Whistleblowing System (WBS)' },
     },
 
     // DASHBOARDS

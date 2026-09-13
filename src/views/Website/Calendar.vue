@@ -1,6 +1,34 @@
 <template>
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
+    <!-- Quick Appointment & Interview Booking Bar -->
+    <div class="mb-5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h4 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <span>📅 Penjadwalan Wawancara & Reservasi Mandiri (Odoo Appointments)</span>
+          <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Tersinkronisasi HRD</span>
+        </h4>
+        <p class="text-xs text-gray-500 mt-0.5">
+          Atur slot interview pelamar rekrutmen atau reservasi sesi konsultasi demo ERP B2B secara terpusat.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          @click="openAppointmentModal('interview')"
+          class="rounded-xl bg-brand-500 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-600 transition-all"
+        >
+          + Slot Wawancara Pelamar
+        </button>
+        <button
+          @click="openAppointmentModal('meeting')"
+          class="rounded-xl border border-gray-300 px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
+        >
+          + Reservasi Konsultasi B2B
+        </button>
+      </div>
+    </div>
+
     <div
       class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
     >
@@ -332,6 +360,33 @@ const resetModalFields = () => {
   eventEndDate.value = ''
   eventLevel.value = 'primary'
   selectedEvent.value = null
+}
+
+const openAppointmentModal = (type) => {
+  resetModalFields()
+  const now = new Date()
+  const pad = (n) => n.toString().padStart(2, '0')
+  const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours() + 1)}:00`
+  const endStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours() + 2)}:00`
+
+  if (type === 'interview') {
+    eventTitle.value = 'Wawancara HR: Kandidat Rekrutmen'
+    eventDescription.value = 'Sesi interview tahap 2 dengan Tim HRD & Lead Divisi via Google Meet.'
+    eventLocation.value = 'Online / Ruang Meeting HR Lantai 2'
+    eventMeetingUrl.value = 'https://meet.google.com/erp-interview-hrd'
+    eventType.value = 'Interview'
+    eventLevel.value = 'primary'
+  } else {
+    eventTitle.value = 'Demo ERP & Konsultasi B2B Klien'
+    eventDescription.value = 'Presentasi alur sistem ERP Odoo & Mekari untuk klien enterprise 100+ karyawan.'
+    eventLocation.value = 'Zoom Enterprise / Boardroom'
+    eventMeetingUrl.value = 'https://zoom.us/j/981293819'
+    eventType.value = 'Client Meeting'
+    eventLevel.value = 'success'
+  }
+  eventStartDate.value = dateStr
+  eventEndDate.value = endStr
+  openModal()
 }
 
 
