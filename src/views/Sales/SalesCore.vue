@@ -346,6 +346,9 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Server-side Pagination Bar -->
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
 
       <!-- VIEW 2: SALES KPI LEADERBOARD & COMMISSIONS -->
@@ -1247,9 +1250,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { API_BASE_URL } from '@/config/api'
+import type { IPaginationMeta } from '@/types'
 
 interface OrderLine {
   id?: number
@@ -1269,6 +1274,22 @@ const isLeaderboardLoading = ref(false)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
 const selectedBranchFilter = ref('All')
+
+// Server-side Pagination State
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
+}
 
 const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
@@ -1491,20 +1512,50 @@ const getStatusLabel = (state: string | undefined) => {
   }
 }
 
+let searchTimer: any = null
+watch([searchQuery, selectedBranchFilter], () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchData()
+  }, 300)
+})
+
 const fetchData = async () => {
   isLoading.value = true
   error.value = null
   try {
     const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/sales/core`, {
+    const queryParams = new URLSearchParams({
+      page: String(pagination.value.current_page),
+      limit: String(pagination.value.per_page)
+    })
+    if (searchQuery.value.trim()) queryParams.append('search', searchQuery.value.trim())
+    if (selectedBranchFilter.value && selectedBranchFilter.value !== 'All') {
+      queryParams.append('branch', selectedBranchFilter.value)
+    }
+
+    const res = await fetch(`${API_BASE_URL}/sales/core?${queryParams.toString()}`, {
       headers: {
         'Authorization': token ? `Bearer ${token}` : '',
         'Content-Type': 'application/json'
       }
     })
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
-    const data = await res.json()
-    records.value = Array.isArray(data) ? data : (data.data || [])
+    const resData = await res.json()
+    if (resData && resData.pagination) {
+      records.value = resData.data || []
+      pagination.value = resData.pagination
+    } else if (Array.isArray(resData)) {
+      records.value = resData
+      pagination.value.total_items = resData.length
+      pagination.value.total_pages = 1
+    } else if (resData && Array.isArray(resData.data)) {
+      records.value = resData.data
+      if (resData.pagination) pagination.value = resData.pagination
+    } else {
+      records.value = []
+    }
   } catch (err: any) {
     error.value = 'Gagal memuat pesanan: ' + err.message
   } finally {

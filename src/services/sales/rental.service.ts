@@ -1,10 +1,20 @@
 import { http } from "@/services/http";
-import type { IResponse } from "@/types";
+import type { IResponse, IPaginatedResponse } from "@/types";
 
 export const rentalService = {
-  async getAll(): Promise<any[]> {
-    const response = await http.get<IResponse<any[]>>("/sales/rental");
-    return response.data.data ?? response.data;
+  async getAll(params?: Record<string, any>): Promise<{ data: any[]; pagination?: any } | any[]> {
+    const response = await http.get<any>("/sales/rental", { params });
+    const resData = response.data;
+    if (Array.isArray(resData)) {
+      return resData;
+    }
+    if (resData && Array.isArray(resData.data)) {
+      return {
+        data: resData.data,
+        pagination: resData.pagination
+      };
+    }
+    return { data: [], pagination: undefined };
   },
 
   async getById(id: number | string): Promise<any> {

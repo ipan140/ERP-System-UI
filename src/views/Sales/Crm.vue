@@ -310,6 +310,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
     </div>
   </AdminLayout>
@@ -680,15 +681,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { crmService } from '@/services/sales/crm.service'
 import { massMailingService } from '@/services/marketing/mass-mailing.service'
+import type { IPaginationMeta } from '@/types'
 
 const activeView = ref<'kanban' | 'table'>('kanban')
 const records = ref<any[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+
+// Server-side Pagination State
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
+}
 
 // Pipeline Stages Standard Odoo Enterprise (Dynamic)
 const defaultStages = [
@@ -1062,15 +1081,43 @@ const fetchStagesAndPartners = async () => {
   }
 }
 
+watch(activeView, () => {
+  pagination.value.current_page = 1
+  fetchData()
+})
+
 const fetchData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const data = await crmService.getAll()
-    records.value = (data || []).map((r: any) => ({
-      ...r,
-      stage_id: r.stage_id || 1
-    }))
+    const params: any = {}
+    if (activeView.value === 'kanban') {
+      params.all = 'true'
+    } else {
+      params.page = pagination.value.current_page
+      params.limit = pagination.value.per_page
+    }
+    const res = await crmService.getAll(params)
+    if (res && typeof res === 'object' && 'pagination' in res && (res as any).pagination) {
+      records.value = ((res as any).data || []).map((r: any) => ({
+        ...r,
+        stage_id: r.stage_id || 1
+      }))
+      pagination.value = (res as any).pagination
+    } else if (Array.isArray(res)) {
+      records.value = (res || []).map((r: any) => ({
+        ...r,
+        stage_id: r.stage_id || 1
+      }))
+      pagination.value.total_items = records.value.length
+      pagination.value.total_pages = 1
+    } else if (res && typeof res === 'object' && 'data' in res && Array.isArray((res as any).data)) {
+      records.value = ((res as any).data || []).map((r: any) => ({
+        ...r,
+        stage_id: r.stage_id || 1
+      }))
+      if ((res as any).pagination) pagination.value = (res as any).pagination
+    }
   } catch (err: any) {
     error.value = 'Gagal memuat pipeline: ' + (err.response?.data?.message || err.message)
   } finally {

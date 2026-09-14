@@ -271,6 +271,8 @@
             </tbody>
           </table>
         </div>
+
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
     </div>
 
@@ -820,9 +822,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { API_BASE_URL } from '@/config/api'
+import type { IPaginationMeta } from '@/types'
 
 interface CartItem {
   id: number
@@ -870,6 +874,22 @@ const lastReceiptData = ref<any>(null)
 // History state
 const historyOrders = ref<any[]>([])
 const isHistoryLoading = ref(false)
+
+// History Server-side Pagination State
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchHistory()
+}
 
 // Filtered products
 const filteredProducts = computed(() => {
@@ -999,15 +1019,31 @@ const fetchHistory = async () => {
   isHistoryLoading.value = true
   try {
     const token = localStorage.getItem('token')
-    const res = await fetch(`${API_BASE_URL}/sales/pos/posorder`, {
+    const queryParams = new URLSearchParams({
+      page: String(pagination.value.current_page),
+      limit: String(pagination.value.per_page)
+    })
+    const res = await fetch(`${API_BASE_URL}/sales/pos/posorder?${queryParams.toString()}`, {
       headers: {
         'Authorization': token ? `Bearer ${token}` : '',
         'Content-Type': 'application/json'
       }
     })
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
-    const data = await res.json()
-    historyOrders.value = Array.isArray(data) ? data : (data.data || [])
+    const resData = await res.json()
+    if (resData && resData.pagination) {
+      historyOrders.value = resData.data || []
+      pagination.value = resData.pagination
+    } else if (Array.isArray(resData)) {
+      historyOrders.value = resData
+      pagination.value.total_items = resData.length
+      pagination.value.total_pages = 1
+    } else if (resData && Array.isArray(resData.data)) {
+      historyOrders.value = resData.data
+      if (resData.pagination) pagination.value = resData.pagination
+    } else {
+      historyOrders.value = []
+    }
   } catch (err: any) {
     console.error('Failed to fetch history:', err)
   } finally {
