@@ -14,6 +14,30 @@
         </div>
       </div>
 
+      <!-- Search & Filters -->
+      <div class="mb-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="relative flex-1 w-full sm:w-auto">
+          <input 
+            v-model="searchQuery" 
+            type="text" 
+            placeholder="Cari nama, email, atau no telp pelamar..." 
+            class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
+          />
+          <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <div class="w-full sm:w-64">
+          <select 
+            v-model="jobPositionFilter" 
+            class="w-full py-2 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
+          >
+            <option value="all">Semua Posisi Pekerjaan</option>
+            <option v-for="job in jobPositionsList" :key="job.id" :value="job.id">{{ job.name }}</option>
+          </select>
+        </div>
+      </div>
+
       <!-- Loader & Error -->
       <div v-if="isLoading" class="py-10 text-center">
         <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
@@ -86,6 +110,7 @@
             
           </div>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" class="mt-4" />
       </div>
     </div>
   </AdminLayout>
@@ -161,14 +186,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import draggable from 'vuedraggable'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import Alert from '@/components/ui/Alert.vue'
 import { recruitmentService } from '@/services/hr/recruitment.service'
 import { employeesService } from '@/services/hr/employees.service'
 import type { IApplicantDto } from '@/types/hr/recruitment.dto'
+import type { IPaginationMeta } from '@/types'
 
 // Dummy stages for Odoo-like recruitment process
   // Tailwind dynamic classes hack: border-l-blue-400 border-l-yellow-400 border-l-orange-400 border-l-purple-400 border-l-green-500
@@ -184,6 +211,18 @@ const stages = ref([
 const records = ref<IApplicantDto[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+
+const searchQuery = ref('')
+const jobPositionFilter = ref('all')
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 20,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
@@ -222,11 +261,25 @@ const onCardMove = async (evt: any, toStageId: number) => {
 const fetchData = async () => {
   isLoading.value = true; error.value = null
   try {
-    const [data, jobsData] = await Promise.all([
-      recruitmentService.getAll(),
+    const params: Record<string, any> = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value) params.search = searchQuery.value
+    if (jobPositionFilter.value !== 'all') params.job_position_id = jobPositionFilter.value
+
+    const [res, jobsData] = await Promise.all([
+      recruitmentService.getAll(params),
       import('@/services/http').then(m => m.http.get('/hr/employees/jobposition')).then(res => res.data.data ?? res.data)
     ]);
-    records.value = data;
+    if (res?.pagination) {
+      records.value = res.data || []
+      pagination.value = res.pagination
+    } else if (Array.isArray(res)) {
+      records.value = res
+    } else {
+      records.value = res?.data || []
+    }
     jobPositionsList.value = jobsData;
   } catch (err: any) {
     error.value = 'Gagal memuat data: ' + (err.response?.data?.message || err.message)
@@ -234,6 +287,20 @@ const fetchData = async () => {
     isLoading.value = false
   }
 }
+
+const onPaginationChange = (page: number) => {
+  pagination.value.current_page = page
+  fetchData()
+}
+
+let searchDebounceTimer: any = null
+watch([searchQuery, jobPositionFilter], () => {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchData()
+  }, 300)
+})
 
 const openModal = (mode: 'create' | 'edit', data: any = null) => {
   modalMode.value = mode

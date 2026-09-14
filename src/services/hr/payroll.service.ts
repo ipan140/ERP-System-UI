@@ -2,9 +2,9 @@ import { http } from "@/services/http";
 import type { IResponse } from "@/types";
 
 export const payrollService = {
-  async getAll(): Promise<any[]> {
-    const response = await http.get<IResponse<any[]>>("/hr/payroll");
-    return response.data.data ?? response.data;
+  async getAll(params?: any): Promise<any> {
+    const response = await http.get<IResponse<any[]>>("/hr/payroll", { params });
+    return response.data;
   },
 
   async getById(id: number | string): Promise<any> {

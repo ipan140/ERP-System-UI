@@ -35,17 +35,25 @@
 
       <!-- Filters/Search -->
       <div class="mb-6 flex flex-col sm:flex-row items-start justify-between p-4 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] gap-4">
-        <div class="flex items-center gap-3 w-full sm:w-auto">
+        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           <div class="relative w-full sm:w-80">
-            <input type="text" placeholder="Cari nama, departemen, atau email..." class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" />
+            <input 
+              v-model="searchQuery" 
+              type="text" 
+              placeholder="Cari nama, email, atau telepon..." 
+              class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" 
+            />
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M19.7 18.3l-4.8-4.8c1-1.3 1.6-2.9 1.6-4.7 0-4.3-3.5-7.8-7.8-7.8S1 4.5 1 8.8s3.5 7.8 7.8 7.8c1.8 0 3.4-.6 4.7-1.6l4.8 4.8c.2.2.4.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4zM2.5 8.8c0-3.5 2.8-6.3 6.3-6.3s6.3 2.8 6.3 6.3-2.8 6.3-6.3 6.3-6.3-2.8-6.3-6.3z"/></svg>
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M19.7 18.3l-4.8-4.8c1-1.3 1.6-2.9 1.6-4.7 0-4.3-3.5-7.8-7.8-7.8S1 4.5 1 8.8s3.5 7.8 7.8 7.8c1.8 0 3.4-.6 4.7-1.6l4.8 4.8c.2.2.4.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4zM2.5 8.8c0-3.5 2.8-6.3 6.3-6.3s6.3 2.8 6.3 6.3-2.8 6.3-6.3 6.3-2.8 6.3-6.3z"/></svg>
             </span>
           </div>
-          <button class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-            Filter
-          </button>
+          <select 
+            v-model="departmentFilter" 
+            class="rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90"
+          >
+            <option value="all">Semua Departemen</option>
+            <option v-for="d in uniqueDepartments" :key="d.id" :value="d.id">{{ d.name }}</option>
+          </select>
         </div>
       </div>
 
@@ -108,6 +116,7 @@
             </div>
           </div>
         </div>
+        <PaginationBar v-if="viewMode === 'grid'" :pagination="pagination" @change="onPaginationChange" class="mt-6" />
       </div>
 
       <!-- LIST / TABLE VIEW -->
@@ -167,13 +176,7 @@
           </table>
         </div>
 
-        <div class="flex items-center justify-between px-5 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/20">
-          <span class="text-sm text-gray-500 dark:text-gray-400">Menampilkan {{ records.length }} data</span>
-          <div class="flex gap-2">
-            <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 bg-transparent">&larr; Prev</button>
-            <button class="px-3 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg dark:text-gray-400 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 bg-transparent">Next &rarr;</button>
-          </div>
-        </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
 
     </div>
@@ -294,23 +297,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import Alert from '@/components/ui/Alert.vue'
 import Badge from '@/components/ui/Badge.vue'
 import { employeesService } from '@/services/hr/employees.service'
 import { departmentsService } from '@/services/hr/departments.service'
 import { http } from '@/services/http'
 import type { IEmployeeDto } from '@/types/hr/employees.dto'
+import type { IPaginationMeta } from '@/types'
 
 const departmentsList = ref<any[]>([])
 const jobPositionsList = ref<any[]>([])
 const records = ref<IEmployeeDto[]>([])
+const allEmployees = ref<IEmployeeDto[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
   
 const viewMode = ref<'grid' | 'list'>('grid')
+const searchQuery = ref('')
+const departmentFilter = ref('all')
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 12,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
@@ -331,10 +348,10 @@ const formData = ref<Partial<IEmployeeDto>>({
 
 // Extract Unique Lists for Dropdowns
 const uniqueDepartments = computed(() => departmentsList.value)
-  const uniqueJobPositions = computed(() => jobPositionsList.value)
+const uniqueJobPositions = computed(() => jobPositionsList.value)
 
 const uniqueManagers = computed(() => {
-  return records.value.map(emp => ({ id: emp.id, name: emp.name }))
+  return allEmployees.value.map(emp => ({ id: emp.id, name: emp.name }))
 })
 
 const getInitials = (name: string) => {
@@ -345,22 +362,51 @@ const getInitials = (name: string) => {
 const fetchData = async () => {
   isLoading.value = true; error.value = null
   try {
-    
-    const [data, depts, jobs] = await Promise.all([
-      employeesService.getAll(), 
+    const params: Record<string, any> = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value) params.search = searchQuery.value
+    if (departmentFilter.value !== 'all') params.department_id = departmentFilter.value
+
+    const [empRes, depts, jobs, allEmpRes] = await Promise.all([
+      employeesService.getAll(params), 
       departmentsService.getAll(),
-      http.get('/hr/employees/jobposition').then(res => res.data.data ?? res.data)
+      http.get('/hr/employees/jobposition').then(res => res.data.data ?? res.data),
+      employeesService.getAll({ all: 'true' })
     ]);
     departmentsList.value = depts;
     jobPositionsList.value = jobs;
+    allEmployees.value = Array.isArray(allEmpRes) ? allEmpRes : (allEmpRes?.data || []);
     
-    records.value = data
+    if (empRes?.pagination) {
+      records.value = empRes.data || []
+      pagination.value = empRes.pagination
+    } else if (Array.isArray(empRes)) {
+      records.value = empRes
+    } else {
+      records.value = empRes?.data || []
+    }
   } catch (err: any) {
     error.value = 'Gagal memuat data: ' + (err.response?.data?.message || err.message)
   } finally {
     isLoading.value = false
   }
 }
+
+const onPaginationChange = (page: number) => {
+  pagination.value.current_page = page
+  fetchData()
+}
+
+let searchDebounceTimer: any = null
+watch([searchQuery, departmentFilter], () => {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchData()
+  }, 300)
+})
 
 const openModal = (mode: 'create' | 'edit', data: any = null) => {
   modalMode.value = mode

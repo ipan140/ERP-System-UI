@@ -23,7 +23,7 @@
             <svg class="w-24 h-24 text-brand-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path></svg>
           </div>
           <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 relative z-10">Total Referensi Sukses</p>
-          <h4 class="text-2xl font-bold text-gray-900 dark:text-white relative z-10">{{ records.length }} Kandidat</h4>
+          <h4 class="text-2xl font-bold text-gray-900 dark:text-white relative z-10">{{ allRecords.length }} Kandidat</h4>
         </div>
         <div class="rounded-xl border border-gray-200 bg-white dark:bg-white/[0.03] p-5 dark:border-gray-800 shadow-sm relative overflow-hidden">
           <div class="absolute -right-4 -bottom-4 opacity-10">
@@ -40,11 +40,17 @@
 
       <!-- DATA TABLE -->
       <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-sm">
-        <div class="flex flex-col sm:flex-row items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 border-b border-gray-200 dark:border-gray-700">
           <h3 class="font-bold text-gray-800 dark:text-white/90 text-lg">Riwayat Referensi (Leaderboard)</h3>
-          <div class="relative mt-3 sm:mt-0">
-            <input type="text" placeholder="Cari..." class="w-full sm:w-64 rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" />
-            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <select v-model="selectedEmployee" class="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90">
+              <option value="all">Semua Pegawai</option>
+              <option v-for="emp in employeesList" :key="emp.id" :value="emp.id">{{ emp.name }}</option>
+            </select>
+            <div class="relative flex-1 sm:flex-initial">
+              <input v-model="searchQuery" type="text" placeholder="Cari referensi..." class="w-full sm:w-64 rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" />
+              <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
           </div>
         </div>
 
@@ -99,6 +105,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" class="border-t border-gray-200 dark:border-gray-700" />
       </div>
     </div>
   </AdminLayout>
@@ -159,25 +166,39 @@
 <script setup lang="ts">
 import { employeesService } from '@/services/hr/employees.service'
 import type { IEmployeeDto } from '@/types/hr/employees.dto'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { referralsService } from '@/services/hr/referrals.service'
 import type { IReferralPointDto } from '@/types/hr/referrals.dto'
+import type { IPaginationMeta } from '@/types'
 
 const employeesList = ref<IEmployeeDto[]>([])
+const allRecords = ref<IReferralPointDto[]>([])
 const records = ref<IReferralPointDto[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+
+const searchQuery = ref('')
+const selectedEmployee = ref('all')
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
 const isSaving = ref(false)
 const formData = ref<Partial<IReferralPointDto>>({ id: undefined, employee_id: undefined, applicant_id: undefined, points: 50, reason: '' })
 
-// Dashboard computed values
-const totalPoints = computed(() => records.value.reduce((acc, curr) => acc + (curr.points || 0), 0))
-const averagePoints = computed(() => records.value.length ? totalPoints.value / records.value.length : 0)
+// Dashboard computed values (using allRecords)
+const totalPoints = computed(() => allRecords.value.reduce((acc, curr) => acc + (curr.points || 0), 0))
+const averagePoints = computed(() => allRecords.value.length ? totalPoints.value / allRecords.value.length : 0)
 
 // Helpers
 const formatDate = (val?: string) => {
@@ -185,21 +206,67 @@ const formatDate = (val?: string) => {
   return new Date(val).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-const fetchData = async () => {
+let searchDebounceTimer: any = null
+watch(searchQuery, () => {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchPaginatedData()
+  }, 400)
+})
+
+watch(selectedEmployee, () => {
+  pagination.value.current_page = 1
+  fetchPaginatedData()
+})
+
+const onPaginationChange = (page: number, limit?: number) => {
+  pagination.value.current_page = page
+  if (limit) pagination.value.per_page = limit
+  fetchPaginatedData()
+}
+
+const fetchAllMetrics = async () => {
+  try {
+    const res = await referralsService.getAll({ all: 'true' })
+    allRecords.value = Array.isArray(res) ? res : (res?.data || [])
+  } catch (e) { console.error('Failed to load referral metrics', e) }
+}
+
+const fetchPaginatedData = async () => {
   if (employeesList.value.length === 0) {
     try {
-      employeesList.value = await employeesService.getAll()
+      const empRes = await employeesService.getAll({ all: 'true' })
+      employeesList.value = Array.isArray(empRes) ? empRes : (empRes?.data || [])
     } catch(e) { console.error('Failed to load employees', e) }
   }
   isLoading.value = true; error.value = null
   try {
-    const data = await referralsService.getAll()
-    records.value = data
+    const params: any = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
+    if (selectedEmployee.value !== 'all') params.employee_id = selectedEmployee.value
+
+    const res = await referralsService.getAll(params)
+    if (res && res.data) {
+      records.value = res.data
+      if (res.pagination) {
+        pagination.value = res.pagination
+      }
+    } else if (Array.isArray(res)) {
+      records.value = res
+    }
   } catch (err: any) {
     error.value = 'Gagal memuat: ' + (err.response?.data?.message || err.message)
   } finally {
     isLoading.value = false
   }
+}
+
+const fetchData = async () => {
+  await Promise.all([fetchAllMetrics(), fetchPaginatedData()])
 }
 
 const openModal = (mode: 'create' | 'edit', data: any = null) => {

@@ -37,11 +37,23 @@
 
       <!-- DATA TABLE -->
       <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-sm">
-        <div class="flex flex-col sm:flex-row items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 border-b border-gray-200 dark:border-gray-700">
           <h3 class="font-bold text-gray-800 dark:text-white/90 text-lg">Daftar Penilaian Pegawai</h3>
-          <div class="relative mt-3 sm:mt-0">
-            <input type="text" placeholder="Cari..." class="w-full sm:w-64 rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" />
-            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <select v-model="selectedState" class="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90">
+              <option value="all">Semua Status</option>
+              <option value="Draft">Draft</option>
+              <option value="Done">Selesai (Done)</option>
+              <option value="Cancelled">Dibatalkan</option>
+            </select>
+            <select v-model="selectedEmployee" class="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90">
+              <option value="all">Semua Pegawai</option>
+              <option v-for="emp in employeesList" :key="emp.id" :value="emp.id">{{ emp.name }}</option>
+            </select>
+            <div class="relative flex-1 sm:flex-initial">
+              <input v-model="searchQuery" type="text" placeholder="Cari penilaian..." class="w-full sm:w-64 rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90" />
+              <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
           </div>
         </div>
 
@@ -100,6 +112,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" class="border-t border-gray-200 dark:border-gray-700" />
       </div>
     </div>
   </AdminLayout>
@@ -178,26 +191,41 @@
 <script setup lang="ts">
 import { employeesService } from '@/services/hr/employees.service'
 import type { IEmployeeDto } from '@/types/hr/employees.dto'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { appraisalsService } from '@/services/hr/appraisals.service'
 import type { IAppraisalDto } from '@/types/hr/appraisals.dto'
+import type { IPaginationMeta } from '@/types'
 
 const employeesList = ref<IEmployeeDto[]>([])
+const allRecords = ref<IAppraisalDto[]>([])
 const records = ref<IAppraisalDto[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+
+const searchQuery = ref('')
+const selectedState = ref('all')
+const selectedEmployee = ref('all')
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
 const isSaving = ref(false)
 const formData = ref<Partial<IAppraisalDto>>({ id: undefined, employee_id: undefined, manager_id: undefined, date: '', score: 3, state: 'Draft', feedback: '' })
 
-// Dashboard computed values
-const averageScore = computed(() => records.value.length ? records.value.reduce((acc, curr) => acc + (curr.score || 0), 0) / records.value.length : 0)
-const completedAppraisals = computed(() => records.value.filter(r => r.state === 'Done').length)
-const pendingAppraisals = computed(() => records.value.filter(r => r.state === 'Draft').length)
+// Dashboard computed values (using allRecords)
+const averageScore = computed(() => allRecords.value.length ? allRecords.value.reduce((acc, curr) => acc + (curr.score || 0), 0) / allRecords.value.length : 0)
+const completedAppraisals = computed(() => allRecords.value.filter(r => r.state === 'Done').length)
+const pendingAppraisals = computed(() => allRecords.value.filter(r => r.state === 'Draft').length)
 
 // Helpers
 const formatDate = (val?: string) => {
@@ -220,21 +248,68 @@ const getStatusDotClass = (state?: string) => {
   return 'bg-gray-500'
 }
 
-const fetchData = async () => {
+let searchDebounceTimer: any = null
+watch(searchQuery, () => {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchPaginatedData()
+  }, 400)
+})
+
+watch([selectedState, selectedEmployee], () => {
+  pagination.value.current_page = 1
+  fetchPaginatedData()
+})
+
+const onPaginationChange = (page: number, limit?: number) => {
+  pagination.value.current_page = page
+  if (limit) pagination.value.per_page = limit
+  fetchPaginatedData()
+}
+
+const fetchAllMetrics = async () => {
+  try {
+    const res = await appraisalsService.getAll({ all: 'true' })
+    allRecords.value = Array.isArray(res) ? res : (res?.data || [])
+  } catch(e) { console.error('Failed to load metrics', e) }
+}
+
+const fetchPaginatedData = async () => {
   if (employeesList.value.length === 0) {
     try {
-      employeesList.value = await employeesService.getAll()
+      const empRes = await employeesService.getAll({ all: 'true' })
+      employeesList.value = Array.isArray(empRes) ? empRes : (empRes?.data || [])
     } catch(e) { console.error('Failed to load employees', e) }
   }
   isLoading.value = true; error.value = null
   try {
-    const data = await appraisalsService.getAll()
-    records.value = data
+    const params: any = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
+    if (selectedState.value !== 'all') params.state = selectedState.value
+    if (selectedEmployee.value !== 'all') params.employee_id = selectedEmployee.value
+
+    const res = await appraisalsService.getAll(params)
+    if (res && res.data) {
+      records.value = res.data
+      if (res.pagination) {
+        pagination.value = res.pagination
+      }
+    } else if (Array.isArray(res)) {
+      records.value = res
+    }
   } catch (err: any) {
     error.value = 'Gagal memuat: ' + (err.response?.data?.message || err.message)
   } finally {
     isLoading.value = false
   }
+}
+
+const fetchData = async () => {
+  await Promise.all([fetchAllMetrics(), fetchPaginatedData()])
 }
 
 const openModal = (mode: 'create' | 'edit', data: any = null) => {

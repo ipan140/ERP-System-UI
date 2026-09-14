@@ -30,9 +30,29 @@
 
       <!-- ATTENDANCE TABLE -->
       <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <div class="flex flex-col sm:flex-row items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
-          <h3 class="font-bold text-gray-800 dark:text-white/90 text-lg">Riwayat Kehadiran</h3>
-          <button @click="openModal('create')" class="text-sm font-medium text-brand-500 hover:text-brand-600">
+        <div class="flex flex-col sm:flex-row items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 gap-4">
+          <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <h3 class="font-bold text-gray-800 dark:text-white/90 text-lg mr-2">Riwayat Kehadiran</h3>
+            <div class="relative w-full sm:w-64">
+              <input 
+                v-model="searchQuery" 
+                type="text" 
+                placeholder="Cari nama pegawai..." 
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pl-8 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white" 
+              />
+              <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M19.7 18.3l-4.8-4.8c1-1.3 1.6-2.9 1.6-4.7 0-4.3-3.5-7.8-7.8-7.8S1 4.5 1 8.8s3.5 7.8 7.8 7.8c1.8 0 3.4-.6 4.7-1.6l4.8 4.8c.2.2.4.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4zM2.5 8.8c0-3.5 2.8-6.3 6.3-6.3s6.3 2.8 6.3 6.3-2.8 6.3-6.3 6.3-2.8 6.3-6.3z"/></svg>
+              </span>
+            </div>
+            <select 
+              v-model="employeeFilter" 
+              class="rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            >
+              <option value="all">Semua Pegawai</option>
+              <option v-for="emp in employeesList" :key="emp.id" :value="emp.id">{{ emp.name }}</option>
+            </select>
+          </div>
+          <button @click="openModal('create')" class="text-sm font-medium text-brand-500 hover:text-brand-600 shrink-0">
             + Tambah Manual
           </button>
         </div>
@@ -83,6 +103,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
     </div>
   </AdminLayout>
@@ -123,18 +144,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { employeesService } from '@/services/hr/employees.service'
 import type { IEmployeeDto } from '@/types/hr/employees.dto'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { attendancesService } from '@/services/hr/attendances.service'
 import type { IAttendanceDto } from '@/types/hr/attendances.dto'
+import type { IPaginationMeta } from '@/types'
 
 const employeesList = ref<IEmployeeDto[]>([])
 const records = ref<IAttendanceDto[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+
+const searchQuery = ref('')
+const employeeFilter = ref('all')
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
@@ -156,19 +191,48 @@ const formatForInput = (val?: string) => {
 const fetchData = async () => {
   if (employeesList.value.length === 0) {
     try {
-      employeesList.value = await employeesService.getAll()
+      const empRes = await employeesService.getAll({ all: 'true' })
+      employeesList.value = Array.isArray(empRes) ? empRes : (empRes?.data || [])
     } catch(e) { console.error('Failed to load employees', e) }
   }
   isLoading.value = true; error.value = null
   try {
-    const data = await attendancesService.getAll()
-    records.value = data
+    const params: Record<string, any> = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value) params.search = searchQuery.value
+    if (employeeFilter.value !== 'all') params.employee_id = employeeFilter.value
+
+    const res = await attendancesService.getAll(params)
+    if (res?.pagination) {
+      records.value = res.data || []
+      pagination.value = res.pagination
+    } else if (Array.isArray(res)) {
+      records.value = res
+    } else {
+      records.value = res?.data || []
+    }
   } catch (err: any) {
     error.value = 'Gagal memuat: ' + (err.response?.data?.message || err.message)
   } finally {
     isLoading.value = false
   }
 }
+
+const onPaginationChange = (page: number) => {
+  pagination.value.current_page = page
+  fetchData()
+}
+
+let searchDebounceTimer: any = null
+watch([searchQuery, employeeFilter], () => {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchData()
+  }, 300)
+})
 
   const quickCheckIn = async () => {
     try {

@@ -178,7 +178,7 @@
       <!-- Data Table -->
       <div class="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 overflow-hidden">
         <div v-if="isLoading" class="py-10 text-center"><div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div></div>
-        <div v-else-if="filteredRecords.length === 0" class="py-10 text-center text-gray-500">Belum ada slip gaji untuk periode {{ selectedPeriod }}. Klik "Generate Gaji" untuk memproses.</div>
+        <div v-else-if="records.length === 0" class="py-10 text-center text-gray-500">Belum ada slip gaji untuk periode {{ selectedPeriod }}. Klik "Generate Gaji" untuk memproses.</div>
         <div v-else class="overflow-x-auto">
           <table class="w-full text-left text-sm text-gray-600 dark:text-gray-400">
             <thead class="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-gray-700/50 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
@@ -194,7 +194,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-for="row in filteredRecords" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+              <tr v-for="row in records" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                 <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
                   {{ row.employee?.name || 'Unknown' }}
                   <div class="text-xs text-gray-500 font-normal">{{ row.employee?.job_position?.name || 'Staff' }}</div>
@@ -250,6 +250,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" class="border-t border-gray-200 dark:border-gray-700" />
       </div>
     </div>
   </AdminLayout>
@@ -418,16 +419,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { IPaginationMeta } from '@/types'
 import { http } from '@/services/http'
 
 const records = ref<any[]>([])
+const allPeriodRecords = ref<any[]>([])
 const isLoading = ref(true)
 const isGenerating = ref(false)
 const isBulkPaying = ref(false)
 const showBankDropdown = ref(false)
 const showSummarySheet = ref(false)
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 const currentMonth = new Date().toISOString().substring(0, 7) // YYYY-MM
 const selectedPeriod = ref(currentMonth)
@@ -484,7 +497,7 @@ const downloadESPT = async () => {
 
 // Filtering
 const filteredByPeriod = computed(() => {
-  return records.value.filter(r => r.period === selectedPeriod.value)
+  return allPeriodRecords.value.filter(r => r.period === selectedPeriod.value)
 })
 
 const departmentsList = computed(() => {
@@ -550,17 +563,72 @@ const totalTHP = computed(() => {
   return filteredRecords.value.reduce((sum, r) => sum + (r.net_salary || 0), 0)
 })
 
+let searchDebounceTimer: any = null
+watch(searchKeyword, () => {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchPaginatedData()
+  }, 400)
+})
+
+watch([selectedDepartment, selectedStatus], () => {
+  pagination.value.current_page = 1
+  fetchPaginatedData()
+})
+
+watch(selectedPeriod, () => {
+  pagination.value.current_page = 1
+  fetchData()
+})
+
+const onPaginationChange = (page: number, limit?: number) => {
+  pagination.value.current_page = page
+  if (limit) pagination.value.per_page = limit
+  fetchPaginatedData()
+}
+
 // API Operations
-const fetchData = async () => {
+const fetchPeriodTotals = async () => {
+  try {
+    const res = await http.get('/hr/employees/payroll', { params: { all: 'true', period: selectedPeriod.value } })
+    allPeriodRecords.value = res.data?.data || res.data || []
+  } catch (err) {
+    console.error('Failed to fetch period totals', err)
+  }
+}
+
+const fetchPaginatedData = async () => {
   isLoading.value = true
   try {
-    const res = await http.get('/hr/employees/payroll')
-    records.value = res.data?.data || res.data || []
+    const params: any = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page,
+      period: selectedPeriod.value
+    }
+    if (searchKeyword.value.trim()) params.search = searchKeyword.value.trim()
+    if (selectedDepartment.value) params.department = selectedDepartment.value
+    if (selectedStatus.value) params.status = selectedStatus.value
+
+    const res = await http.get('/hr/employees/payroll', { params })
+    const data = res.data
+    if (data && data.data) {
+      records.value = data.data
+      if (data.pagination) {
+        pagination.value = data.pagination
+      }
+    } else if (Array.isArray(data)) {
+      records.value = data
+    }
   } catch (err) {
     console.error(err)
   } finally {
     isLoading.value = false
   }
+}
+
+const fetchData = async () => {
+  await Promise.all([fetchPeriodTotals(), fetchPaginatedData()])
 }
 
 const generatePayroll = async () => {
