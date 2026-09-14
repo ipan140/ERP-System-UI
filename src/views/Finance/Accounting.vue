@@ -96,13 +96,13 @@
                   <p class="mt-2 text-xs">Memuat Chart of Accounts...</p>
                 </td>
               </tr>
-              <tr v-else-if="filteredAccounts.length === 0">
+              <tr v-else-if="accounts.length === 0">
                 <td colspan="6" class="py-12 text-center text-gray-500 dark:text-gray-400 text-sm">
                   Tidak ada akun rekening yang sesuai dengan filter.
                 </td>
               </tr>
               <tr 
-                v-for="acc in filteredAccounts" 
+                v-for="acc in accounts" 
                 :key="acc.id" 
                 class="hover:bg-gray-50/60 dark:hover:bg-gray-700/30 transition-colors"
               >
@@ -156,6 +156,8 @@
             </tbody>
           </table>
         </div>
+        <!-- Server-side Pagination Bar -->
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
 
     </div>
@@ -304,16 +306,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { http } from '@/services/http'
 import type { IAccountDto as IAccount } from '@/types/finance'
+import type { IPaginationMeta } from '@/types'
 
 const accounts = ref<IAccount[]>([])
+const allAccounts = ref<IAccount[]>([])
 const isLoading = ref(false)
 const isSaving = ref(false)
 const searchQuery = ref('')
 const selectedCategory = ref('all')
+
+// Server-side Pagination State
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchAccounts()
+}
+
+let searchTimer: any = null
+watch([searchQuery, selectedCategory], () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchAccounts()
+  }, 300)
+})
 
 const categories = [
   { label: 'Semua Akun', value: 'all' },
@@ -354,13 +384,37 @@ const cashForm = ref<{
 
 onMounted(() => {
   fetchAccounts()
+  fetchAllAccounts()
 })
+
+const fetchAllAccounts = async () => {
+  try {
+    const res = await http.get('/finance/accounting/accounts?all=true')
+    allAccounts.value = res.data?.data || res.data || []
+  } catch (err) {
+    console.error('Failed to load all accounts', err)
+  }
+}
 
 const fetchAccounts = async () => {
   isLoading.value = true
   try {
-    const res = await http.get('/finance/accounting/accounts')
-    accounts.value = res.data?.data || res.data || []
+    const params: Record<string, any> = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
+    if (selectedCategory.value && selectedCategory.value !== 'all') params.category = selectedCategory.value
+
+    const res = await http.get('/finance/accounting/accounts', { params })
+    if (res.data && res.data.pagination) {
+      accounts.value = res.data.data || []
+      pagination.value = res.data.pagination
+    } else if (Array.isArray(res.data?.data)) {
+      accounts.value = res.data.data
+    } else if (Array.isArray(res.data)) {
+      accounts.value = res.data
+    }
   } catch (err) {
     console.error('Failed to load accounts', err)
   } finally {
@@ -368,22 +422,15 @@ const fetchAccounts = async () => {
   }
 }
 
-// Computed Filters & Totals
-const filteredAccounts = computed(() => {
-  return accounts.value.filter(acc => {
-    const matchCat = selectedCategory.value === 'all' || acc.type === selectedCategory.value
-    const matchSearch = acc.name.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-                        acc.code.toLowerCase().includes(searchQuery.value.toLowerCase())
-    return matchCat && matchSearch
-  })
-})
+// Computed Filters & Totals based on allAccounts (for accuracy across all pages)
+const accountDataSource = computed(() => allAccounts.value.length ? allAccounts.value : accounts.value)
 
 const cashAndBankAccounts = computed(() => {
-  return accounts.value.filter(a => a.type === 'asset' && (a.code.startsWith('1-100') || a.category?.includes('Kas') || a.name?.includes('Bank')))
+  return accountDataSource.value.filter(a => a.type === 'asset' && (a.code.startsWith('1-100') || a.category?.includes('Kas') || a.name?.includes('Bank')))
 })
 
 const oppositeAccounts = computed(() => {
-  return accounts.value.filter(a => !cashAndBankAccounts.value.some(cb => cb.id === a.id))
+  return accountDataSource.value.filter(a => !cashAndBankAccounts.value.some(cb => cb.id === a.id))
 })
 
 const totalCashAndBank = computed(() => {
@@ -391,15 +438,15 @@ const totalCashAndBank = computed(() => {
 })
 
 const totalReceivables = computed(() => {
-  return accounts.value.filter(a => a.code.startsWith('1-12') || a.code.startsWith('1-14')).reduce((acc, curr) => acc + (curr.balance || 0), 0)
+  return accountDataSource.value.filter(a => a.code.startsWith('1-12') || a.code.startsWith('1-14')).reduce((acc, curr) => acc + (curr.balance || 0), 0)
 })
 
 const totalPayables = computed(() => {
-  return accounts.value.filter(a => a.type === 'liability').reduce((acc, curr) => acc + (curr.balance || 0), 0)
+  return accountDataSource.value.filter(a => a.type === 'liability').reduce((acc, curr) => acc + (curr.balance || 0), 0)
 })
 
 const totalPayrollExpense = computed(() => {
-  return accounts.value.filter(a => a.code.startsWith('6-10')).reduce((acc, curr) => acc + (curr.balance || 0), 0)
+  return accountDataSource.value.filter(a => a.code.startsWith('6-10')).reduce((acc, curr) => acc + (curr.balance || 0), 0)
 })
 
 // Formatting Helpers
@@ -476,6 +523,7 @@ const saveAccount = async () => {
     }
     isAccountModalOpen.value = false
     await fetchAccounts()
+    await fetchAllAccounts()
   } catch (err: any) {
     alert('Gagal menyimpan akun: ' + (err.response?.data?.message || err.message))
   } finally {
@@ -488,6 +536,7 @@ const deleteAccount = async (id: number) => {
   try {
     await http.delete(`/finance/accounting/accounts/${id}`)
     await fetchAccounts()
+    await fetchAllAccounts()
   } catch (err: any) {
     alert('Gagal menghapus: ' + (err.response?.data?.message || err.message))
   }
@@ -516,6 +565,7 @@ const submitCashTransaction = async () => {
     await http.post('/finance/accounting/cash-transaction', cashForm.value)
     isCashModalOpen.value = false
     await fetchAccounts()
+    await fetchAllAccounts()
     alert('Transaksi berhasil dibukukan ke jurnal dan saldo akun ter-update!')
   } catch (err: any) {
     alert('Gagal membukukan transaksi: ' + (err.response?.data?.message || err.message))

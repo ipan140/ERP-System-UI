@@ -58,9 +58,20 @@
       <!-- BUDGET BARS & TABEL REALISASI -->
       <div class="grid grid-cols-1 gap-4">
         <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-800 shadow-sm">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-bold text-gray-900 dark:text-white text-base">Penyerapan Anggaran per Departemen & Status Kunci</h3>
-            <span class="text-xs text-gray-400">Total {{ budgets.length }} Departemen Terdaftar</span>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+            <div>
+              <h3 class="font-bold text-gray-900 dark:text-white text-base">Penyerapan Anggaran per Departemen & Status Kunci</h3>
+              <p class="text-xs text-gray-400">Total {{ pagination.total_items || budgets.length }} Departemen Terdaftar</p>
+            </div>
+            <div class="relative w-full sm:w-64">
+              <input 
+                v-model="searchQuery" 
+                type="text" 
+                placeholder="Cari departemen / periode..." 
+                class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2 pl-10 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white"
+              />
+              <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
           </div>
           
           <div class="space-y-6">
@@ -125,6 +136,8 @@
               </div>
             </div>
           </div>
+          <!-- Server-side Pagination Bar -->
+          <PaginationBar :pagination="pagination" @change="onPaginationChange" class="mt-4" />
         </div>
       </div>
 
@@ -246,10 +259,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { http } from '@/services/http'
 import type { IDepartmentBudgetDto } from '@/types/finance'
+import type { IPaginationMeta } from '@/types'
 
 const budgets = ref<IDepartmentBudgetDto[]>([])
 const summary = ref({
@@ -261,6 +276,33 @@ const summary = ref({
 const isModalOpen = ref(false)
 const isSaving = ref(false)
 const editId = ref<number | null>(null)
+
+const searchQuery = ref('')
+
+// Server-side Pagination State
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchBudgets()
+}
+
+let searchTimer: any = null
+watch(searchQuery, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchBudgets()
+  }, 300)
+})
 
 // CFO Bypass States
 const isBypassModalOpen = ref(false)
@@ -285,13 +327,22 @@ onMounted(() => {
 
 const fetchBudgets = async () => {
   try {
-    const res = await http.get('/finance/budget')
+    const params: Record<string, any> = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
+
+    const res = await http.get('/finance/budget', { params })
     budgets.value = res.data?.data?.items || []
     summary.value = {
       total_allocated: res.data?.data?.total_allocated || 0,
       total_realized: res.data?.data?.total_realized || 0,
       total_remaining: res.data?.data?.total_remaining || 0,
       overall_usage_pct: res.data?.data?.overall_usage_pct || 0
+    }
+    if (res.data?.pagination) {
+      pagination.value = res.data.pagination
     }
   } catch (err) {
     console.error(err)

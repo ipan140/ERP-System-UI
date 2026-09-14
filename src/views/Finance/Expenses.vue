@@ -68,6 +68,30 @@
           </div>
         </div>
 
+        <!-- FILTER & PENCARIAN -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-700 pb-4">
+          <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar">
+            <button 
+              v-for="st in statusTabs" 
+              :key="st.value" 
+              @click="selectedStatus = st.value"
+              :class="['px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors', selectedStatus === st.value ? 'bg-brand-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700']"
+            >
+              {{ st.label }}
+            </button>
+          </div>
+
+          <div class="relative w-full sm:w-64">
+            <input 
+              v-model="searchQuery" 
+              type="text" 
+              placeholder="Cari deskripsi klaim atau karyawan..." 
+              class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2 pl-10 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white"
+            />
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </div>
+        </div>
+
         <!-- FILTER & TABEL -->
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-800 shadow-sm">
           <div class="max-w-full overflow-x-auto custom-scrollbar">
@@ -147,6 +171,8 @@
             </tbody>
           </table>
         </div>
+        <!-- Server-side Pagination Bar -->
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
       </div>
 
@@ -519,19 +545,58 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { http } from '@/services/http'
 import type { IExpenseDto as IExpense, IPettyCashFundDto, IPettyCashTransactionDto } from '@/types/finance'
+import type { IPaginationMeta } from '@/types'
 
 const activeTab = ref<'expenses' | 'petty_cash'>('expenses')
 
 const records = ref<IExpense[]>([])
+const allRecords = ref<IExpense[]>([])
 const isLoading = ref(false)
 const isSaving = ref(false)
 const isModalOpen = ref(false)
 const isEditing = ref(false)
 const editingId = ref<number | null>(null)
+
+const searchQuery = ref('')
+const selectedStatus = ref('all')
+
+const statusTabs = [
+  { label: 'Semua Status', value: 'all' },
+  { label: 'Draf', value: 'draft' },
+  { label: 'Diajukan', value: 'submit' },
+  { label: 'Disetujui', value: 'approved' },
+  { label: 'Terbayar', value: 'paid' },
+]
+
+// Server-side Pagination State
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchExpenses()
+}
+
+let searchTimer: any = null
+watch([searchQuery, selectedStatus], () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchExpenses()
+  }, 300)
+})
 
 const formData = ref({
   name: '',
@@ -545,6 +610,7 @@ const budgets = ref<any[]>([])
 
 onMounted(() => {
   fetchExpenses()
+  fetchKpiMetrics()
   fetchEmployees()
   fetchBudgets()
 })
@@ -591,11 +657,34 @@ const fetchEmployees = async () => {
   }
 }
 
+const fetchKpiMetrics = async () => {
+  try {
+    const res = await http.get('/finance/expenses?all=true')
+    allRecords.value = res.data?.data || res.data || []
+  } catch (err) {
+    console.error('Failed to load KPI metrics', err)
+  }
+}
+
 const fetchExpenses = async () => {
   isLoading.value = true
   try {
-    const res = await http.get('/finance/expenses')
-    records.value = res.data?.data || res.data || []
+    const params: Record<string, any> = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
+    if (selectedStatus.value && selectedStatus.value !== 'all') params.status = selectedStatus.value
+
+    const res = await http.get('/finance/expenses', { params })
+    if (res.data && res.data.pagination) {
+      records.value = res.data.data || []
+      pagination.value = res.data.pagination
+    } else if (Array.isArray(res.data?.data)) {
+      records.value = res.data.data
+    } else if (Array.isArray(res.data)) {
+      records.value = res.data
+    }
   } catch (err) {
     console.error('Failed to load expenses', err)
   } finally {
@@ -603,9 +692,10 @@ const fetchExpenses = async () => {
   }
 }
 
-const totalClaimAmount = computed(() => records.value.reduce((acc, c) => acc + (c.total_amount || 0), 0))
-const pendingCount = computed(() => records.value.filter(r => r.state === 'draft' || r.state === 'submit' || !r.state).length)
-const approvedCount = computed(() => records.value.filter(r => r.state === 'approved' || r.state === 'paid').length)
+const kpiSource = computed(() => allRecords.value.length ? allRecords.value : records.value)
+const totalClaimAmount = computed(() => kpiSource.value.reduce((acc, c) => acc + (c.total_amount || 0), 0))
+const pendingCount = computed(() => kpiSource.value.filter(r => r.state === 'draft' || r.state === 'submit' || !r.state).length)
+const approvedCount = computed(() => kpiSource.value.filter(r => r.state === 'approved' || r.state === 'paid').length)
 
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val || 0)
@@ -656,6 +746,7 @@ const saveClaim = async () => {
     }
     isModalOpen.value = false
     await fetchExpenses()
+    await fetchKpiMetrics()
   } catch (err: any) {
     alert('Gagal menyimpan klaim: ' + (err.response?.data?.message || err.message))
   } finally {
@@ -669,6 +760,7 @@ const approveClaim = async (claim: IExpense) => {
     claim.state = 'approved'
     await http.put(`/finance/expenses/${claim.id}`, claim)
     await fetchExpenses()
+    await fetchKpiMetrics()
     alert('Klaim disetujui untuk dicairkan!')
   } catch (err: any) {
     alert('Gagal menyetujui klaim: ' + (err.response?.data?.message || err.message))
@@ -680,6 +772,7 @@ const deleteClaim = async (id: number) => {
   try {
     await http.delete(`/finance/expenses/${id}`)
     await fetchExpenses()
+    await fetchKpiMetrics()
   } catch (err: any) {
     alert('Gagal menghapus: ' + (err.response?.data?.message || err.message))
   }

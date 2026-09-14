@@ -38,6 +38,32 @@
         </div>
       </div>
 
+      <!-- FILTER & SEARCH -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="relative flex-1 w-full sm:w-auto">
+          <input 
+            v-model="searchQuery" 
+            type="text" 
+            placeholder="Cari permohonan atau pemohon..." 
+            class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
+          />
+          <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <div class="w-full sm:w-48">
+          <select 
+            v-model="statusFilter" 
+            class="w-full py-2 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
+          >
+            <option value="all">Semua Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+
       <!-- TABEL DAFTAR PERSETUJUAN -->
       <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-800 shadow-sm">
         <div class="max-w-full overflow-x-auto custom-scrollbar">
@@ -118,6 +144,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
 
     </div>
@@ -170,15 +197,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { http } from '@/services/http'
 import type { IApprovalDto as IApproval } from '@/types/finance'
+import type { IPaginationMeta } from '@/types'
 
 const records = ref<IApproval[]>([])
+const allRecords = ref<IApproval[]>([])
 const isLoading = ref(false)
 const isSaving = ref(false)
 const isModalOpen = ref(false)
+
+const searchQuery = ref('')
+const statusFilter = ref('all')
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 const formData = ref({
   name: '',
@@ -190,14 +232,36 @@ const formData = ref({
 })
 
 onMounted(() => {
+  fetchAllMetrics()
   fetchApprovals()
 })
+
+const fetchAllMetrics = async () => {
+  try {
+    const res = await http.get('/finance/approvals', { params: { all: 'true' } })
+    allRecords.value = res.data?.data || res.data || []
+  } catch (err) {
+    console.error('Failed to load all approvals for metrics', err)
+  }
+}
 
 const fetchApprovals = async () => {
   isLoading.value = true
   try {
-    const res = await http.get('/finance/approvals')
-    records.value = res.data?.data || res.data || []
+    const params: Record<string, any> = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value) params.search = searchQuery.value
+    if (statusFilter.value && statusFilter.value !== 'all') params.status = statusFilter.value
+
+    const res = await http.get('/finance/approvals', { params })
+    if (res.data?.pagination) {
+      records.value = res.data.data || []
+      pagination.value = res.data.pagination
+    } else {
+      records.value = res.data?.data || res.data || []
+    }
   } catch (err) {
     console.error('Failed to load approvals', err)
   } finally {
@@ -205,9 +269,23 @@ const fetchApprovals = async () => {
   }
 }
 
-const totalReqAmount = computed(() => records.value.reduce((acc, c) => acc + (c.amount || 0), 0))
-const pendingCount = computed(() => records.value.filter(r => r.status === 'pending' || !r.status).length)
-const approvedCount = computed(() => records.value.filter(r => r.status === 'approved').length)
+const onPaginationChange = (page: number) => {
+  pagination.value.current_page = page
+  fetchApprovals()
+}
+
+let searchDebounceTimer: any = null
+watch([searchQuery, statusFilter], () => {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchApprovals()
+  }, 300)
+})
+
+const totalReqAmount = computed(() => allRecords.value.reduce((acc, c) => acc + (c.amount || 0), 0))
+const pendingCount = computed(() => allRecords.value.filter(r => r.status === 'pending' || !r.status).length)
+const approvedCount = computed(() => allRecords.value.filter(r => r.status === 'approved').length)
 
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val || 0)
@@ -243,6 +321,7 @@ const saveRequest = async () => {
     await http.post('/finance/approvals', formData.value)
     isModalOpen.value = false
     await fetchApprovals()
+    await fetchAllMetrics()
   } catch (err: any) {
     alert('Gagal mengirim permohonan: ' + (err.response?.data?.message || err.message))
   } finally {
@@ -258,6 +337,7 @@ const processApproval = async (item: IApproval, newStatus: 'approved' | 'rejecte
     item.approver_name = 'CFO / Authorized Signer'
     await http.put(`/finance/approvals/${item.id}`, item)
     await fetchApprovals()
+    await fetchAllMetrics()
     alert(`Permohonan berhasil di-${newStatus}!`)
   } catch (err: any) {
     alert('Gagal memproses permohonan: ' + (err.response?.data?.message || err.message))
@@ -269,6 +349,7 @@ const deleteRequest = async (id: number) => {
   try {
     await http.delete(`/finance/approvals/${id}`)
     await fetchApprovals()
+    await fetchAllMetrics()
   } catch (err: any) {
     alert('Gagal menghapus: ' + (err.response?.data?.message || err.message))
   }

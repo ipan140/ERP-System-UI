@@ -41,7 +41,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-800 shadow-sm">
           <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Total Mutasi Bank</p>
-          <h3 class="text-2xl font-black text-gray-900 dark:text-white mt-2">{{ records.length }} <span class="text-sm font-normal text-gray-400">Transaksi</span></h3>
+          <h3 class="text-2xl font-black text-gray-900 dark:text-white mt-2">{{ allRecords.length }} <span class="text-sm font-normal text-gray-400">Transaksi</span></h3>
           <p class="text-xs text-gray-400 mt-1">BCA Giro & Mandiri MCM</p>
         </div>
         <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-800 shadow-sm">
@@ -51,8 +51,43 @@
         </div>
         <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-800 shadow-sm">
           <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Belum Teridentifikasi</p>
-          <h3 class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-2">{{ records.length - reconciledCount }} <span class="text-sm font-normal text-gray-400">Pending</span></h3>
+          <h3 class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-2">{{ allRecords.length - reconciledCount }} <span class="text-sm font-normal text-gray-400">Pending</span></h3>
           <p class="text-xs text-amber-500 mt-1">Menunggu Pencocokan</p>
+        </div>
+      </div>
+
+      <!-- SEARCH & FILTERS -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="relative flex-1 w-full sm:w-auto">
+          <input 
+            v-model="searchQuery" 
+            type="text" 
+            placeholder="Cari keterangan mutasi, no. ref, invoice..." 
+            class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
+          />
+          <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+          <select 
+            v-model="bankFilter" 
+            class="py-2 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
+          >
+            <option value="all">Semua Bank</option>
+            <option value="BCA Giro Operasional">BCA Giro</option>
+            <option value="Mandiri Corporate">Mandiri Corporate</option>
+            <option value="BNI Bisnis">BNI Bisnis</option>
+            <option value="BRI Cash Management">BRI Cash Management</option>
+          </select>
+          <select 
+            v-model="statusFilter" 
+            class="py-2 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
+          >
+            <option value="all">Semua Status</option>
+            <option value="reconciled">Sudah Cocok</option>
+            <option value="unreconciled">Belum Cocok</option>
+          </select>
         </div>
       </div>
 
@@ -127,6 +162,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
 
       <!-- MODAL INPUT / EDIT MUTASI -->
@@ -272,12 +308,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { http } from '@/services/http'
 import type { IBankStatementItemDto } from '@/types/finance'
+import type { IPaginationMeta } from '@/types'
 
 const records = ref<IBankStatementItemDto[]>([])
+const allRecords = ref<IBankStatementItemDto[]>([])
 const openInvoices = ref<any[]>([])
 const isMatching = ref(false)
 const isSaving = ref(false)
@@ -285,6 +324,19 @@ const isModalOpen = ref(false)
 const editId = ref<number | null>(null)
 const isUploadingCsv = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+
+const searchQuery = ref('')
+const bankFilter = ref('all')
+const statusFilter = ref('all')
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 const triggerFileInput = () => {
   fileInputRef.value?.click()
@@ -308,6 +360,7 @@ const handleFileUpload = async (event: Event) => {
     const importedCount = res.data?.data?.length || 0
     alert(`Sukses mengimpor rekening koran! ${importedCount} baris mutasi bank berhasil dimuat.`)
     await fetchStatements()
+    await fetchAllMetrics()
   } catch (err: any) {
     alert('Gagal mengimpor file CSV rekening koran: ' + (err.response?.data?.message || err.message))
   } finally {
@@ -329,26 +382,63 @@ const formData = ref({
   debit: 0
 })
 
-const reconciledCount = computed(() => records.value.filter(r => r.is_reconciled).length)
+const reconciledCount = computed(() => allRecords.value.filter(r => r.is_reconciled).length)
 
 onMounted(() => {
+  fetchAllMetrics()
   fetchStatements()
   fetchOpenInvoices()
 })
 
+const fetchAllMetrics = async () => {
+  try {
+    const res = await http.get('/finance/reconciliation', { params: { all: 'true' } })
+    allRecords.value = res.data?.data || []
+  } catch (err) {
+    console.error('Failed to load all records for metrics', err)
+  }
+}
+
 const fetchStatements = async () => {
   try {
-    const res = await http.get('/finance/reconciliation')
-    records.value = res.data?.data || []
+    const params: Record<string, any> = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value) params.search = searchQuery.value
+    if (bankFilter.value && bankFilter.value !== 'all') params.bank = bankFilter.value
+    if (statusFilter.value && statusFilter.value !== 'all') params.status = statusFilter.value
+
+    const res = await http.get('/finance/reconciliation', { params })
+    if (res.data?.pagination) {
+      records.value = res.data.data || []
+      pagination.value = res.data.pagination
+    } else {
+      records.value = res.data?.data || []
+    }
   } catch (err) {
     console.error(err)
   }
 }
 
+const onPaginationChange = (page: number) => {
+  pagination.value.current_page = page
+  fetchStatements()
+}
+
+let searchDebounceTimer: any = null
+watch([searchQuery, bankFilter, statusFilter], () => {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchStatements()
+  }, 300)
+})
+
 const fetchOpenInvoices = async () => {
   try {
-    // Memanggil endpoint faktur resmi ERP
-    const res = await http.get('/finance/invoicing')
+    // Memanggil endpoint faktur resmi ERP dengan all=true
+    const res = await http.get('/finance/invoicing', { params: { all: 'true' } })
     const raw = res.data?.data || res.data || []
     if (Array.isArray(raw) && raw.length > 0) {
       openInvoices.value = raw
@@ -404,6 +494,7 @@ const saveStatement = async () => {
     }
     isModalOpen.value = false
     await fetchStatements()
+    await fetchAllMetrics()
   } catch (err: any) {
     alert('Gagal menyimpan: ' + err.message)
   } finally {
@@ -416,6 +507,7 @@ const deleteRecord = async (id: number) => {
   try {
     await http.delete(`/finance/reconciliation/${id}`)
     await fetchStatements()
+    await fetchAllMetrics()
   } catch (err: any) {
     alert('Gagal menghapus: ' + err.message)
   }
@@ -427,6 +519,7 @@ const triggerAutoMatch = async () => {
     const res = await http.post('/finance/reconciliation/auto')
     alert(`Berhasil! ${res.data?.data?.matched_items || 0} mutasi otomatis cocok dengan faktur terbuka.`)
     await fetchStatements()
+    await fetchAllMetrics()
   } catch (err: any) {
     alert('Gagal auto-match: ' + err.message)
   } finally {
@@ -449,6 +542,7 @@ const submitManualMatch = async () => {
     })
     isMatchModalOpen.value = false
     await fetchStatements()
+    await fetchAllMetrics()
   } catch (err: any) {
     alert('Gagal rekonsiliasi: ' + err.message)
   }

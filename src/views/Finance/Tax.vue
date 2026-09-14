@@ -49,9 +49,20 @@
 
       <!-- TABEL REKAPITULASI TRANSAKSI BUKTI POTONG -->
       <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-800 shadow-sm">
-        <div class="p-4 border-b border-gray-100 dark:border-gray-700/60 flex justify-between items-center">
-          <h3 class="font-bold text-gray-900 dark:text-white text-sm">Daftar Pemotongan Pajak Masa Berjalan</h3>
-          <span class="text-xs text-gray-400">Menampilkan {{ taxes.length }} Bukti Potong</span>
+        <div class="p-4 border-b border-gray-100 dark:border-gray-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="font-bold text-gray-900 dark:text-white text-sm">Daftar Pemotongan Pajak Masa Berjalan</h3>
+            <span class="text-xs text-gray-400">Total {{ pagination.total_items || taxes.length }} Bukti Potong</span>
+          </div>
+          <div class="relative w-full sm:w-64">
+            <input 
+              v-model="searchQuery" 
+              type="text" 
+              placeholder="Cari lawan transaksi / NPWP..." 
+              class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2 pl-10 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white"
+            />
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </div>
         </div>
         <div class="max-w-full overflow-x-auto custom-scrollbar">
           <table class="min-w-full text-left text-xs">
@@ -115,6 +126,8 @@
             </tbody>
           </table>
         </div>
+        <!-- Server-side Pagination Bar -->
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
 
       <!-- MODAL INPUT / EDIT BUKTI POTONG PAJAK -->
@@ -282,10 +295,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { http } from '@/services/http'
 import type { ITaxMasterConfigDto, ITaxReportSummaryDto } from '@/types/finance'
+import type { IPaginationMeta } from '@/types'
 
 const taxes = ref<ITaxReportSummaryDto[]>([])
 const taxConfigs = ref<ITaxMasterConfigDto[]>([])
@@ -294,6 +309,33 @@ const isModalOpen = ref(false)
 const isSaving = ref(false)
 const editId = ref<number | null>(null)
 const hasNoNPWP = ref(false)
+
+const searchQuery = ref('')
+
+// Server-side Pagination State
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchTaxes()
+}
+
+let searchTimer: any = null
+watch(searchQuery, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchTaxes()
+  }, 300)
+})
 
 // State Modal Master Config
 const isConfigModalOpen = ref(false)
@@ -339,9 +381,18 @@ const fetchTaxConfigs = async () => {
 
 const fetchTaxes = async () => {
   try {
-    const res = await http.get('/finance/tax')
+    const params: Record<string, any> = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
+
+    const res = await http.get('/finance/tax', { params })
     taxes.value = res.data?.data?.items || []
     totalTax.value = res.data?.data?.total_tax_amount || 0
+    if (res.data?.pagination) {
+      pagination.value = res.data.pagination
+    }
   } catch (err) {
     console.error(err)
   }

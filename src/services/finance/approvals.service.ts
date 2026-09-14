@@ -2,9 +2,9 @@ import { http } from "@/services/http";
 import type { IResponse } from "@/types";
 
 export const approvalsService = {
-  async getAll(): Promise<any[]> {
-    const response = await http.get<IResponse<any[]>>("/finance/approvals");
-    return response.data.data ?? response.data;
+  async getAll(params?: Record<string, any>): Promise<any> {
+    const response = await http.get<IResponse<any>>("/finance/approvals", { params });
+    return response.data;
   },
 
   async getById(id: number | string): Promise<any> {

@@ -92,13 +92,13 @@
                   <p class="mt-2 text-xs">Memuat data faktur...</p>
                 </td>
               </tr>
-              <tr v-else-if="filteredInvoices.length === 0">
+              <tr v-else-if="records.length === 0">
                 <td colspan="6" class="py-12 text-center text-gray-500 dark:text-gray-400 text-sm">
                   Tidak ada faktur yang sesuai dengan kriteria.
                 </td>
               </tr>
               <tr 
-                v-for="inv in filteredInvoices" 
+                v-for="inv in records" 
                 :key="inv.id" 
                 class="hover:bg-gray-50/60 dark:hover:bg-gray-700/30 transition-colors"
               >
@@ -193,6 +193,8 @@
             </tbody>
           </table>
         </div>
+        <!-- Server-side Pagination Bar -->
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
 
     </div>
@@ -301,17 +303,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { http } from '@/services/http'
 import type { IInvoiceDto as IInvoice } from '@/types/finance'
+import type { IPaginationMeta } from '@/types'
 
 const records = ref<IInvoice[]>([])
+const allRecords = ref<IInvoice[]>([])
 const isLoading = ref(false)
 const isSaving = ref(false)
 const isDunningRunning = ref(false)
 const searchQuery = ref('')
 const selectedStatus = ref('all')
+
+// Server-side Pagination State
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchInvoices()
+}
+
+let searchTimer: any = null
+watch([searchQuery, selectedStatus], () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchInvoices()
+  }, 300)
+})
 
 const statusTabs = [
   { label: 'Semua Faktur', value: 'all' },
@@ -342,6 +372,7 @@ const partners = ref<any[]>([])
 
 onMounted(() => {
   fetchInvoices()
+  fetchKpiMetrics()
   fetchPartners()
 })
 
@@ -357,11 +388,34 @@ const fetchPartners = async () => {
   }
 }
 
+const fetchKpiMetrics = async () => {
+  try {
+    const res = await http.get('/finance/invoicing?all=true')
+    allRecords.value = res.data?.data || res.data || []
+  } catch (err) {
+    console.error('Failed to load KPI metrics', err)
+  }
+}
+
 const fetchInvoices = async () => {
   isLoading.value = true
   try {
-    const res = await http.get('/finance/invoicing')
-    records.value = res.data?.data || res.data || []
+    const params: Record<string, any> = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
+    if (selectedStatus.value && selectedStatus.value !== 'all') params.status = selectedStatus.value
+
+    const res = await http.get('/finance/invoicing', { params })
+    if (res.data && res.data.pagination) {
+      records.value = res.data.data || []
+      pagination.value = res.data.pagination
+    } else if (Array.isArray(res.data?.data)) {
+      records.value = res.data.data
+    } else if (Array.isArray(res.data)) {
+      records.value = res.data
+    }
   } catch (err) {
     console.error('Failed to load invoices', err)
   } finally {
@@ -382,23 +436,14 @@ const calculatedTotal = computed(() => {
   return calculatedUntaxed.value + calculatedTax.value
 })
 
-// Computed KPI
-const totalInvoiced = computed(() => records.value.reduce((acc, c) => acc + (c.amount_total || 0), 0))
-const totalUnpaid = computed(() => records.value.filter(r => r.state === 'posted').reduce((acc, c) => acc + (c.amount_total || 0), 0))
-const totalPaid = computed(() => records.value.filter(r => r.state === 'paid').reduce((acc, c) => acc + (c.amount_total || 0), 0))
-const unpaidCount = computed(() => records.value.filter(r => r.state === 'posted').length)
-const paidCount = computed(() => records.value.filter(r => r.state === 'paid').length)
-const draftCount = computed(() => records.value.filter(r => r.state === 'draft' || !r.state).length)
-
-// Filter List
-const filteredInvoices = computed(() => {
-  return records.value.filter(inv => {
-    const matchStatus = selectedStatus.value === 'all' || inv.state === selectedStatus.value || (!inv.state && selectedStatus.value === 'draft')
-    const matchSearch = (inv.name && inv.name.toLowerCase().includes(searchQuery.value.toLowerCase())) ||
-                        (inv.partner?.name && inv.partner.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
-    return matchStatus && matchSearch
-  })
-})
+// Computed KPI (uses allRecords if available, else falls back to records)
+const kpiSource = computed(() => allRecords.value.length ? allRecords.value : records.value)
+const totalInvoiced = computed(() => kpiSource.value.reduce((acc, c) => acc + (c.amount_total || 0), 0))
+const totalUnpaid = computed(() => kpiSource.value.filter(r => r.state === 'posted').reduce((acc, c) => acc + (c.amount_total || 0), 0))
+const totalPaid = computed(() => kpiSource.value.filter(r => r.state === 'paid').reduce((acc, c) => acc + (c.amount_total || 0), 0))
+const unpaidCount = computed(() => kpiSource.value.filter(r => r.state === 'posted').length)
+const paidCount = computed(() => kpiSource.value.filter(r => r.state === 'paid').length)
+const draftCount = computed(() => kpiSource.value.filter(r => r.state === 'draft' || !r.state).length)
 
 // Formatters
 const formatCurrency = (val: number) => {
@@ -470,6 +515,7 @@ const saveInvoice = async () => {
     }
     isModalOpen.value = false
     await fetchInvoices()
+    await fetchKpiMetrics()
   } catch (err: any) {
     alert('Gagal menyimpan faktur: ' + (err.response?.data?.message || err.message))
   } finally {
@@ -482,6 +528,7 @@ const postInvoice = async (id: number) => {
   try {
     await http.post(`/finance/invoicing/${id}/post`)
     await fetchInvoices()
+    await fetchKpiMetrics()
     alert('Faktur berhasil diposting dan piutang telah tercatat di Jurnal Akuntansi!')
   } catch (err: any) {
     alert('Gagal posting faktur: ' + (err.response?.data?.message || err.message))
@@ -493,6 +540,8 @@ const deleteInvoice = async (id: number) => {
   try {
     await http.delete(`/finance/invoicing/${id}`)
     await fetchInvoices()
+    await fetchKpiMetrics()
+    alert('Faktur berhasil dihapus!')
   } catch (err: any) {
     alert('Gagal menghapus: ' + (err.response?.data?.message || err.message))
   }

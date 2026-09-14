@@ -28,13 +28,28 @@
         </div>
         <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-800 shadow-sm">
           <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Laporan Diterbitkan</p>
-          <h3 class="text-2xl font-black text-brand-600 dark:text-brand-400 mt-2">{{ records.length }} <span class="text-sm font-normal text-gray-400">Periode</span></h3>
+          <h3 class="text-2xl font-black text-brand-600 dark:text-brand-400 mt-2">{{ allRecords.length }} <span class="text-sm font-normal text-gray-400">Periode</span></h3>
           <p class="text-xs text-gray-400 mt-1">Tersimpan dalam format konsolidasi IFRS</p>
         </div>
         <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-800 shadow-sm">
           <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Status Eliminasi Intercompany</p>
           <h3 class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">100% <span class="text-sm font-normal text-gray-400">Seimbang</span></h3>
           <p class="text-xs text-emerald-500 mt-1">Transaksi antar-cabang tereliminasi</p>
+        </div>
+      </div>
+
+      <!-- SEARCH BAR -->
+      <div class="flex items-center justify-between gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="relative flex-1">
+          <input 
+            v-model="searchQuery" 
+            type="text" 
+            placeholder="Cari nama laporan atau periode..." 
+            class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
+          />
+          <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
       </div>
 
@@ -113,6 +128,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
 
     </div>
@@ -245,18 +261,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { http } from '@/services/http'
 import type { IConsolidationDto as IConsolidation } from '@/types/finance'
+import type { IPaginationMeta } from '@/types'
 
 const records = ref<IConsolidation[]>([])
+const allRecords = ref<IConsolidation[]>([])
 const isLoading = ref(false)
 const isSaving = ref(false)
 const isModalOpen = ref(false)
 const isViewModalOpen = ref(false)
 const editId = ref<number | null>(null)
 const activeConsolidation = ref<IConsolidation | null>(null)
+
+const searchQuery = ref('')
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 const availableBranches = ref([
   { id: 'hq', name: 'PT Holding Jakarta (HQ)', region: 'Kantor Pusat - DKI Jakarta', asset: 'Rp 1.450.000.000', liability: 'Rp 320.000.000', profit: '+Rp 310.000.000' },
@@ -283,14 +312,31 @@ const filteredBranchesForActive = computed(() => {
 })
 
 onMounted(() => {
+  fetchAllMetrics()
   fetchConsolidations()
 })
+
+const fetchAllMetrics = async () => {
+  try {
+    const res = await http.get('/finance/consolidation', { params: { all: 'true' } })
+    const raw = res.data?.data || res.data || []
+    allRecords.value = raw
+  } catch (err) {
+    console.error('Failed to load all consolidations for metrics', err)
+  }
+}
 
 const fetchConsolidations = async () => {
   isLoading.value = true
   try {
-    const res = await http.get('/finance/consolidation')
-    const raw = res.data?.data || res.data || []
+    const params: Record<string, any> = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value) params.search = searchQuery.value
+
+    const res = await http.get('/finance/consolidation', { params })
+    const raw = res.data?.data || []
     records.value = raw.map((item: any) => {
       let b = item.branches
       if (typeof b === 'string' && b.startsWith('[')) {
@@ -298,12 +344,29 @@ const fetchConsolidations = async () => {
       }
       return { ...item, branches: Array.isArray(b) ? b : (b ? [b] : null) }
     })
+    if (res.data?.pagination) {
+      pagination.value = res.data.pagination
+    }
   } catch (err) {
     console.error('Failed to load consolidations', err)
   } finally {
     isLoading.value = false
   }
 }
+
+const onPaginationChange = (page: number) => {
+  pagination.value.current_page = page
+  fetchConsolidations()
+}
+
+let searchDebounceTimer: any = null
+watch(searchQuery, () => {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchConsolidations()
+  }, 300)
+})
 
 const formatDate = (d: string) => {
   if (!d) return '-'
@@ -350,6 +413,7 @@ const saveReport = async () => {
     }
     isModalOpen.value = false
     await fetchConsolidations()
+    await fetchAllMetrics()
   } catch (err: any) {
     alert('Gagal menyimpan konsolidasi: ' + (err.response?.data?.message || err.message))
   } finally {
@@ -362,6 +426,7 @@ const deleteRecord = async (id: number) => {
   try {
     await http.delete(`/finance/consolidation/${id}`)
     await fetchConsolidations()
+    await fetchAllMetrics()
   } catch (err: any) {
     alert('Gagal menghapus: ' + (err.response?.data?.message || err.message))
   }

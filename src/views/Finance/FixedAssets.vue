@@ -49,9 +49,20 @@
 
       <!-- TABEL INVENTARIS ASET -->
       <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-800 shadow-sm">
-        <div class="p-4 border-b border-gray-100 dark:border-gray-700/60 flex justify-between items-center">
-          <h3 class="font-bold text-gray-900 dark:text-white text-sm">Inventaris Aktiva Tetap Perusahaan</h3>
-          <span class="text-xs text-gray-400">Total {{ assets.length }} Aset Terdaftar</span>
+        <div class="p-4 border-b border-gray-100 dark:border-gray-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="font-bold text-gray-900 dark:text-white text-sm">Inventaris Aktiva Tetap Perusahaan</h3>
+            <p class="text-xs text-gray-400">Total {{ pagination.total_items || assets.length }} Aset Terdaftar</p>
+          </div>
+          <div class="relative w-full sm:w-64">
+            <input 
+              v-model="searchQuery" 
+              type="text" 
+              placeholder="Cari nama atau kode aset..." 
+              class="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-4 py-2 pl-10 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white"
+            />
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </div>
         </div>
         <div class="max-w-full overflow-x-auto custom-scrollbar">
           <table class="min-w-full text-left text-xs">
@@ -117,6 +128,8 @@
             </tbody>
           </table>
         </div>
+        <!-- Server-side Pagination Bar -->
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
 
       <!-- MODAL INPUT / EDIT ASET (KATEGORI DINAMIS DARI DATABASE) -->
@@ -265,10 +278,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { http } from '@/services/http'
 import type { IFixedAssetDto, IAssetCategoryDto } from '@/types/finance'
+import type { IPaginationMeta } from '@/types'
 
 const assets = ref<IFixedAssetDto[]>([])
 const categories = ref<IAssetCategoryDto[]>([])
@@ -281,6 +296,33 @@ const isPosting = ref(false)
 const isModalOpen = ref(false)
 const isSaving = ref(false)
 const editId = ref<number | null>(null)
+
+const searchQuery = ref('')
+
+// Server-side Pagination State
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchAssets()
+}
+
+let searchTimer: any = null
+watch(searchQuery, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    pagination.value.current_page = 1
+    fetchAssets()
+  }, 300)
+})
 
 // State Modal Master Kategori
 const isCategoryModalOpen = ref(false)
@@ -320,12 +362,21 @@ const fetchCategories = async () => {
 
 const fetchAssets = async () => {
   try {
-    const res = await http.get('/finance/assets')
-    assets.value = res.data?.data?.items || []
+    const params: Record<string, any> = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
+
+    const res = await http.get('/finance/assets', { params })
+    assets.value = res.data?.data?.items || res.data?.data || []
     summary.value = {
       total_acquisition: res.data?.data?.total_acquisition || 0,
       total_accumulated: res.data?.data?.total_accumulated || 0,
       total_net_book_val: res.data?.data?.total_net_book_val || 0
+    }
+    if (res.data?.pagination) {
+      pagination.value = res.data.pagination
     }
   } catch (err) {
     console.error(err)
