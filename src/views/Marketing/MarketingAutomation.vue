@@ -138,6 +138,7 @@
               </tbody>
             </table>
           </div>
+          <PaginationBar :pagination="pagination" @change="onPaginationChange" />
         </div>
 
         <!-- Visual Drip Workflow Flowchart (5 Cols) -->
@@ -445,14 +446,31 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { marketingAutomationService } from '@/services/marketing/automation.service'
 import type { IAutomationCampaignDto, IWorkflowActivityDto } from '@/types/marketing/marketing_automation.dto'
+import type { IPaginationMeta } from '@/types'
 
 const records = ref<IAutomationCampaignDto[]>([])
 const activities = ref<IWorkflowActivityDto[]>([])
 const selectedCampaign = ref<IAutomationCampaignDto | null>(null)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
+}
 
 // Modal Kampanye
 const isModalOpen = ref(false)
@@ -551,11 +569,18 @@ const fetchData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const [camps, acts] = await Promise.all([
-      marketingAutomationService.getAll(),
+    const [campsRes, acts] = await Promise.all([
+      marketingAutomationService.getAll({ page: pagination.value.current_page, limit: pagination.value.per_page }),
       marketingAutomationService.getAllActivities()
     ])
-    records.value = camps || []
+    if (campsRes && typeof campsRes === 'object' && 'data' in campsRes && Array.isArray((campsRes as any).data)) {
+      records.value = (campsRes as any).data
+      if ((campsRes as any).pagination) {
+        pagination.value = (campsRes as any).pagination
+      }
+    } else if (Array.isArray(campsRes)) {
+      records.value = campsRes
+    }
     activities.value = acts || []
     if (records.value.length > 0) {
       if (!selectedCampaign.value || !records.value.some(r => r.id === selectedCampaign.value?.id)) {

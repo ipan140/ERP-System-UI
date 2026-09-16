@@ -256,6 +256,7 @@
                 </tbody>
               </table>
             </div>
+            <PaginationBar :pagination="pagination" @change="onPaginationChange" />
           </div>
         </div>
       </div>
@@ -446,7 +447,24 @@
 import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { IPaginationMeta } from '@/types'
 import { documentsService } from '@/services/core/documents.service'
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
+}
 
 interface IDocumentRecord {
   id: number
@@ -621,7 +639,17 @@ const getClearanceBadgeClass = (level: string) => {
 const fetchData = async () => {
   isLoading.value = true
   try {
-    const data = await documentsService.getAll()
+    const res = await documentsService.getAll({
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    })
+    let data: any[] = []
+    if (res && typeof res === 'object' && 'data' in res && Array.isArray((res as any).data)) {
+      data = (res as any).data
+      if ((res as any).pagination) pagination.value = (res as any).pagination
+    } else if (Array.isArray(res)) {
+      data = res
+    }
     if (Array.isArray(data) && data.length > 0) {
       data.forEach((sDoc: any) => {
         const exists = documentsList.value.some(d => d.id === sDoc.id)

@@ -276,6 +276,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
     </div>
 
@@ -333,6 +334,8 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { PaginationMeta } from '@/types'
 
 const activeTab = ref<'config' | 'logs'>('config')
 const records = ref<any[]>([])
@@ -340,6 +343,15 @@ const isLoading = ref(false)
 const searchQuery = ref('')
 const selectedPreset = ref('Google Workspace')
 const saveSuccessMsg = ref(false)
+
+const pagination = ref<PaginationMeta>({
+  page: 1,
+  per_page: 10,
+  total: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 const isTestModalOpen = ref(false)
 const testEmailRecipient = ref('hr.admin@perusahaan.co.id')
@@ -388,23 +400,38 @@ const sendTestEmail = async () => {
   }, 1200)
 }
 
-const fetchData = async () => {
+const fetchData = async (page = pagination.value.page, perPage = pagination.value.per_page) => {
   isLoading.value = true
   try {
     const token = localStorage.getItem('token') || ''
     const res = await axios.get('/api/core/mailer', {
       headers: { Authorization: `Bearer ${token}` },
+      params: { page, per_page: perPage, search: searchQuery.value || undefined }
     })
     if (res.data?.data && res.data.data.length > 0) {
       records.value = res.data.data
+      if (res.data?.meta) {
+        pagination.value = res.data.meta
+      } else {
+        pagination.value.total = records.value.length
+        pagination.value.total_pages = Math.ceil(records.value.length / perPage) || 1
+      }
     } else {
       populateDefaultLogs()
+      pagination.value.total = records.value.length
+      pagination.value.total_pages = 1
     }
   } catch (err) {
     populateDefaultLogs()
+    pagination.value.total = records.value.length
+    pagination.value.total_pages = 1
   } finally {
     isLoading.value = false
   }
+}
+
+const onPaginationChange = (newPag: PaginationMeta) => {
+  fetchData(newPag.page, newPag.per_page)
 }
 
 const populateDefaultLogs = () => {

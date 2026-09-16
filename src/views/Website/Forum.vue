@@ -178,6 +178,8 @@
         </div>
       </div>
 
+      <PaginationBar :pagination="pagination" @change="onPaginationChange" />
+
       <!-- Modal Detail Diskusi & Balasan -->
       <div v-if="selectedThread" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
         <div class="relative w-full max-w-2xl rounded-3xl bg-white p-6 md:p-8 shadow-2xl dark:bg-gray-800 my-8">
@@ -324,9 +326,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { IPaginationMeta } from '@/types'
+import { forumService } from '@/services/website/forum.service'
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
+}
 
 interface Reply {
   author: string
@@ -509,4 +529,39 @@ function submitReply() {
   })
   replyText.value = ''
 }
+
+async function fetchData() {
+  try {
+    const res = await forumService.getAll({
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    })
+    let items: any[] = []
+    if (res && typeof res === 'object' && 'data' in res && Array.isArray((res as any).data)) {
+      items = (res as any).data
+      if ((res as any).pagination) pagination.value = (res as any).pagination
+    } else if (Array.isArray(res)) {
+      items = res
+    }
+    if (items.length > 0) {
+      threads.value = items.map((t: any) => ({
+        id: t.id,
+        title: t.title || 'Diskusi Forum',
+        category: t.category || 'Tanya Jawab Teknis ERP',
+        author: t.author?.name || t.author?.username || 'Karyawan',
+        timeAgo: t.created_at ? new Date(t.created_at).toLocaleDateString('id-ID') : 'Baru saja',
+        votes: t.votes || 0,
+        is_solved: !!t.is_solved,
+        content: t.content || '',
+        replies: t.replies || [],
+      }))
+    }
+  } catch (err) {
+    console.error('Error fetching forum threads:', err)
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 </script>

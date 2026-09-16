@@ -54,6 +54,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
     </div>
   </AdminLayout>
@@ -100,7 +101,9 @@
 import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { http } from '@/services/http'
+import type { PaginationMeta } from '@/types'
 
 const records = ref<any[]>([])
 const employeesList = ref<any[]>([])
@@ -110,23 +113,42 @@ const modalMode = ref<'create'|'edit'>('create')
 const isSaving = ref(false)
 const formData = ref<any>({})
 
+const pagination = ref<PaginationMeta>({
+  page: 1,
+  per_page: 10,
+  total: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
 const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString('id-ID') : '-'
 const formatCurrency = (val: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val)
 
-const fetchData = async () => {
+const fetchData = async (page = pagination.value.page, perPage = pagination.value.per_page) => {
   isLoading.value = true
   try {
     const [res, empRes] = await Promise.all([
-      http.get('/hr/employees/expense'),
-      http.get('/hr/employees')
+      http.get('/hr/employees/expense', { params: { page, per_page: perPage } }),
+      http.get('/hr/employees', { params: { all: true } })
     ])
     records.value = res.data?.data || res.data || []
+    if (res.data?.meta) {
+      pagination.value = res.data.meta
+    } else {
+      pagination.value.total = records.value.length
+      pagination.value.total_pages = Math.ceil(records.value.length / perPage) || 1
+    }
     employeesList.value = empRes.data?.data || empRes.data || []
   } catch (err) {
     console.error(err)
   } finally {
     isLoading.value = false
   }
+}
+
+const onPaginationChange = (newPag: PaginationMeta) => {
+  fetchData(newPag.page, newPag.per_page)
 }
 
 const openModal = (mode: 'create'|'edit', data: any = null) => {

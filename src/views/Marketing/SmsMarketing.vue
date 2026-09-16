@@ -189,6 +189,7 @@
               </tbody>
             </table>
           </div>
+          <PaginationBar :pagination="pagination" @change="onPaginationChange" />
         </div>
 
         <!-- Smartphone Device Simulator (4 Cols) -->
@@ -580,6 +581,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { IPaginationMeta } from '@/types'
 import { smsMarketingService } from '@/services/marketing/sms.service'
 import type { ISmsCampaignDto } from '@/types/marketing/sms_marketing.dto'
 
@@ -587,6 +590,21 @@ const records = ref<ISmsCampaignDto[]>([])
 const selectedPreviewSms = ref<ISmsCampaignDto | null>(null)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
+}
 
 const isModalOpen = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
@@ -696,8 +714,18 @@ const fetchData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const data = await smsMarketingService.getAll()
-    records.value = data || []
+    const res = await smsMarketingService.getAll({
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    })
+    if (res && typeof res === 'object' && 'data' in res && Array.isArray((res as any).data)) {
+      records.value = (res as any).data
+      if ((res as any).pagination) pagination.value = (res as any).pagination
+    } else if (Array.isArray(res)) {
+      records.value = res
+    } else {
+      records.value = []
+    }
     if (records.value.length > 0 && !selectedPreviewSms.value) {
       selectPreviewRecord(records.value[0])
     }

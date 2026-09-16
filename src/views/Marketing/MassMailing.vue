@@ -297,6 +297,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
 
       <!-- TAB 2: UTM Link Tracker Table -->
@@ -546,14 +547,31 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { massMailingService } from '@/services/marketing/mass-mailing.service'
 import type { IMailingCampaignDto, IUtmTrackerDto } from '@/types/marketing/mass_mailing.dto'
+import type { IPaginationMeta } from '@/types'
 
 const activeTab = ref<'campaigns' | 'utm'>('campaigns')
 const records = ref<IMailingCampaignDto[]>([])
 const utmRecords = ref<IUtmTrackerDto[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
+}
 
 // Modal Kampanye
 const isModalOpen = ref(false)
@@ -668,11 +686,21 @@ const fetchData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const [campaigns, utms] = await Promise.all([
-      massMailingService.getAll(),
+    const [campaignsRes, utms] = await Promise.all([
+      massMailingService.getAll({
+        page: pagination.value.current_page,
+        limit: pagination.value.per_page
+      }),
       massMailingService.getAllUtm()
     ])
-    records.value = campaigns || []
+    if (campaignsRes && typeof campaignsRes === 'object' && 'data' in campaignsRes && Array.isArray((campaignsRes as any).data)) {
+      records.value = (campaignsRes as any).data
+      if ((campaignsRes as any).pagination) pagination.value = (campaignsRes as any).pagination
+    } else if (Array.isArray(campaignsRes)) {
+      records.value = campaignsRes
+    } else {
+      records.value = []
+    }
     utmRecords.value = utms || []
   } catch (err: any) {
     error.value = 'Gagal memuat data: ' + (err.response?.data?.message || err.message)

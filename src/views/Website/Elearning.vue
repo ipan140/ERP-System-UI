@@ -190,6 +190,8 @@
         </div>
       </div>
 
+      <PaginationBar :pagination="pagination" @change="onPaginationChange" />
+
       <!-- Modal Tambah Kursus -->
       <div v-if="showAddCourseModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div class="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl dark:bg-gray-800">
@@ -440,9 +442,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { IPaginationMeta } from '@/types'
+import { elearningService } from '@/services/website/elearning.service'
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
+}
 
 const showAddCourseModal = ref(false)
 const showAddCatModal = ref(false)
@@ -658,4 +678,39 @@ function createCourse() {
     is_mandatory: true,
   }
 }
+
+async function fetchData() {
+  try {
+    const res = await elearningService.getAll({
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    })
+    let items: any[] = []
+    if (res && typeof res === 'object' && 'data' in res && Array.isArray((res as any).data)) {
+      items = (res as any).data
+      if ((res as any).pagination) pagination.value = (res as any).pagination
+    } else if (Array.isArray(res)) {
+      items = res
+    }
+    if (items.length > 0) {
+      courses.value = items.map((c: any) => ({
+        id: c.id,
+        title: c.title || 'Materi Pelatihan',
+        category: c.category || 'Kepatuhan & Regulasi',
+        description: c.description || '',
+        duration: c.duration || '2 Jam',
+        modules: c.modules || 4,
+        enrolled: c.enrolled || 100,
+        progress: c.progress || 0,
+        is_mandatory: c.is_mandatory ?? true,
+      }))
+    }
+  } catch (err) {
+    console.error('Error fetching elearning courses:', err)
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 </script>

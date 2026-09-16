@@ -145,6 +145,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
 
       <!-- TAB 2: Tickets & Check-In Scanner Table -->
@@ -773,14 +774,31 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { eventsService } from '@/services/marketing/events.service'
 import type { IEventDto, IEventTicketDto } from '@/types/marketing/events.dto'
+import type { IPaginationMeta } from '@/types'
 
 const activeTab = ref<'events' | 'tickets'>('events')
 const records = ref<IEventDto[]>([])
 const tickets = ref<IEventTicketDto[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
+}
 
 // Modal Acara
 const isModalOpen = ref(false)
@@ -942,12 +960,19 @@ const fetchData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const [events, allTickets, allPartners] = await Promise.all([
-      eventsService.getAll(),
+    const [eventsRes, allTickets, allPartners] = await Promise.all([
+      eventsService.getAll({ page: pagination.value.current_page, limit: pagination.value.per_page }),
       eventsService.getAllTickets(),
       eventsService.getPartners()
     ])
-    records.value = events || []
+    if (eventsRes && typeof eventsRes === 'object' && 'data' in eventsRes && Array.isArray((eventsRes as any).data)) {
+      records.value = (eventsRes as any).data
+      if ((eventsRes as any).pagination) {
+        pagination.value = (eventsRes as any).pagination
+      }
+    } else if (Array.isArray(eventsRes)) {
+      records.value = eventsRes
+    }
     tickets.value = allTickets || []
     partners.value = allPartners || []
   } catch (err: any) {

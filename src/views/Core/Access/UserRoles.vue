@@ -269,6 +269,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
 
       <!-- TAB 2: USER ASSIGNMENT TABLE -->
@@ -502,6 +503,8 @@
 import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { IPaginationMeta } from '@/types'
 import { appRoleService } from '@/services/core/role.service'
 import { http } from '@/services/http'
 import type { IRoleDto } from '@/types/core'
@@ -510,6 +513,21 @@ const activeTab = ref<'roles' | 'users'>('roles')
 const searchQuery = ref<string>('')
 const isLoading = ref<boolean>(false)
 const error = ref<string | null>(null)
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
+}
 
 // Roles state
 const records = ref<IRoleDto[]>([])
@@ -625,7 +643,17 @@ const fetchData = async () => {
 
   // 2. Fetch active dynamic roles
   try {
-    const data = await appRoleService.getAll()
+    const res = await appRoleService.getAll({
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    })
+    let data: any[] = []
+    if (res && typeof res === 'object' && 'data' in res && Array.isArray((res as any).data)) {
+      data = (res as any).data
+      if ((res as any).pagination) pagination.value = (res as any).pagination
+    } else if (Array.isArray(res)) {
+      data = res
+    }
     if (data && data.length > 0) {
       records.value = data
     } else {

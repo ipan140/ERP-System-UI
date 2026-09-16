@@ -158,6 +158,8 @@
         </div>
       </div>
 
+      <PaginationBar :pagination="pagination" @change="onPaginationChange" />
+
       <!-- Modal Baca Artikel Lengkap -->
       <div v-if="selectedArticle" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
         <div class="relative w-full max-w-2xl rounded-3xl bg-white p-6 md:p-8 shadow-2xl dark:bg-gray-800 my-8">
@@ -287,9 +289,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { IPaginationMeta } from '@/types'
+import { blogService } from '@/services/website/blog.service'
 
 interface Article {
   id: number
@@ -300,6 +305,21 @@ interface Article {
   readTime: string
   summary: string
   content: string
+}
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
 }
 
 const showCreateModal = ref(false)
@@ -422,6 +442,40 @@ function openCreatePostModal() {
   }
   showCreateModal.value = true
 }
+
+async function fetchData() {
+  try {
+    const res = await blogService.getAll({
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    })
+    let items: any[] = []
+    if (res && typeof res === 'object' && 'data' in res && Array.isArray((res as any).data)) {
+      items = (res as any).data
+      if ((res as any).pagination) pagination.value = (res as any).pagination
+    } else if (Array.isArray(res)) {
+      items = res
+    }
+    if (items.length > 0) {
+      articles.value = items.map((b: any) => ({
+        id: b.id,
+        title: b.title || 'Tanpa Judul',
+        category: b.category || 'Transformasi Digital',
+        author: b.author?.username || b.author?.name || 'Tim Redaksi Korporat',
+        date: b.published_date ? new Date(b.published_date).toLocaleDateString('id-ID') : '10 Sep 2026',
+        readTime: '5 Menit',
+        summary: b.content ? b.content.slice(0, 120) + '...' : '',
+        content: b.content || ''
+      }))
+    }
+  } catch (err) {
+    console.error('Error fetching blog articles:', err)
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 
 function saveArticle() {
   articles.value.unshift({

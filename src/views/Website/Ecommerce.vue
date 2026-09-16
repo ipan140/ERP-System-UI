@@ -277,6 +277,7 @@
               </div>
             </div>
           </div>
+          <PaginationBar :pagination="pagination" @change="onPaginationChange" />
         </div>
       </div>
 
@@ -597,9 +598,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { IPaginationMeta } from '@/types'
+import { ecommerceService } from '@/services/website/ecommerce.service'
 
 interface Product {
   id: number
@@ -615,6 +619,21 @@ interface Product {
 interface CartItem {
   product: Product
   qty: number
+}
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
 }
 
 const isCartOpen = ref(false)
@@ -926,4 +945,38 @@ function confirmPayment() {
     cart.value = []
   }, 1200)
 }
+
+async function fetchData() {
+  try {
+    const res = await ecommerceService.getAll({
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    })
+    let items: any[] = []
+    if (res && typeof res === 'object' && 'data' in res && Array.isArray((res as any).data)) {
+      items = (res as any).data
+      if ((res as any).pagination) pagination.value = (res as any).pagination
+    } else if (Array.isArray(res)) {
+      items = res
+    }
+    if (items.length > 0) {
+      products.value = items.map((p: any) => ({
+        id: p.id,
+        sku: p.sku || `PRD-${p.id}`,
+        name: p.name || 'Produk eCommerce',
+        category: p.category || 'Hardware IT',
+        price: Number(p.price) || 1000000,
+        stock: Number(p.stock) || 10,
+        description: p.description || '',
+        icon: p.icon || '📦'
+      }))
+    }
+  } catch (err) {
+    console.error('Error fetching ecommerce products:', err)
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 </script>

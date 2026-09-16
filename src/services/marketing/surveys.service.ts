@@ -2,9 +2,19 @@ import { http } from "@/services/http";
 import type { IResponse } from "@/types";
 
 export const surveysService = {
-  async getAll(): Promise<any[]> {
-    const response = await http.get<IResponse<any[]>>("/marketing/surveys");
-    return response.data.data ?? response.data;
+  async getAll(params?: Record<string, any>): Promise<{ data: any[]; pagination?: any } | any[]> {
+    const response = await http.get<any>("/marketing/surveys", { params });
+    const resData = response.data;
+    if (Array.isArray(resData)) {
+      return resData;
+    }
+    if (resData && Array.isArray(resData.data)) {
+      return {
+        data: resData.data,
+        pagination: resData.pagination
+      };
+    }
+    return { data: [], pagination: undefined };
   },
 
   async getById(id: number | string): Promise<any> {

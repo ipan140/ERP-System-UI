@@ -132,6 +132,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
 
     </div>
@@ -204,8 +205,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { http } from '@/services/http'
 import type { IPartnerDto as IPartner } from '@/types/core'
+import type { PaginationMeta } from '@/types'
 
 const records = ref<IPartner[]>([])
 const isLoading = ref(false)
@@ -214,6 +217,15 @@ const isModalOpen = ref(false)
 const isEditing = ref(false)
 const selectedType = ref('all')
 const searchQuery = ref('')
+
+const pagination = ref<PaginationMeta>({
+  page: 1,
+  per_page: 10,
+  total: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 const typeTabs = [
   { label: 'Semua Rekanan', value: 'all' },
@@ -238,16 +250,32 @@ onMounted(() => {
   fetchPartners()
 })
 
-const fetchPartners = async () => {
+const fetchPartners = async (page = pagination.value.page, perPage = pagination.value.per_page) => {
   isLoading.value = true
   try {
-    const res = await http.get('/base/partner')
+    const res = await http.get('/base/partner', {
+      params: {
+        page,
+        per_page: perPage,
+        search: searchQuery.value || undefined
+      }
+    })
     records.value = res.data?.data || res.data || []
+    if (res.data?.meta) {
+      pagination.value = res.data.meta
+    } else {
+      pagination.value.total = records.value.length
+      pagination.value.total_pages = Math.ceil(records.value.length / perPage) || 1
+    }
   } catch (err) {
     console.error('Failed to load partners', err)
   } finally {
     isLoading.value = false
   }
+}
+
+const onPaginationChange = (newPag: PaginationMeta) => {
+  fetchPartners(newPag.page, newPag.per_page)
 }
 
 const bankCount = computed(() => records.value.filter(r => r.type === 'bank').length)

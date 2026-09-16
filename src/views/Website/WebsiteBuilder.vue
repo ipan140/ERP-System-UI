@@ -130,6 +130,7 @@
               </tbody>
             </table>
           </div>
+          <PaginationBar :pagination="pagination" @change="onPaginationChange" />
         </div>
       </div>
 
@@ -255,6 +256,24 @@
 import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { IPaginationMeta } from '@/types'
+import { websiteBuilderService } from '@/services/website/builder.service'
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchAnnouncements()
+}
 
 const activeTab = ref<'announcements' | 'pages' | 'settings'>('announcements')
 const showModal = ref(false)
@@ -321,10 +340,21 @@ function viewAnnouncement(item: any) {
 async function fetchAnnouncements() {
   isLoading.value = true
   try {
-    const res = await fetch('http://localhost:7070/api/website/announcements')
-    if (res.ok) {
-      const json = await res.json()
-      if (json.data) announcements.value = json.data
+    const res = await websiteBuilderService.getAll({
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    })
+    if (res && typeof res === 'object' && 'data' in res && Array.isArray((res as any).data)) {
+      announcements.value = (res as any).data
+      if ((res as any).pagination) pagination.value = (res as any).pagination
+    } else if (Array.isArray(res)) {
+      announcements.value = res
+    } else {
+      const fallbackRes = await fetch('http://localhost:7070/api/website/announcements')
+      if (fallbackRes.ok) {
+        const json = await fallbackRes.json()
+        if (json.data) announcements.value = json.data
+      }
     }
   } catch (err) {
     console.error(err)

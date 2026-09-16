@@ -293,6 +293,7 @@
             </div>
           </div>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" class="mt-4" />
       </div>
 
       <!-- ============================================== -->
@@ -768,13 +769,24 @@ import Alert from '@/components/ui/Alert.vue'
 import { projectService } from '@/services/services/project.service'
 import { employeesService } from '@/services/hr/employees.service'
 import { crmService } from '@/services/sales/crm.service'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import type { IProjectDto, ITaskDto, IProjectMilestoneDto } from '@/types/services'
+import type { PaginationMeta } from '@/types'
 
 // Tab & View Control
 const activeTab = ref<'projects' | 'tasks' | 'milestones'>('projects')
 const searchQuery = ref('')
 const filterProjectState = ref('all')
 const selectedProjectFilter = ref('all')
+
+const pagination = ref<PaginationMeta>({
+  page: 1,
+  per_page: 10,
+  total: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 // Data Collections
 const projects = ref<IProjectDto[]>([])
@@ -825,16 +837,26 @@ const milestoneForm = ref<Partial<IProjectMilestoneDto>>({
 })
 
 // Fetch All Data
-const fetchAllData = async () => {
+const fetchAllData = async (page = pagination.value.page, perPage = pagination.value.per_page) => {
   isLoading.value = true
   error.value = null
   try {
-    const [prjData, msData, taskData] = await Promise.all([
-      projectService.getAll(),
+    const [prjRes, msData, taskData] = await Promise.all([
+      projectService.getAll({ page, per_page: perPage, search: searchQuery.value || undefined }),
       projectService.getMilestones().catch(() => []),
       projectService.getTasks().catch(() => [])
     ])
-    projects.value = Array.isArray(prjData) ? prjData : []
+    if (prjRes && prjRes.meta) {
+      projects.value = prjRes.data || []
+      pagination.value = prjRes.meta
+    } else if (Array.isArray(prjRes)) {
+      projects.value = prjRes
+      pagination.value.total = prjRes.length
+      pagination.value.total_pages = Math.ceil(prjRes.length / perPage) || 1
+    } else if (prjRes && prjRes.data && Array.isArray(prjRes.data)) {
+      projects.value = prjRes.data
+      if (prjRes.meta) pagination.value = prjRes.meta
+    }
     milestones.value = Array.isArray(msData) ? msData : []
     tasks.value = Array.isArray(taskData) ? taskData : []
 
@@ -849,6 +871,10 @@ const fetchAllData = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+const onPaginationChange = (newPag: PaginationMeta) => {
+  fetchAllData(newPag.page, newPag.per_page)
 }
 
 // Filtered Projects

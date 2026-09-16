@@ -73,6 +73,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
     </div>
   </AdminLayout>
@@ -168,13 +169,24 @@ import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Alert from '@/components/ui/Alert.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
 import { http } from '@/services/http'
 import type { IContractDto, IEmployeeDto, IJobPositionDto, IWorkingScheduleDto } from '@/types/hr/employees.dto'
+import type { PaginationMeta } from '@/types'
 
 const records = ref<IContractDto[]>([])
 const employeesList = ref<IEmployeeDto[]>([])
 const jobPositionsList = ref<IJobPositionDto[]>([])
 const schedulesList = ref<IWorkingScheduleDto[]>([])
+
+const pagination = ref<PaginationMeta>({
+  page: 1,
+  per_page: 10,
+  total: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
 
 const isLoading = ref(false)
 const error = ref<string | null>(null)
@@ -221,18 +233,24 @@ const toDateInputString = (isoString?: string) => {
   }
 }
 
-const fetchData = async () => {
+const fetchData = async (page = pagination.value.page, perPage = pagination.value.per_page) => {
   isLoading.value = true
   error.value = null
   try {
     const [contractsRes, empsRes, jobsRes, schedRes] = await Promise.all([
-      http.get('/hr/employees/contract'),
-      http.get('/hr/employees'),
-      http.get('/hr/employees/jobposition'),
-      http.get('/hr/employees/workingschedule').catch(() => ({ data: { data: [] } })) // Fallback if API missing
+      http.get('/hr/employees/contract', { params: { page, per_page: perPage } }),
+      http.get('/hr/employees', { params: { all: true } }),
+      http.get('/hr/employees/jobposition', { params: { all: true } }),
+      http.get('/hr/employees/workingschedule', { params: { all: true } }).catch(() => ({ data: { data: [] } })) // Fallback if API missing
     ])
     
     records.value = contractsRes.data?.data || contractsRes.data || []
+    if (contractsRes.data?.meta) {
+      pagination.value = contractsRes.data.meta
+    } else {
+      pagination.value.total = records.value.length
+      pagination.value.total_pages = Math.ceil(records.value.length / perPage) || 1
+    }
     employeesList.value = empsRes.data?.data || empsRes.data || []
     jobPositionsList.value = jobsRes.data?.data || jobsRes.data || []
     schedulesList.value = schedRes.data?.data || schedRes.data || []
@@ -241,6 +259,10 @@ const fetchData = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+const onPaginationChange = (newPag: PaginationMeta) => {
+  fetchData(newPag.page, newPag.per_page)
 }
 
 const openModal = (mode: 'create' | 'edit', data: any = null) => {

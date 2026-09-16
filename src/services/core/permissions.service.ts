@@ -3,9 +3,19 @@ import type { IResponse } from "@/types";
 import type { ITogglePermissionRequestDto, IRolePermissionDto } from "@/types/core/permissions.dto";
 
 export const permissionsService = {
-  async getAll(): Promise<IRolePermissionDto[]> {
-    const response = await http.get<IResponse<IRolePermissionDto[]>>("/core/permissions");
-    return response.data.data ?? response.data;
+  async getAll(params?: Record<string, any>): Promise<{ data: IRolePermissionDto[]; pagination?: any } | IRolePermissionDto[]> {
+    const response = await http.get<any>("/core/permissions", { params });
+    const resData = response.data;
+    if (Array.isArray(resData)) {
+      return resData;
+    }
+    if (resData && Array.isArray(resData.data)) {
+      return {
+        data: resData.data,
+        pagination: resData.pagination
+      };
+    }
+    return { data: [], pagination: undefined };
   },
 
   async getById(id: number | string): Promise<IRolePermissionDto> {

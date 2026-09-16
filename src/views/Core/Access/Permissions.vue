@@ -46,7 +46,7 @@
             <button
               v-for="role in availableRoles"
               :key="role"
-              @click="selectedRole = role"
+              @click="selectedRole = role; pagination.current_page = 1"
               :class="[
                 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 border',
                 selectedRole === role
@@ -178,11 +178,8 @@
           </div>
 
           <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-green-500"></span> Lihat</span>
-            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Ubah</span>
-            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Hapus</span>
-            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Ekspor Data</span>
-            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Otorisasi (Approve)</span>
+            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span> Aktif (Biru)</span>
+            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span> Tidak Aktif (Abu-abu)</span>
           </div>
         </div>
 
@@ -239,7 +236,7 @@
               </tr>
               <tr
                 v-else
-                v-for="mod in filteredModules"
+                v-for="mod in paginatedModules"
                 :key="mod.module"
                 class="hover:bg-gray-50/70 dark:hover:bg-gray-800/40 transition"
               >
@@ -271,67 +268,102 @@
 
                 <!-- Read Toggle -->
                 <td class="px-4 py-3.5 text-center">
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      class="sr-only peer"
-                      :checked="mod.can_read"
-                      @change="handleToggle(mod, 'read', $event)"
+                  <button
+                    type="button"
+                    @click="handleToggle(mod, 'read')"
+                    :class="[
+                      'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                      mod.can_read ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                    ]"
+                    :title="mod.can_read ? 'Aktif (Klik untuk matikan)' : 'Tidak aktif (Klik untuk aktifkan)'"
+                  >
+                    <span
+                      :class="[
+                        'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                        mod.can_read ? 'translate-x-4' : 'translate-x-0'
+                      ]"
                     />
-                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-green-500"></div>
-                  </label>
+                  </button>
                 </td>
 
                 <!-- Write Toggle -->
                 <td class="px-4 py-3.5 text-center">
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      class="sr-only peer"
-                      :checked="mod.can_write"
-                      @change="handleToggle(mod, 'write', $event)"
+                  <button
+                    type="button"
+                    @click="handleToggle(mod, 'write')"
+                    :class="[
+                      'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                      mod.can_write ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                    ]"
+                    :title="mod.can_write ? 'Aktif (Klik untuk matikan)' : 'Tidak aktif (Klik untuk aktifkan)'"
+                  >
+                    <span
+                      :class="[
+                        'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                        mod.can_write ? 'translate-x-4' : 'translate-x-0'
+                      ]"
                     />
-                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
-                  </label>
+                  </button>
                 </td>
 
                 <!-- Delete Toggle -->
                 <td class="px-4 py-3.5 text-center">
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      class="sr-only peer"
-                      :checked="mod.can_delete"
-                      @change="handleToggle(mod, 'delete', $event)"
+                  <button
+                    type="button"
+                    @click="handleToggle(mod, 'delete')"
+                    :class="[
+                      'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                      mod.can_delete ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                    ]"
+                    :title="mod.can_delete ? 'Aktif (Klik untuk matikan)' : 'Tidak aktif (Klik untuk aktifkan)'"
+                  >
+                    <span
+                      :class="[
+                        'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                        mod.can_delete ? 'translate-x-4' : 'translate-x-0'
+                      ]"
                     />
-                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-red-500"></div>
-                  </label>
+                  </button>
                 </td>
 
                 <!-- Export Toggle -->
                 <td class="px-4 py-3.5 text-center">
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      class="sr-only peer"
-                      :checked="mod.can_export"
-                      @change="handleToggle(mod, 'export', $event)"
+                  <button
+                    type="button"
+                    @click="handleToggle(mod, 'export')"
+                    :class="[
+                      'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                      mod.can_export ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                    ]"
+                    :title="mod.can_export ? 'Aktif (Klik untuk matikan)' : 'Tidak aktif (Klik untuk aktifkan)'"
+                  >
+                    <span
+                      :class="[
+                        'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                        mod.can_export ? 'translate-x-4' : 'translate-x-0'
+                      ]"
                     />
-                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-amber-500"></div>
-                  </label>
+                  </button>
                 </td>
 
                 <!-- Approve Toggle -->
                 <td class="px-4 py-3.5 text-center">
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      class="sr-only peer"
-                      :checked="mod.can_approve"
-                      @change="handleToggle(mod, 'approve', $event)"
+                  <button
+                    type="button"
+                    @click="handleToggle(mod, 'approve')"
+                    :class="[
+                      'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                      mod.can_approve ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                    ]"
+                    :title="mod.can_approve ? 'Aktif (Klik untuk matikan)' : 'Tidak aktif (Klik untuk aktifkan)'"
+                  >
+                    <span
+                      :class="[
+                        'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                        mod.can_approve ? 'translate-x-4' : 'translate-x-0'
+                      ]"
                     />
-                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-purple-500"></div>
-                  </label>
+                  </button>
                 </td>
 
                 <!-- Quick Module Toggle -->
@@ -357,6 +389,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
     </div>
 
@@ -421,32 +454,61 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { IPaginationMeta } from '@/types'
 import { permissionsService } from '@/services/core/permissions.service'
 import { http } from '@/services/http'
 import type { IRolePermissionDto } from '@/types/core/permissions.dto'
 
 const route = useRoute()
 
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  pagination.value.total_pages = Math.ceil(filteredModules.value.length / payload.limit) || 1
+  pagination.value.has_next = payload.page < pagination.value.total_pages
+  pagination.value.has_prev = payload.page > 1
+}
+
 // Master List of Roles
 const availableRoles = ref<string[]>([
-  'Superadmin',
-  'Direktur / C-Level',
-  'HR Manager',
-  'HR Specialist (Payroll & Attendance)',
-  'Finance & Accounting Manager',
-  'Tax & AP/AR Officer',
-  'Supply Chain & Warehouse Head',
-  'Sales & Marketing Director',
-  'General Staff / Employee',
-  'Internal Auditor'
+  'SUPERADMIN',
+  'DIRECTOR',
+  'FINANCE_MANAGER',
+  'FINANCE_BILLING',
+  'WAREHOUSE_MANAGER',
+  'WAREHOUSE_WORKER',
+  'PURCHASING',
+  'MANUFACTURING_MANAGER',
+  'QUALITY_MANAGER',
+  'MAINTENANCE_MANAGER',
+  'SALES_MANAGER',
+  'SALES_STAFF',
+  'HR_MANAGER',
+  'FLEET_MANAGER',
+  'EMPLOYEE',
+  'MARKETING_MANAGER',
+  'PROJECT_MANAGER',
+  'SUPPORT_AGENT',
+  'CUSTOMER',
+  'GUEST'
 ])
 
 // Current active role filter
-const selectedRole = ref<string>('Superadmin')
+const selectedRole = ref<string>('SUPERADMIN')
 const selectedCategory = ref<string>('all')
 const searchQuery = ref<string>('')
 const showBulkMenu = ref<boolean>(false)
@@ -455,35 +517,36 @@ const toastMessage = ref<string | null>(null)
 // Raw DB permissions records
 const records = ref<IRolePermissionDto[]>([])
 const availableModules = ref<string[]>([
-  // Core & Systems
-  'core/artificial_intelligence', 'core/base', 'core/dashboards', 'core/discuss',
+  // Core & Systems (15)
+  'core/artificial_intelligence', 'core/base', 'core/calendar', 'core/dashboards', 'core/discuss',
   'core/documents', 'core/iot', 'core/knowledge', 'core/mailer', 'core/permissions',
   'core/report', 'core/storage', 'core/user_roles', 'core/voip', 'core/whatsapp',
 
-  // Finance & Accounting
-  'finance/accounting', 'finance/approvals', 'finance/consolidation', 'finance/documents',
-  'finance/expenses', 'finance/invoicing', 'finance/sign', 'finance/spreadsheet_bi',
+  // Finance & Accounting (12)
+  'finance/accounting', 'finance/approvals', 'finance/assets', 'finance/budget', 'finance/consolidation',
+  'finance/documents', 'finance/expenses', 'finance/invoicing', 'finance/reconciliation', 'finance/sign',
+  'finance/spreadsheet_bi', 'finance/tax',
 
-  // HR & People
+  // HR & People (9)
   'hr/appraisals', 'hr/attendances', 'hr/employees', 'hr/fleet', 'hr/lunch',
   'hr/payroll', 'hr/recruitment', 'hr/referrals', 'hr/time_off',
 
-  // Supply Chain & Manufacturing
-  'supply_chain/barcode', 'supply_chain/inventory', 'supply_chain/maintenance',
+  // Supply Chain & Manufacturing (8)
+  'supply_chain/barcode', 'supply_chain/dashboard', 'supply_chain/inventory', 'supply_chain/maintenance',
   'supply_chain/manufacturing', 'supply_chain/plm', 'supply_chain/purchase', 'supply_chain/quality',
 
-  // Sales & CRM
+  // Sales & CRM (5)
   'sales/crm', 'sales/point_of_sale', 'sales/rental', 'sales/sales_core', 'sales/subscriptions',
 
-  // Marketing
+  // Marketing (6)
   'marketing/events', 'marketing/marketing_automation', 'marketing/mass_mailing',
   'marketing/sms_marketing', 'marketing/social_marketing', 'marketing/surveys',
 
-  // Services
-  'services/appointments', 'services/field_service', 'services/helpdesk', 'services/planning',
-  'services/project', 'services/repairs', 'services/timesheets',
+  // Services (9)
+  'services/activity_logs', 'services/appointments', 'services/field_service', 'services/helpdesk',
+  'services/notifications', 'services/planning', 'services/project', 'services/repairs', 'services/timesheets',
 
-  // Website & Portal
+  // Website & Portal (6)
   'website/blog', 'website/ecommerce', 'website/elearning', 'website/forum',
   'website/live_chat', 'website/website_builder'
 ])
@@ -494,6 +557,8 @@ const moduleCategories = [
   { key: 'finance', label: '💰 Keuangan & Akuntansi' },
   { key: 'supply_chain', label: '📦 Rantai Pasok & Gudang' },
   { key: 'sales', label: '🤝 Penjualan & CRM' },
+  { key: 'marketing', label: '📢 Pemasaran' },
+  { key: 'services', label: '🛠️ Layanan & Jasa' },
   { key: 'core', label: '⚙️ Sistem & Pengaturan' },
   { key: 'website', label: '🌐 Website & Portal' }
 ]
@@ -514,18 +579,19 @@ const showToast = (msg: string) => {
 
 // Compute matrix rows for selectedRole
 const matrixItems = computed(() => {
+  const isSuper = selectedRole.value?.toUpperCase() === 'SUPERADMIN'
   return availableModules.value.map(mod => {
     const existing = records.value.find(
-      r => r.role_name?.toLowerCase() === selectedRole.value.toLowerCase() && r.module === mod
+      r => r.role_name?.toUpperCase() === selectedRole.value?.toUpperCase() && r.module === mod
     )
     return {
       role_name: selectedRole.value,
       module: mod,
-      can_read: existing ? !!existing.can_read : selectedRole.value === 'Superadmin',
-      can_write: existing ? !!existing.can_write : selectedRole.value === 'Superadmin',
-      can_delete: existing ? !!existing.can_delete : (selectedRole.value === 'Superadmin'),
-      can_export: existing ? !!existing.can_export : (selectedRole.value === 'Superadmin' || selectedRole.value.includes('Manager') || selectedRole.value.includes('Auditor')),
-      can_approve: existing ? !!existing.can_approve : (selectedRole.value === 'Superadmin' || selectedRole.value.includes('Manager') || selectedRole.value.includes('Direktur'))
+      can_read: existing ? !!existing.can_read : isSuper,
+      can_write: existing ? !!existing.can_write : isSuper,
+      can_delete: existing ? !!existing.can_delete : isSuper,
+      can_export: existing ? !!existing.can_export : isSuper,
+      can_approve: existing ? !!existing.can_approve : isSuper
     }
   })
 })
@@ -551,6 +617,23 @@ const filteredModules = computed(() => {
   })
 })
 
+// Client-side pagination of filtered modules
+const paginatedModules = computed(() => {
+  const start = (pagination.value.current_page - 1) * pagination.value.per_page
+  const end = start + pagination.value.per_page
+  return filteredModules.value.slice(start, end)
+})
+
+watch(filteredModules, (newVal) => {
+  pagination.value.total_items = newVal.length
+  pagination.value.total_pages = Math.ceil(newVal.length / pagination.value.per_page) || 1
+  if (pagination.value.current_page > pagination.value.total_pages) {
+    pagination.value.current_page = 1
+  }
+  pagination.value.has_next = pagination.value.current_page < pagination.value.total_pages
+  pagination.value.has_prev = pagination.value.current_page > 1
+}, { immediate: true })
+
 const getCategoryCount = (key: string) => {
   if (key === 'all') return availableModules.value.length
   return availableModules.value.filter(m => m.startsWith(key + '/')).length
@@ -562,26 +645,29 @@ const activeModuleCount = computed(() => {
 
 // Security Intelligence for selected role
 const roleRiskBadgeClass = computed(() => {
-  if (selectedRole.value === 'Superadmin' || selectedRole.value.includes('Direktur')) {
+  const r = selectedRole.value?.toUpperCase() || ''
+  if (r.includes('SUPERADMIN') || r.includes('DIRECTOR')) {
     return 'rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700 dark:bg-red-900/40 dark:text-red-400'
   }
-  if (selectedRole.value.includes('Manager') || selectedRole.value.includes('Finance') || selectedRole.value.includes('HR')) {
+  if (r.includes('MANAGER') || r.includes('FINANCE') || r.includes('HR')) {
     return 'rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
   }
   return 'rounded-full bg-green-100 px-2.5 py-1 text-xs font-bold text-green-700 dark:bg-green-900/40 dark:text-green-400'
 })
 
 const roleRiskText = computed(() => {
-  if (selectedRole.value === 'Superadmin') return 'Privilege Tertinggi (Wajib 2FA)'
-  if (selectedRole.value.includes('Manager') || selectedRole.value.includes('Finance')) return 'Sensitivitas Tinggi (Wajib 2FA)'
+  const r = selectedRole.value?.toUpperCase() || ''
+  if (r.includes('SUPERADMIN')) return 'Privilege Tertinggi (Wajib 2FA)'
+  if (r.includes('MANAGER') || r.includes('FINANCE')) return 'Sensitivitas Tinggi (Wajib 2FA)'
   return 'Tingkat Standar'
 })
 
 const roleSecurityRecommendation = computed(() => {
-  if (selectedRole.value === 'Superadmin') {
+  const r = selectedRole.value?.toUpperCase() || ''
+  if (r.includes('SUPERADMIN')) {
     return 'Superadmin memiliki hak bypass seluruh modul. Pastikan akun ini dilindungi otentikasi dua faktor (TOTP).'
   }
-  if (selectedRole.value.includes('Finance') || selectedRole.value.includes('HR')) {
+  if (r.includes('FINANCE') || r.includes('HR')) {
     return 'Role ini mengelola aset keuangan dan data PII karyawan. Hak ekspor dan persetujuan harus dibatasi secara berkala.'
   }
   return 'Hak akses operasional standar, pembatasan ekspor massal dianjurkan guna mencegah kebocoran data.'
@@ -609,8 +695,14 @@ const fetchData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const data = await permissionsService.getAll()
-    records.value = Array.isArray(data) ? data : []
+    const res = await permissionsService.getAll({ all: 'true' })
+    if (res && typeof res === 'object' && 'data' in res && Array.isArray((res as any).data)) {
+      records.value = (res as any).data
+    } else if (Array.isArray(res)) {
+      records.value = res
+    } else {
+      records.value = []
+    }
 
     // Fetch dynamic modules list from API using http service
     try {
@@ -625,8 +717,11 @@ const fetchData = async () => {
     // Fetch dynamic role constants if available
     try {
       const roleRes = await http.get('/core/user_roles/constants')
-      if (roleRes.data?.data && Array.isArray(roleRes.data.data)) {
+      if (roleRes.data?.data && Array.isArray(roleRes.data.data) && roleRes.data.data.length > 0) {
         availableRoles.value = roleRes.data.data
+        if (!availableRoles.value.includes(selectedRole.value)) {
+          selectedRole.value = availableRoles.value[0]
+        }
       }
     } catch (e) {}
 
@@ -638,12 +733,30 @@ const fetchData = async () => {
 }
 
 // Toggle granular permissions
-const handleToggle = async (item: any, action: string, event: Event) => {
-  const target = event.target as HTMLInputElement
-  const newValue = target.checked
+const handleToggle = async (item: any, action: string) => {
+  const currentVal = !!item[`can_${action}`]
+  const newValue = !currentVal
 
   // Optimistic UI update in local state
   item[`can_${action}`] = newValue
+
+  // Update records mirror
+  const existing = records.value.find(
+    r => r.role_name?.toUpperCase() === selectedRole.value?.toUpperCase() && r.module === item.module
+  )
+  if (existing) {
+    (existing as any)[`can_${action}`] = newValue
+  } else {
+    records.value.push({
+      role_name: selectedRole.value,
+      module: item.module,
+      can_read: action === 'read' ? newValue : item.can_read,
+      can_write: action === 'write' ? newValue : item.can_write,
+      can_delete: action === 'delete' ? newValue : item.can_delete,
+      can_export: action === 'export' ? newValue : item.can_export,
+      can_approve: action === 'approve' ? newValue : item.can_approve
+    })
+  }
 
   try {
     await permissionsService.toggle({
@@ -653,29 +766,13 @@ const handleToggle = async (item: any, action: string, event: Event) => {
       value: newValue
     })
 
-    // Update records mirror
-    const existing = records.value.find(
-      r => r.role_name?.toLowerCase() === selectedRole.value.toLowerCase() && r.module === item.module
-    )
-    if (existing) {
-      (existing as any)[`can_${action}`] = newValue
-    } else {
-      records.value.push({
-        role_name: selectedRole.value,
-        module: item.module,
-        can_read: item.can_read,
-        can_write: item.can_write,
-        can_delete: item.can_delete,
-        can_export: item.can_export,
-        can_approve: item.can_approve
-      })
-    }
-
     showToast(`Izin '${action.toUpperCase()}' untuk modul ${formatModuleName(item.module)} berhasil diperbarui.`)
   } catch (err) {
     console.error('Toggle failed', err)
-    item[`can_${action}`] = !newValue
-    target.checked = !newValue
+    item[`can_${action}`] = currentVal
+    if (existing) {
+      (existing as any)[`can_${action}`] = currentVal
+    }
     alert('Gagal mengubah status izin pada server.')
   }
 }
@@ -686,6 +783,28 @@ const setModuleAll = async (mod: any, enabled: boolean) => {
   actions.forEach(act => {
     mod[`can_${act}`] = enabled
   })
+
+  // Update records mirror
+  const existing = records.value.find(
+    r => r.role_name?.toUpperCase() === selectedRole.value?.toUpperCase() && r.module === mod.module
+  )
+  if (existing) {
+    existing.can_read = enabled
+    existing.can_write = enabled
+    existing.can_delete = enabled
+    existing.can_export = enabled
+    existing.can_approve = enabled
+  } else {
+    records.value.push({
+      role_name: selectedRole.value,
+      module: mod.module,
+      can_read: enabled,
+      can_write: enabled,
+      can_delete: enabled,
+      can_export: enabled,
+      can_approve: enabled
+    })
+  }
 
   try {
     for (const act of actions) {
@@ -708,12 +827,42 @@ const bulkToggle = async (type: 'full' | 'read_only' | 'revoke') => {
   const targets = filteredModules.value
 
   for (const item of targets) {
+    const isFull = type === 'full'
+    const isReadOnly = type === 'read_only'
+    const canRead = isFull || isReadOnly
+    const canWrite = isFull
+    const canDelete = isFull
+    const canExport = isFull
+    const canApprove = isFull
+
+    item.can_read = canRead
+    item.can_write = canWrite
+    item.can_delete = canDelete
+    item.can_export = canExport
+    item.can_approve = canApprove
+
+    const existing = records.value.find(
+      r => r.role_name?.toUpperCase() === selectedRole.value?.toUpperCase() && r.module === item.module
+    )
+    if (existing) {
+      existing.can_read = canRead
+      existing.can_write = canWrite
+      existing.can_delete = canDelete
+      existing.can_export = canExport
+      existing.can_approve = canApprove
+    } else {
+      records.value.push({
+        role_name: selectedRole.value,
+        module: item.module,
+        can_read: canRead,
+        can_write: canWrite,
+        can_delete: canDelete,
+        can_export: canExport,
+        can_approve: canApprove
+      })
+    }
+
     if (type === 'full') {
-      item.can_read = true
-      item.can_write = true
-      item.can_delete = true
-      item.can_export = true
-      item.can_approve = true
       await permissionsService.toggle({ role_name: selectedRole.value, module: item.module, action: 'read', value: true })
       await permissionsService.toggle({ role_name: selectedRole.value, module: item.module, action: 'write', value: true })
       await permissionsService.toggle({ role_name: selectedRole.value, module: item.module, action: 'delete', value: true })

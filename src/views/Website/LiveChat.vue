@@ -117,6 +117,7 @@
                 </div>
               </div>
             </div>
+            <PaginationBar :pagination="pagination" @change="onPaginationChange" />
           </div>
 
           <div class="p-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 text-center text-[11px] text-gray-400">
@@ -325,9 +326,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { IPaginationMeta } from '@/types'
+import { liveChatService } from '@/services/website/live-chat.service'
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
+}
 
 interface Message {
   sender: 'user' | 'agent'
@@ -526,4 +545,43 @@ function endSession() {
   }
   alert(`Sesi percakapan dengan "${name}" telah ditandai selesai dan diarsipkan.`)
 }
+
+async function fetchData() {
+  try {
+    const res = await liveChatService.getAll({
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    })
+    let items: any[] = []
+    if (res && typeof res === 'object' && 'data' in res && Array.isArray((res as any).data)) {
+      items = (res as any).data
+      if ((res as any).pagination) pagination.value = (res as any).pagination
+    } else if (Array.isArray(res)) {
+      items = res
+    }
+    if (items.length > 0) {
+      activeSessions.value = items.map((s: any) => ({
+        id: s.id,
+        name: s.visitor_name || s.name || `Tamu #${s.id}`,
+        email: s.visitor_email || s.email || 'guest@example.com',
+        category: s.category || 'Pertanyaan Layanan',
+        time: s.created_at ? new Date(s.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Baru saja',
+        lastMessage: s.last_message || 'Percakapan baru dimulai',
+        unread: s.unread_count || 0,
+        messages: s.messages || [
+          { sender: 'user', text: s.last_message || 'Halo, ada yang bisa dibantu?', time: 'Baru saja' }
+        ]
+      }))
+      if (activeSessions.value.length > 0) {
+        selectedSession.value = activeSessions.value[0]
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching live chat sessions:', err)
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 </script>

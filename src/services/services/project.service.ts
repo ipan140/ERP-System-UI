@@ -4,9 +4,12 @@ import type { IProjectDto, IProjectMilestoneDto, IResourceForecastDto } from "@/
 
 export const projectService = {
   // --- Projects ---
-  async getAll(): Promise<IProjectDto[]> {
-    const response = await http.get<IResponse<IProjectDto[]>>("/services/project");
-    return response.data.data ?? response.data;
+  async getAll(params?: any): Promise<any> {
+    const response = await http.get<any>("/services/project", { params: params || { all: true } });
+    if (!params || params.all) {
+      return response.data?.data ?? response.data;
+    }
+    return response.data;
   },
 
   async getById(id: number | string): Promise<IProjectDto> {

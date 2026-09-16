@@ -221,6 +221,7 @@
             </tbody>
           </table>
         </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
     </div>
 
@@ -287,6 +288,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { PaginationMeta } from '@/types'
 
 const activeTab = ref<'config' | 'templates' | 'logs'>('config')
 const saveSuccessMsg = ref(false)
@@ -295,6 +298,19 @@ const testPhone = ref('6281298765432')
 const selectedTestTemplateId = ref('TPL_PAYROLL_01')
 const isSending = ref(false)
 const testResult = ref<string | null>(null)
+
+const pagination = ref<PaginationMeta>({
+  page: 1,
+  per_page: 10,
+  total: 4,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (newPag: PaginationMeta) => {
+  pagination.value = newPag
+}
 
 const gwConfig = ref({
   provider: 'WABA_CLOUD',

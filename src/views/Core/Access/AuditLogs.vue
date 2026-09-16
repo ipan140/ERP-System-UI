@@ -252,31 +252,8 @@
           </table>
         </div>
 
-        <!-- Footer Pagination -->
-        <div class="flex items-center justify-between border-t border-gray-200 px-5 py-4 dark:border-gray-800">
-          <div class="text-xs text-gray-500 dark:text-gray-400">
-            Menampilkan <span class="font-medium text-gray-800 dark:text-gray-200">{{ filteredLogs.length }}</span> dari <span class="font-medium text-gray-800 dark:text-gray-200">{{ totalRecords }}</span> total rekaman audit
-          </div>
-          <div class="flex gap-2">
-            <button
-              :disabled="currentPage <= 1"
-              @click="currentPage--; fetchLogs()"
-              class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-            >
-              Sebelumnya
-            </button>
-            <span class="inline-flex items-center px-3 py-1 text-xs font-medium bg-indigo-50 text-indigo-700 rounded-lg dark:bg-indigo-950 dark:text-indigo-300">
-              Halaman {{ currentPage }}
-            </span>
-            <button
-              :disabled="filteredLogs.length < pageSize"
-              @click="currentPage++; fetchLogs()"
-              class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-            >
-              Selanjutnya
-            </button>
-          </div>
-        </div>
+        <!-- PaginationBar -->
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
       </div>
     </div>
 
@@ -376,6 +353,8 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { IPaginationMeta } from '@/types'
 
 interface IAuditLog {
   id: number
@@ -391,8 +370,21 @@ interface IAuditLog {
 const logs = ref<IAuditLog[]>([])
 const isLoading = ref(false)
 const totalRecords = ref(0)
-const currentPage = ref(1)
-const pageSize = ref(20)
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchLogs()
+}
 
 const searchQuery = ref('')
 const selectedModule = ref('ALL')
@@ -419,16 +411,24 @@ const fetchLogs = async () => {
     const res = await axios.get('/api/sys/audit', {
       headers: { Authorization: `Bearer ${token}` },
       params: {
-        page: currentPage.value,
-        limit: pageSize.value,
+        page: pagination.value.current_page,
+        limit: pagination.value.per_page,
         module: selectedModule.value,
         action: selectedAction.value,
         search: searchQuery.value,
       },
     })
     if (res.data && res.data.data) {
-      logs.value = res.data.data.data || []
-      totalRecords.value = res.data.data.total || logs.value.length
+      if (Array.isArray(res.data.data)) {
+        logs.value = res.data.data
+        if (res.data.pagination) pagination.value = res.data.pagination
+        totalRecords.value = pagination.value.total_items
+      } else if (res.data.data.data) {
+        logs.value = res.data.data.data
+        totalRecords.value = res.data.data.total || logs.value.length
+        pagination.value.total_items = totalRecords.value
+        pagination.value.total_pages = Math.ceil(totalRecords.value / pagination.value.per_page) || 1
+      }
     }
   } catch (err) {
     console.error('Failed to fetch audit logs, loading fallback data', err)

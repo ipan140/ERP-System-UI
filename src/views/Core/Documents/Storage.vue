@@ -184,17 +184,88 @@
           </div>
         </div>
       </div>
+
+      <!-- Daftar Berkas & Attachment di Storage -->
+      <div class="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+          <div>
+            <h3 class="font-bold text-gray-900 dark:text-white text-sm">Daftar Berkas & Lampiran Storage</h3>
+            <p class="text-xs text-gray-500">Log berkas fisik dan lampiran yang tersimpan di driver storage.</p>
+          </div>
+          <button @click="fetchData" class="text-xs text-brand-600 font-semibold hover:underline">
+            Refresh
+          </button>
+        </div>
+        <div class="max-w-full overflow-x-auto custom-scrollbar">
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-xs">
+            <thead class="bg-gray-50 dark:bg-gray-800/50">
+              <tr>
+                <th class="px-5 py-3.5 text-left font-semibold text-gray-700 dark:text-gray-200">Nama Berkas</th>
+                <th class="px-5 py-3.5 text-left font-semibold text-gray-700 dark:text-gray-200">Tipe Berkas</th>
+                <th class="px-5 py-3.5 text-left font-semibold text-gray-700 dark:text-gray-200">Ukuran</th>
+                <th class="px-5 py-3.5 text-left font-semibold text-gray-700 dark:text-gray-200">Lokasi / Path</th>
+                <th class="px-5 py-3.5 text-left font-semibold text-gray-700 dark:text-gray-200">Diunggah Oleh</th>
+                <th class="px-5 py-3.5 text-right font-semibold text-gray-700 dark:text-gray-200">Tanggal</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+              <tr v-if="isLoading">
+                <td colspan="6" class="py-8 text-center text-gray-500">Memuat berkas storage...</td>
+              </tr>
+              <tr v-else-if="records.length === 0">
+                <td colspan="6" class="py-8 text-center text-gray-500">Belum ada berkas lampiran yang tercatat.</td>
+              </tr>
+              <tr v-for="item in records" :key="item.id" class="hover:bg-gray-50/70 dark:hover:bg-gray-800/40 transition">
+                <td class="px-5 py-3.5 font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span>📄</span>
+                  <span>{{ item.file_name || 'attachment' }}</span>
+                </td>
+                <td class="px-5 py-3.5 text-gray-600 dark:text-gray-300">
+                  <span class="rounded bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[10px] font-mono">
+                    {{ item.file_type || '-' }}
+                  </span>
+                </td>
+                <td class="px-5 py-3.5 text-gray-600 dark:text-gray-300">{{ formatSize(item.file_size) }}</td>
+                <td class="px-5 py-3.5 text-gray-500 dark:text-gray-400 font-mono text-[11px] truncate max-w-xs">{{ item.file_path || '-' }}</td>
+                <td class="px-5 py-3.5 text-gray-700 dark:text-gray-300">{{ item.uploadedby?.name || item.uploadedby?.username || 'System' }}</td>
+                <td class="px-5 py-3.5 text-right text-gray-500 dark:text-gray-400">{{ formatDate(item.created_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <PaginationBar :pagination="pagination" @change="onPaginationChange" />
+      </div>
     </div>
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import PaginationBar from '@/components/common/PaginationBar.vue'
+import type { IPaginationMeta } from '@/types'
+import { storageService } from '@/services/core/storage.service'
 
 const isCleaning = ref(false)
 const saveSuccess = ref(false)
 const storageDriver = ref('S3')
+const isLoading = ref(false)
+const records = ref<any[]>([])
+
+const pagination = ref<IPaginationMeta>({
+  current_page: 1,
+  per_page: 10,
+  total_items: 0,
+  total_pages: 1,
+  has_next: false,
+  has_prev: false
+})
+
+const onPaginationChange = (payload: { page: number; limit: number }) => {
+  pagination.value.current_page = payload.page
+  pagination.value.per_page = payload.limit
+  fetchData()
+}
 
 const s3Config = ref({
   bucket: 'erp-company-dms',
@@ -217,4 +288,45 @@ const saveStorageConfig = () => {
     saveSuccess.value = false
   }, 3000)
 }
+
+const formatSize = (bytes?: number) => {
+  if (!bytes || bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  try {
+    return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+  } catch {
+    return dateStr
+  }
+}
+
+const fetchData = async () => {
+  isLoading.value = true
+  try {
+    const res = await storageService.getAll({
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    })
+    if (res && typeof res === 'object' && 'data' in res && Array.isArray((res as any).data)) {
+      records.value = (res as any).data
+      if ((res as any).pagination) pagination.value = (res as any).pagination
+    } else if (Array.isArray(res)) {
+      records.value = res
+    }
+  } catch (err) {
+    console.error('Error fetching storage records:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 </script>
