@@ -130,8 +130,7 @@
                 <input
                   v-model="smtpConfig.password"
                   type="password"
-                  required
-                  placeholder="••••••••••••••••"
+                  placeholder="•••••••••••••••• (Kosongkan jika tidak diubah)"
                   class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 />
               </div>
@@ -139,7 +138,7 @@
               <div>
                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nama Tampilan Pengirim (Sender Name)</label>
                 <input
-                  v-model="smtpConfig.senderName"
+                  v-model="smtpConfig.sender_name"
                   type="text"
                   required
                   placeholder="ERP Notification System"
@@ -161,13 +160,16 @@
             </div>
 
             <div class="pt-4 flex items-center justify-between border-t border-gray-200 dark:border-gray-800">
-              <span v-if="saveSuccessMsg" class="text-xs text-emerald-600 font-medium">✓ Konfigurasi SMTP berhasil disimpan!</span>
-              <span v-else></span>
+              <div>
+                <span v-if="saveSuccessMsg" class="text-xs text-emerald-600 font-medium">✓ Konfigurasi SMTP berhasil disimpan ke database!</span>
+                <span v-else-if="saveErrorMsg" class="text-xs text-rose-600 font-medium">✗ {{ saveErrorMsg }}</span>
+              </div>
               <button
                 type="submit"
-                class="rounded-lg bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-700"
+                :disabled="isSaving"
+                class="rounded-lg bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
               >
-                Simpan Konfigurasi SMTP
+                {{ isSaving ? 'Menyimpan...' : 'Simpan Konfigurasi SMTP' }}
               </button>
             </div>
           </form>
@@ -332,7 +334,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import axios from 'axios'
+import { http } from '@/services/http'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PaginationBar from '@/components/common/PaginationBar.vue'
 import type { PaginationMeta } from '@/types'
@@ -342,7 +344,9 @@ const records = ref<any[]>([])
 const isLoading = ref(false)
 const searchQuery = ref('')
 const selectedPreset = ref('Google Workspace')
+const isSaving = ref(false)
 const saveSuccessMsg = ref(false)
+const saveErrorMsg = ref('')
 
 const pagination = ref<PaginationMeta>({
   page: 1,
@@ -354,7 +358,7 @@ const pagination = ref<PaginationMeta>({
 })
 
 const isTestModalOpen = ref(false)
-const testEmailRecipient = ref('hr.admin@perusahaan.co.id')
+const testEmailRecipient = ref('')
 const isSendingTest = ref(false)
 const testResult = ref<{ success: boolean; message: string } | null>(null)
 
@@ -366,11 +370,12 @@ const presets = [
 ]
 
 const smtpConfig = ref({
+  id: 0,
   host: 'smtp.gmail.com',
   port: 587,
-  username: 'no-reply@erp-enterprise.co.id',
-  password: 'app-password-secret-xyz',
-  senderName: 'ERP Notification System',
+  username: '',
+  password: '',
+  sender_name: 'ERP Notification System',
   encryption: 'STARTTLS',
 })
 
@@ -381,34 +386,94 @@ const applyPreset = (preset: any) => {
   smtpConfig.value.encryption = preset.encryption
 }
 
-const saveSmtpConfig = () => {
-  saveSuccessMsg.value = true
-  setTimeout(() => {
-    saveSuccessMsg.value = false
-  }, 3000)
+const fetchSmtpConfig = async () => {
+  try {
+    const res = await http.get('/core/mailer/config')
+    if (res.data?.data) {
+      const d = res.data.data
+      smtpConfig.value = {
+        id: d.id || 0,
+        host: d.host || 'smtp.gmail.com',
+        port: d.port || 587,
+        username: d.username || '',
+        password: '',
+        sender_name: d.sender_name || 'ERP Notification System',
+        encryption: d.encryption || 'STARTTLS',
+      }
+      if (!testEmailRecipient.value && d.username) {
+        testEmailRecipient.value = d.username
+      }
+      const match = presets.find(p => p.host === d.host && p.port === d.port)
+      if (match) {
+        selectedPreset.value = match.name
+      } else {
+        selectedPreset.value = 'Custom SMTP'
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load SMTP config:', err)
+  }
+}
+
+const saveSmtpConfig = async () => {
+  isSaving.value = true
+  saveErrorMsg.value = ''
+  saveSuccessMsg.value = false
+  try {
+    await http.post('/core/mailer/config', {
+      host: smtpConfig.value.host,
+      port: Number(smtpConfig.value.port),
+      username: smtpConfig.value.username,
+      password: smtpConfig.value.password,
+      sender_name: smtpConfig.value.sender_name,
+      encryption: smtpConfig.value.encryption,
+    })
+    saveSuccessMsg.value = true
+    setTimeout(() => {
+      saveSuccessMsg.value = false
+    }, 4000)
+  } catch (err: any) {
+    saveErrorMsg.value = err.response?.data?.message || err.response?.data?.error || err.message || 'Gagal menyimpan konfigurasi SMTP'
+  } finally {
+    isSaving.value = false
+  }
 }
 
 const sendTestEmail = async () => {
+  if (!testEmailRecipient.value) {
+    testResult.value = { success: false, message: 'Alamat email tujuan pengujian harus diisi.' }
+    return
+  }
   isSendingTest.value = true
   testResult.value = null
-  setTimeout(() => {
-    isSendingTest.value = false
+  try {
+    const res = await http.post('/core/mailer/test', {
+      recipient: testEmailRecipient.value
+    })
     testResult.value = {
       success: true,
-      message: `✓ Sukses! Email verifikasi telah terkirim ke ${testEmailRecipient.value} melalui SMTP Server ${smtpConfig.value.host}.`,
+      message: res.data?.message || `✓ Sukses! Email verifikasi telah terkirim ke ${testEmailRecipient.value}.`,
     }
-  }, 1200)
+    fetchData()
+  } catch (err: any) {
+    const errMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Gagal menghubungi server SMTP'
+    testResult.value = {
+      success: false,
+      message: `✗ Gagal mengirim email: ${errMsg}`,
+    }
+    fetchData()
+  } finally {
+    isSendingTest.value = false
+  }
 }
 
 const fetchData = async (page = pagination.value.page, perPage = pagination.value.per_page) => {
   isLoading.value = true
   try {
-    const token = localStorage.getItem('token') || ''
-    const res = await axios.get('/api/core/mailer', {
-      headers: { Authorization: `Bearer ${token}` },
+    const res = await http.get('/core/mailer', {
       params: { page, per_page: perPage, search: searchQuery.value || undefined }
     })
-    if (res.data?.data && res.data.data.length > 0) {
+    if (res.data?.data) {
       records.value = res.data.data
       if (res.data?.meta) {
         pagination.value = res.data.meta
@@ -417,14 +482,13 @@ const fetchData = async (page = pagination.value.page, perPage = pagination.valu
         pagination.value.total_pages = Math.ceil(records.value.length / perPage) || 1
       }
     } else {
-      populateDefaultLogs()
-      pagination.value.total = records.value.length
+      records.value = []
+      pagination.value.total = 0
       pagination.value.total_pages = 1
     }
   } catch (err) {
-    populateDefaultLogs()
-    pagination.value.total = records.value.length
-    pagination.value.total_pages = 1
+    console.error('Failed to fetch mailer logs:', err)
+    records.value = []
   } finally {
     isLoading.value = false
   }
@@ -432,51 +496,6 @@ const fetchData = async (page = pagination.value.page, perPage = pagination.valu
 
 const onPaginationChange = (newPag: PaginationMeta) => {
   fetchData(newPag.page, newPag.per_page)
-}
-
-const populateDefaultLogs = () => {
-  records.value = [
-    {
-      id: 1,
-      recipient: 'budi.santoso@karyawan.co.id',
-      subject: '[SLIP GAJI] Rincian Slip Gaji Elektronik Periode September 2026',
-      module: 'HR & Payroll',
-      status: 'DELIVERED',
-      sent_at: new Date(Date.now() - 3600 * 1000).toISOString(),
-    },
-    {
-      id: 2,
-      recipient: 'siti.aminah@karyawan.co.id',
-      subject: '[SLIP GAJI] Rincian Slip Gaji Elektronik Periode September 2026',
-      module: 'HR & Payroll',
-      status: 'DELIVERED',
-      sent_at: new Date(Date.now() - 3600 * 1000 * 2).toISOString(),
-    },
-    {
-      id: 3,
-      recipient: 'finance@vendor-supplier.co.id',
-      subject: '[PURCHASE ORDER] Salinan PO #PO-2026-0048 Disetujui',
-      module: 'Supply Chain',
-      status: 'SENT',
-      sent_at: new Date(Date.now() - 3600 * 1000 * 4).toISOString(),
-    },
-    {
-      id: 4,
-      recipient: 'direktur@holding.co.id',
-      subject: '[APPROVAL] Permohonan Persetujuan Diskon Penjualan >20%',
-      module: 'Sales & CRM',
-      status: 'DELIVERED',
-      sent_at: new Date(Date.now() - 3600 * 1000 * 6).toISOString(),
-    },
-    {
-      id: 5,
-      recipient: 'andi.wijaya@karyawan.co.id',
-      subject: '[KEAMANAN] Kode OTP Verifikasi Login Sistem Dua Langkah (2FA)',
-      module: 'Auth & Security',
-      status: 'DELIVERED',
-      sent_at: new Date(Date.now() - 3600 * 1000 * 10).toISOString(),
-    },
-  ]
 }
 
 const filteredRecords = computed(() => {
@@ -489,11 +508,12 @@ const filteredRecords = computed(() => {
 })
 
 const getStatusBadgeClass = (status: string) => {
-  switch (status) {
+  switch (status?.toUpperCase()) {
     case 'DELIVERED':
     case 'SENT':
       return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
     case 'QUEUED':
+    case 'PENDING':
       return 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
     case 'FAILED':
     case 'BOUNCED':
@@ -504,15 +524,19 @@ const getStatusBadgeClass = (status: string) => {
 }
 
 const formatTime = (ts: string) => {
+  if (!ts) return '-'
   const d = new Date(ts)
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
-const resendEmail = (item: any) => {
-  alert(`Email ke ${item.recipient} sedang dikirim ulang via antrean SMTP background worker.`)
+const resendEmail = async (item: any) => {
+  testEmailRecipient.value = item.recipient
+  isTestModalOpen.value = true
+  await sendTestEmail()
 }
 
 onMounted(() => {
+  fetchSmtpConfig()
   fetchData()
 })
 </script>
