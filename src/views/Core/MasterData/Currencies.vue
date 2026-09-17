@@ -142,13 +142,13 @@
                   Rp {{ formatNumber(item.rate) }}
                 </td>
                 <td class="px-5 py-3.5 text-center">
-                  <span class="rounded-full px-2.5 py-0.5 text-[10px] font-bold" :class="item.isBase ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'">
-                    {{ item.isBase ? 'BASE CURRENCY' : 'ACTIVE' }}
+                  <span class="rounded-full px-2.5 py-0.5 text-[10px] font-bold" :class="(item.is_base || item.isBase) ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'">
+                    {{ (item.is_base || item.isBase) ? 'BASE CURRENCY' : 'ACTIVE' }}
                   </span>
                 </td>
                 <td class="px-5 py-3.5 text-right whitespace-nowrap">
                   <button
-                    v-if="!item.isBase"
+                    v-if="!(item.is_base || item.isBase)"
                     @click="editRate(item)"
                     class="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
                   >
@@ -209,24 +209,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { http } from '@/services/http'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 
 const isSyncing = ref(false)
+const isLoading = ref(false)
 const calcAmount = ref(100)
 const calcFrom = ref('USD')
 const editingCurrency = ref<any>(null)
-
-const currencies = ref([
-  { code: 'IDR', name: 'Rupiah Indonesia', symbol: 'Rp', rate: 1, isBase: true },
-  { code: 'USD', name: 'US Dollar', symbol: '$', rate: 16250.00, isBase: false },
-  { code: 'EUR', name: 'Euro Uni Eropa', symbol: '€', rate: 17580.00, isBase: false },
-  { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', rate: 12320.00, isBase: false },
-  { code: 'JPY', name: 'Japanese Yen (100)', symbol: '¥', rate: 10450.00, isBase: false },
-  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', rate: 2260.00, isBase: false },
-  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', rate: 10750.00, isBase: false },
-  { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM', rate: 3740.00, isBase: false },
-])
+const currencies = ref<any[]>([])
 
 const convertedValue = computed(() => {
   const target = currencies.value.find(c => c.code === calcFrom.value)
@@ -235,32 +227,78 @@ const convertedValue = computed(() => {
 })
 
 const formatNumber = (num: number) => {
+  if (num === undefined || num === null) return '0.00'
   return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num)
 }
 
-const syncBankIndonesiaRate = () => {
+const fetchCurrencies = async () => {
+  isLoading.value = true
+  try {
+    const res = await http.get('/base/currency')
+    if (res.data?.data) {
+      currencies.value = res.data.data
+    }
+  } catch (err) {
+    console.error('Failed to load currencies:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const syncBankIndonesiaRate = async () => {
   isSyncing.value = true
-  setTimeout(() => {
-    isSyncing.value = false
+  try {
+    const res = await http.post('/base/currency/sync-bi')
+    if (res.data?.data) {
+      currencies.value = res.data.data
+    } else {
+      await fetchCurrencies()
+    }
     alert('✓ Berhasil! Kurs Tengah Bank Indonesia (JISDOR) berhasil disinkronkan ke seluruh sistem ERP.')
-  }, 1200)
+  } catch (err: any) {
+    alert(`✗ Gagal sinkronisasi kurs: ${err.response?.data?.message || err.message}`)
+  } finally {
+    isSyncing.value = false
+  }
 }
 
 const openModal = (mode: string) => {
-  editingCurrency.value = { code: 'GBP', name: 'British Pound Sterling', symbol: '£', rate: 21100.00, isBase: false }
+  editingCurrency.value = { code: 'GBP', name: 'British Pound Sterling', symbol: '£', rate: 21100.00, is_base: false }
 }
 
 const editRate = (curr: any) => {
   editingCurrency.value = { ...curr }
 }
 
-const saveRate = () => {
-  const idx = currencies.value.findIndex(c => c.code === editingCurrency.value.code)
-  if (idx !== -1) {
-    currencies.value[idx].rate = editingCurrency.value.rate
-  } else {
-    currencies.value.push({ ...editingCurrency.value })
+const saveRate = async () => {
+  if (!editingCurrency.value) return
+  try {
+    if (editingCurrency.value.id) {
+      await http.put(`/base/currency/${editingCurrency.value.id}`, {
+        code: editingCurrency.value.code,
+        name: editingCurrency.value.name,
+        symbol: editingCurrency.value.symbol,
+        rate: Number(editingCurrency.value.rate),
+        is_base: Boolean(editingCurrency.value.is_base),
+      })
+    } else {
+      await http.post('/base/currency', {
+        code: editingCurrency.value.code,
+        name: editingCurrency.value.name,
+        symbol: editingCurrency.value.symbol,
+        rate: Number(editingCurrency.value.rate),
+        is_base: Boolean(editingCurrency.value.is_base),
+      })
+    }
+    await fetchCurrencies()
+  } catch (err: any) {
+    alert(`Gagal menyimpan kurs: ${err.response?.data?.message || err.message}`)
+  } finally {
+    editingCurrency.value = null
   }
-  editingCurrency.value = null
 }
+
+onMounted(() => {
+  fetchCurrencies()
+})
 </script>
