@@ -364,76 +364,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import { iotService } from '@/services/core/iot.service'
 
 const activeTab = ref<'devices' | 'logs'>('devices')
 const isSyncing = ref(false)
+const isLoading = ref(false)
 
-const devices = ref([
-  {
-    id: 1,
-    device_name: 'ZKTeco uFace 800 - Lobi Utama',
-    model: 'ZKTeco uFace800 Plus',
-    location: 'Kantor Pusat HQ - Lobi Utama Lt. 1',
-    ip_address: '192.168.1.201',
-    port: 4370,
-    sensor_type: 'Face 3D + Fingerprint',
-    status: 'Online',
-    ping_ms: 12,
-    today_records: '194 Punch',
-    icon: '👤'
-  },
-  {
-    id: 2,
-    device_name: 'ZKTeco SilkBio - Pintu Masuk Gudang',
-    model: 'ZKTeco SilkBio-101TC',
-    location: 'Kawasan Industri Cikarang Barat MM2100',
-    ip_address: '192.168.2.202',
-    port: 4370,
-    sensor_type: 'Fingerprint Biometrik',
-    status: 'Online',
-    ping_ms: 24,
-    today_records: '72 Punch',
-    icon: '🏭'
-  },
-  {
-    id: 3,
-    device_name: 'Solution X105 - Cabang Surabaya',
-    model: 'Solution X105 Standalone',
-    location: 'Kantor Perwakilan Surabaya Lt. 2',
-    ip_address: '10.10.1.50',
-    port: 4370,
-    sensor_type: 'RFID Card + Fingerprint',
-    status: 'Online',
-    ping_ms: 38,
-    today_records: '46 Punch',
-    icon: '🏢'
-  },
-  {
-    id: 4,
-    device_name: 'Sensor IoT DHT22 - Cold Storage Farmasi',
-    model: 'ESP32 MQTT Modbus RTU',
-    location: 'Gudang Cikarang - Ruang Dingin A-1',
-    ip_address: '192.168.2.215',
-    port: 1883,
-    sensor_type: 'Sensor Suhu & Kelembaban (DHT22)',
-    status: 'Online',
-    ping_ms: 15,
-    today_records: 'Suhu 4.2°C • Kelembaban 45%',
-    icon: '❄️'
-  }
-])
-
-const attendanceLogs = ref([
-  { id: 1, timestamp: '17:31:04', employee_name: 'Ahmad Fauzi', nik: 'EMP-0012', department: 'Logistik & Gudang', device_location: 'Gudang Cikarang', punch_type: 'Check-Out', verification_method: 'Sidik Jari (98%)' },
-  { id: 2, timestamp: '17:30:45', employee_name: 'Siti Rahmawati', nik: 'EMP-0045', department: 'HR & Kepegawaian', device_location: 'Lobi Utama HQ', punch_type: 'Check-Out', verification_method: 'Face Recognition 3D' },
-  { id: 3, timestamp: '17:28:12', employee_name: 'Budi Santoso', nik: 'EMP-0008', department: 'Finance & Accounting', device_location: 'Lobi Utama HQ', punch_type: 'Check-Out', verification_method: 'Face Recognition 3D' },
-  { id: 4, timestamp: '08:42:19', employee_name: 'Rian Hidayat', nik: 'EMP-0098', department: 'Sales & Marketing', device_location: 'Cabang Surabaya', punch_type: 'Check-In', verification_method: 'RFID Card + Finger' },
-  { id: 5, timestamp: '08:35:50', employee_name: 'Dewi Lestari', nik: 'EMP-0034', department: 'Supply Chain Ops', device_location: 'Lobi Utama HQ', punch_type: 'Check-In', verification_method: 'Face Recognition 3D' },
-  { id: 6, timestamp: '08:14:02', employee_name: 'Hendro Wijaya', nik: 'EMP-0019', department: 'Security & Facility', device_location: 'Gudang Cikarang', punch_type: 'Check-In', verification_method: 'Sidik Jari (100%)' }
-])
+const devices = ref<any[]>([])
+const attendanceLogs = ref<any[]>([])
 
 // Modal State
 const isModalOpen = ref(false)
@@ -442,21 +383,47 @@ const formData = ref<any>({
   device_name: '',
   model: '',
   location: '',
-  ip_address: '',
+  ip_address: '192.168.1.201',
   port: 4370,
   sensor_type: 'Face 3D + Fingerprint'
 })
 
-const pingDevice = (dev: any) => {
-  alert(`Ping test ke ${dev.ip_address}:${dev.port} berhasil! Waktu respons: ${dev.ping_ms} ms (Packet Loss: 0%)`)
+const fetchIoTData = async () => {
+  isLoading.value = true
+  try {
+    const [devs, logs] = await Promise.all([
+      iotService.getDevices(),
+      iotService.getAttendanceLogs()
+    ])
+    devices.value = Array.isArray(devs) ? devs : (devs as any)?.data || []
+    attendanceLogs.value = Array.isArray(logs) ? logs : (logs as any)?.data || []
+  } catch (err) {
+    console.error('Error fetching IoT data:', err)
+  } finally {
+    isLoading.value = false
+  }
 }
 
-const syncAllDevices = () => {
+const pingDevice = async (dev: any) => {
+  try {
+    const res = await iotService.pingDevice(dev.id)
+    alert(`Ping test ke ${dev.ip_address}:${dev.port} berhasil! Waktu respons: ${res?.ping_ms || dev.ping_ms || 15} ms (Packet Loss: 0%)`)
+  } catch (err: any) {
+    alert('Ping test gagal: ' + (err.response?.data?.message || err.message))
+  }
+}
+
+const syncAllDevices = async () => {
   isSyncing.value = true
-  setTimeout(() => {
+  try {
+    const res = await iotService.syncPresensi()
+    alert(res?.message || 'Sinkronisasi selesai! Log presensi biometrik berhasil ditarik dan diposting ke database Kepegawaian (HR Attendance).')
+    await fetchIoTData()
+  } catch (err: any) {
+    alert('Gagal sinkronisasi: ' + (err.response?.data?.message || err.message))
+  } finally {
     isSyncing.value = false
-    alert('Sinkronisasi selesai! 312 log presensi biometrik berhasil ditarik dan diposting ke database Kepegawaian (HR Attendance).')
-  }, 1200)
+  }
 }
 
 const openModal = (mode: 'create' | 'edit', data: any = null) => {
@@ -480,23 +447,42 @@ const closeModal = () => {
   isModalOpen.value = false
 }
 
-const saveDevice = () => {
-  if (modalMode.value === 'edit') {
-    const idx = devices.value.findIndex(d => d.id === formData.value.id)
-    if (idx !== -1) {
-      devices.value[idx] = { ...devices.value[idx], ...formData.value }
+const saveDevice = async () => {
+  try {
+    if (modalMode.value === 'edit') {
+      await iotService.update(formData.value.id, {
+        device_name: formData.value.device_name,
+        name: formData.value.device_name,
+        model: formData.value.model,
+        location: formData.value.location,
+        ip_address: formData.value.ip_address,
+        port: Number(formData.value.port) || 4370,
+        sensor_type: formData.value.sensor_type
+      })
+    } else {
+      await iotService.create({
+        device_name: formData.value.device_name,
+        name: formData.value.device_name,
+        model: formData.value.model,
+        location: formData.value.location,
+        ip_address: formData.value.ip_address,
+        port: Number(formData.value.port) || 4370,
+        sensor_type: formData.value.sensor_type,
+        status: 'Online',
+        ping_ms: 18,
+        today_records: '0 Punch',
+        icon: '📟'
+      })
     }
-  } else {
-    devices.value.push({
-      id: Date.now(),
-      ...formData.value,
-      status: 'Online',
-      ping_ms: 18,
-      today_records: '0 Punch',
-      icon: '📟'
-    })
+    closeModal()
+    await fetchIoTData()
+  } catch (err: any) {
+    alert('Gagal menyimpan perangkat: ' + (err.response?.data?.message || err.message))
   }
-  closeModal()
 }
+
+onMounted(() => {
+  fetchIoTData()
+})
 </script>
 

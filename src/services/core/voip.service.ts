@@ -25,4 +25,14 @@ export const voipService = {
   async delete(id: number | string): Promise<void> {
     await http.delete(`/voip/${id}`);
   },
+
+  async getExtensions(): Promise<any[]> {
+    const response = await http.get<IResponse<any[]>>("/voip/extensions");
+    return response.data.data ?? response.data;
+  },
+
+  async initiateCall(callee: string, caller?: string): Promise<any> {
+    const response = await http.post<IResponse<any>>("/voip/call", { callee, caller });
+    return response.data.data ?? response.data;
+  }
 };

@@ -8,9 +8,9 @@
           <button
             @click="activeView = 'library'"
             :class="activeView === 'library' ? 'bg-brand-500 text-white shadow-theme-xs' : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'"
-            class="rounded-lg px-4 py-2 text-xs font-semibold transition-colors"
+            class="rounded-lg px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
           >
-            Prompt Engineering Library
+            <span>📚</span> Prompt Library
           </button>
           <button
             @click="activeView = 'simulator'"
@@ -18,6 +18,13 @@
             class="rounded-lg px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
           >
             <span>✨</span> AI Playground & Simulator
+          </button>
+          <button
+            @click="activeView = 'settings'"
+            :class="activeView === 'settings' ? 'bg-brand-500 text-white shadow-theme-xs' : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'"
+            class="rounded-lg px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
+          >
+            <span>⚙️</span> Multi-Provider LLM
           </button>
         </div>
       </div>
@@ -27,14 +34,14 @@
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">Model AI Terintegrasi</p>
-              <h4 class="mt-1 text-2xl font-bold text-gray-800 dark:text-white">Gemini 1.5 Pro</h4>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">Provider Aktif Utama</p>
+              <h4 class="mt-1 text-xl font-bold text-brand-600 dark:text-brand-400">{{ getActiveProviderLabel() }}</h4>
             </div>
             <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/10 text-xl font-bold">
               ✨
             </div>
           </div>
-          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Kapasitas 1M Token Context Window</p>
+          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Model: {{ getActiveModelLabel() }}</p>
         </div>
 
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
@@ -55,23 +62,23 @@
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">Penggunaan Token Bulan Ini</p>
-              <h4 class="mt-1 text-2xl font-bold text-gray-800 dark:text-white">128.4 K Token</h4>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">Provider Siap Pakai</p>
+              <h4 class="mt-1 text-2xl font-bold text-gray-800 dark:text-white">{{ getConfiguredProvidersCount() }} / 5 Provider</h4>
             </div>
             <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-500 dark:bg-blue-500/10">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             </div>
           </div>
-          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Estimasi biaya: $0.42 / bulan</p>
+          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Gemini, OpenAI, Claude, DeepSeek, Ollama</p>
         </div>
 
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">Tingkat Akurasi Rekomendasi</p>
-              <h4 class="mt-1 text-2xl font-bold text-purple-600 dark:text-purple-400">98.4%</h4>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">Keamanan Kunci API</p>
+              <h4 class="mt-1 text-2xl font-bold text-purple-600 dark:text-purple-400">Tersandi</h4>
             </div>
             <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-purple-50 text-purple-500 dark:bg-purple-500/10">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +86,7 @@
               </svg>
             </div>
           </div>
-          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Zero data leakage (Enterprise Isolated)</p>
+          <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Prioritas: Database > File .env</p>
         </div>
       </div>
 
@@ -147,6 +154,15 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
                 </button>
+                <button
+                  @click="deletePrompt(p)"
+                  class="rounded-lg border border-red-200 p-1.5 text-red-500 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20"
+                  title="Hapus Prompt"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -155,18 +171,48 @@
 
       <!-- VIEW 2: AI Playground & Simulator -->
       <div v-if="activeView === 'simulator'" class="space-y-4">
+        <!-- Provider & Engine Toolbar -->
+        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Pilih Provider AI:</span>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button
+                v-for="prov in providerList"
+                :key="prov.key"
+                @click="simProvider = prov.key; onSimProviderChange()"
+                :class="simProvider === prov.key ? 'bg-brand-500 text-white shadow-theme-xs font-bold' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'"
+                class="rounded-lg px-3 py-1 text-xs transition-colors flex items-center gap-1.5"
+              >
+                <span>{{ prov.icon }}</span>
+                <span>{{ prov.name }}</span>
+                <span v-if="isProviderConfigured(prov.key)" class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500 dark:text-gray-400">Model:</span>
+            <select
+              v-model="simModel"
+              class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 font-medium"
+            >
+              <option v-for="m in availableModelsFor(simProvider)" :key="m" :value="m">{{ m }}</option>
+            </select>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Input Simulator -->
           <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 space-y-4">
             <div class="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
               <div>
-                <h3 class="font-bold text-gray-900 dark:text-white text-sm">Input Variabel Simulasi AI</h3>
+                <h3 class="font-bold text-gray-900 dark:text-white text-sm">Input Variabel Kasus AI</h3>
                 <p class="text-xs text-gray-400">Pilih template dan sesuaikan data parameter kasus</p>
               </div>
               <select
                 v-model="selectedPromptId"
                 @change="onPromptSelected"
-                class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 font-medium"
+                class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 font-medium max-w-[200px] truncate"
               >
                 <option v-for="p in prompts" :key="p.id" :value="p.id">
                   {{ p.title }}
@@ -193,7 +239,9 @@
             </div>
 
             <div class="flex items-center justify-between pt-2">
-              <span class="text-2xs text-gray-400">Engine: Google Gemini 1.5 Pro • Temp: 0.2</span>
+              <span class="text-2xs text-gray-500">
+                Engine: <strong class="text-gray-700 dark:text-gray-300">{{ simProvider }}</strong> ({{ simModel }})
+              </span>
               <button
                 @click="executeAiSimulation"
                 :disabled="isGenerating"
@@ -214,27 +262,30 @@
               <div class="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-800 mb-4">
                 <div class="flex items-center gap-2">
                   <h3 class="font-bold text-gray-900 dark:text-white text-sm">Hasil Generatif AI ERP</h3>
-                  <span v-if="simResult" class="rounded bg-success-50 text-success-600 px-2 py-0.5 text-2xs font-semibold">
-                    Generated (1.2s)
+                  <span v-if="simMeta" :class="simMeta.is_live ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'" class="rounded px-2 py-0.5 text-2xs font-semibold">
+                    {{ simMeta.is_live ? '🟢 Live LLM' : '🟡 Fallback' }} ({{ simMeta.latency_ms }}ms)
                   </span>
                 </div>
                 <button
                   v-if="simResult"
                   @click="copySimResult"
-                  class="text-xs text-brand-500 hover:text-brand-600 font-medium"
+                  class="text-xs text-brand-500 hover:text-brand-600 font-medium flex items-center gap-1"
                 >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
                   Salin Teks
                 </button>
               </div>
 
               <div v-if="isGenerating" class="py-16 text-center">
                 <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-                <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Gemini sedang memproses analisis parameter...</p>
+                <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">{{ simProvider }} sedang memproses input analitis...</p>
               </div>
 
               <div
                 v-else-if="simResult"
-                class="rounded-xl bg-gray-50 p-4 border border-gray-100 dark:border-gray-800 dark:bg-gray-800/50 text-xs text-gray-800 dark:text-gray-200 leading-relaxed space-y-3 font-sans"
+                class="rounded-xl bg-gray-50 p-4 border border-gray-100 dark:border-gray-800 dark:bg-gray-800/50 text-xs text-gray-800 dark:text-gray-200 leading-relaxed space-y-3 font-sans overflow-auto max-h-[420px]"
                 v-html="simResult"
               ></div>
 
@@ -243,8 +294,281 @@
               </div>
             </div>
 
-            <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 text-2xs text-gray-400">
-              Keluaran AI diverifikasi sesuai regulasi ketenagakerjaan dan standar akuntansi keuangan (SAK Indonesia).
+            <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-2xs text-gray-400">
+              <span>Model Eksekusi: {{ simMeta?.model_version || (simProvider + ' ' + simModel) }}</span>
+              <span>Tokens: ~{{ simMeta?.tokens_used || 0 }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: Multi-Provider LLM Configuration -->
+      <div v-if="activeView === 'settings'" class="space-y-6">
+        <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-gray-100 dark:border-gray-800 gap-3">
+            <div>
+              <h3 class="font-bold text-gray-900 dark:text-white text-base">Konfigurasi Multi-Provider AI Enterprise</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Konfigurasi API Key untuk Google Gemini, OpenAI, Anthropic Claude, DeepSeek, atau Local Ollama. Prioritas: Database > .env
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span v-if="configSaveSuccess" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                ✓ Konfigurasi Tersimpan!
+              </span>
+              <button
+                @click="saveAIConfigurations"
+                :disabled="isSavingConfig"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-5 py-2.5 text-xs font-bold text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 transition-colors"
+              >
+                <svg v-if="isSavingConfig" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span v-else>💾</span>
+                {{ isSavingConfig ? 'Menyimpan...' : 'Simpan Konfigurasi AI' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Provider Cards -->
+          <div class="mt-6 space-y-6">
+            <!-- Active Provider Selector -->
+            <div>
+              <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+                Pilih Provider Default Sistem (Active Provider)
+              </label>
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div
+                  v-for="prov in providerList"
+                  :key="prov.key"
+                  @click="aiConfig.active_provider = prov.key"
+                  :class="aiConfig.active_provider === prov.key ? 'border-brand-500 bg-brand-50/40 dark:bg-brand-500/10 ring-2 ring-brand-500' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'"
+                  class="cursor-pointer rounded-xl border p-4 transition-all relative"
+                >
+                  <div class="flex items-center justify-between">
+                    <span class="text-2xl">{{ prov.icon }}</span>
+                    <span
+                      v-if="aiConfig.active_provider === prov.key"
+                      class="rounded-full bg-brand-500 text-white text-2xs px-2 py-0.5 font-bold"
+                    >
+                      Aktif
+                    </span>
+                  </div>
+                  <h4 class="mt-2 text-sm font-bold text-gray-900 dark:text-white">{{ prov.name }}</h4>
+                  <p class="text-2xs text-gray-500 dark:text-gray-400 mt-0.5">{{ prov.desc }}</p>
+                  <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                    <span :class="isProviderConfigured(prov.key) ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'" class="text-2xs font-semibold">
+                      {{ isProviderConfigured(prov.key) ? '● Siap Digunakan' : '○ Belum Dikonfigurasi' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Provider Detail Forms -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <!-- 1. Google Gemini -->
+              <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-700 space-y-3 bg-gray-50/50 dark:bg-gray-800/30">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl">✨</span>
+                    <div>
+                      <h4 class="font-bold text-sm text-gray-900 dark:text-white">Google Gemini</h4>
+                      <p class="text-2xs text-gray-500">Google AI Studio REST API</p>
+                    </div>
+                  </div>
+                  <span :class="getProviderStatusBadgeClass('GEMINI')" class="rounded px-2 py-0.5 text-2xs font-semibold">
+                    {{ getProviderStatusText('GEMINI') }}
+                  </span>
+                </div>
+                <div>
+                  <label class="block text-2xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Gemini API Key</label>
+                  <input
+                    v-model="aiConfig.gemini_api_key"
+                    type="password"
+                    :placeholder="aiConfig.gemini_configured ? '•••••••••••• (Tersimpan)' : 'Masukkan AIzaSy...'"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  />
+                  <p class="text-2xs text-gray-400 mt-1">Dapatkan gratis di Google AI Studio (aistudio.google.com)</p>
+                </div>
+                <div>
+                  <label class="block text-2xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Model Default</label>
+                  <select
+                    v-model="aiConfig.gemini_model"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  >
+                    <option value="gemini-1.5-flash">gemini-1.5-flash (Cepat & Hemat)</option>
+                    <option value="gemini-1.5-pro">gemini-1.5-pro (Penalaran Kompleks)</option>
+                    <option value="gemini-2.0-flash-exp">gemini-2.0-flash-exp (Experimental)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 2. OpenAI GPT -->
+              <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-700 space-y-3 bg-gray-50/50 dark:bg-gray-800/30">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl">🧠</span>
+                    <div>
+                      <h4 class="font-bold text-sm text-gray-900 dark:text-white">OpenAI GPT</h4>
+                      <p class="text-2xs text-gray-500">Official Chat Completions API</p>
+                    </div>
+                  </div>
+                  <span :class="getProviderStatusBadgeClass('OPENAI')" class="rounded px-2 py-0.5 text-2xs font-semibold">
+                    {{ getProviderStatusText('OPENAI') }}
+                  </span>
+                </div>
+                <div>
+                  <label class="block text-2xs font-semibold text-gray-600 dark:text-gray-400 mb-1">OpenAI API Key</label>
+                  <input
+                    v-model="aiConfig.openai_api_key"
+                    type="password"
+                    :placeholder="aiConfig.openai_configured ? '•••••••••••• (Tersimpan)' : 'Masukkan sk-proj-...'"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  />
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-2xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Model Default</label>
+                    <select
+                      v-model="aiConfig.openai_model"
+                      class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    >
+                      <option value="gpt-4o-mini">gpt-4o-mini</option>
+                      <option value="gpt-4o">gpt-4o</option>
+                      <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-2xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Base URL</label>
+                    <input
+                      v-model="aiConfig.openai_base_url"
+                      type="text"
+                      placeholder="https://api.openai.com/v1"
+                      class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Anthropic Claude -->
+              <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-700 space-y-3 bg-gray-50/50 dark:bg-gray-800/30">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl">🎭</span>
+                    <div>
+                      <h4 class="font-bold text-sm text-gray-900 dark:text-white">Anthropic Claude</h4>
+                      <p class="text-2xs text-gray-500">Claude 3.5 Sonnet / Haiku</p>
+                    </div>
+                  </div>
+                  <span :class="getProviderStatusBadgeClass('CLAUDE')" class="rounded px-2 py-0.5 text-2xs font-semibold">
+                    {{ getProviderStatusText('CLAUDE') }}
+                  </span>
+                </div>
+                <div>
+                  <label class="block text-2xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Anthropic API Key</label>
+                  <input
+                    v-model="aiConfig.claude_api_key"
+                    type="password"
+                    :placeholder="aiConfig.claude_configured ? '•••••••••••• (Tersimpan)' : 'Masukkan sk-ant-...'"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label class="block text-2xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Model Default</label>
+                  <select
+                    v-model="aiConfig.claude_model"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  >
+                    <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet-20241022</option>
+                    <option value="claude-3-haiku-20240307">claude-3-haiku-20240307</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 4. DeepSeek -->
+              <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-700 space-y-3 bg-gray-50/50 dark:bg-gray-800/30">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl">⚡</span>
+                    <div>
+                      <h4 class="font-bold text-sm text-gray-900 dark:text-white">DeepSeek</h4>
+                      <p class="text-2xs text-gray-500">DeepSeek-V3 / Coder</p>
+                    </div>
+                  </div>
+                  <span :class="getProviderStatusBadgeClass('DEEPSEEK')" class="rounded px-2 py-0.5 text-2xs font-semibold">
+                    {{ getProviderStatusText('DEEPSEEK') }}
+                  </span>
+                </div>
+                <div>
+                  <label class="block text-2xs font-semibold text-gray-600 dark:text-gray-400 mb-1">DeepSeek API Key</label>
+                  <input
+                    v-model="aiConfig.deepseek_api_key"
+                    type="password"
+                    :placeholder="aiConfig.deepseek_configured ? '•••••••••••• (Tersimpan)' : 'Masukkan sk-...'"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  />
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-2xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Model Default</label>
+                    <select
+                      v-model="aiConfig.deepseek_model"
+                      class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    >
+                      <option value="deepseek-chat">deepseek-chat</option>
+                      <option value="deepseek-coder">deepseek-coder</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-2xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Base URL</label>
+                    <input
+                      v-model="aiConfig.deepseek_base_url"
+                      type="text"
+                      placeholder="https://api.deepseek.com/v1"
+                      class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 5. Ollama (Local AI) -->
+              <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-700 space-y-3 bg-gray-50/50 dark:bg-gray-800/30 md:col-span-2">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl">🦙</span>
+                    <div>
+                      <h4 class="font-bold text-sm text-gray-900 dark:text-white">Ollama Local AI (On-Premises / Offline)</h4>
+                      <p class="text-2xs text-gray-500">Menjalankan LLM lokal tanpa internet di server perusahaan (Privacy-first)</p>
+                    </div>
+                  </div>
+                  <span class="rounded bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 text-2xs font-semibold">
+                    Self-Hosted
+                  </span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-2xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Ollama Base URL</label>
+                    <input
+                      v-model="aiConfig.ollama_base_url"
+                      type="text"
+                      placeholder="http://localhost:11434"
+                      class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white font-mono"
+                    />
+                    <p class="text-2xs text-gray-400 mt-1">Default Ollama lokal: http://localhost:11434</p>
+                  </div>
+                  <div>
+                    <label class="block text-2xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Model Name</label>
+                    <input
+                      v-model="aiConfig.ollama_model"
+                      type="text"
+                      placeholder="llama3"
+                      class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white font-mono"
+                    />
+                    <p class="text-2xs text-gray-400 mt-1">Contoh: llama3, mistral, qwen2.5, deepseek-r1</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -348,102 +672,57 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import { artificialIntelligenceService, type AIConfigData } from '@/services/core/ai.service'
 
-const activeView = ref<'library' | 'simulator'>('library')
+const activeView = ref<'library' | 'simulator' | 'settings'>('library')
 
-const prompts = ref([
-  {
-    id: 1,
-    title: 'Analisis 360° Evaluasi Kinerja & Deteksi Burnout Karyawan',
-    module: 'HR & Payroll',
-    model: 'Gemini 1.5 Pro',
-    description: 'Menganalisis ulasan peer review, tingkat absensi, dan jam lembur untuk mendeteksi risiko kejenuhan kerja serta rekomendasi pengembangan.',
-    tags: ['employee_name', 'review_scores', 'overtime_hours'],
-    system: 'Anda adalah Senior People & Culture Director berpengalaman 15 tahun di perusahaan enterprise multinasional.',
-    sampleInput: 'Nama: Ahmad Fauzi (Software Engineer)\nNilai Kinerja: 88/100\nTotal Lembur Bulan Ini: 38 Jam\nFeedback Rekan: "Sering merespons tiket larut malam, hasil kode berkualitas tinggi namun terlihat kelelahan."',
-    sampleOutput: `
-      <h4 class="font-bold text-gray-900 dark:text-white mb-1">📋 Hasil Analisis People & Culture:</h4>
-      <p><strong>1. Evaluasi Kinerja:</strong> Karyawan menunjukkan komitmen dan hasil teknis luar biasa (Skor 88/100, Tier: Exceeding Expectation).</p>
-      <p><strong>2. Risiko Burnout (Waspada Tinggi):</strong> Lembur 38 jam sebulan melampaui batas wajar kesehatan kerja (maksimal anjuran 14 jam/minggu). Pola kerja larut malam berpotensi menurunkan produktivitas dalam 2-3 bulan ke depan.</p>
-      <p><strong>3. Rekomendasi Otoritas HR:</strong></p>
-      <ul class="list-disc list-inside space-y-1 mt-1 text-gray-600 dark:text-gray-300">
-        <li>Berikan dispensasi cuti pemulihan (wellness day) 1-2 hari.</li>
-        <li>Tinjau ulang alokasi backlog sprint tim untuk re-distribusi beban tiket support.</li>
-        <li>Usulkan promosi jenjang Technical Specialist pada review Q4.</li>
-      </ul>
-    `,
-    icon: '👥'
-  },
-  {
-    id: 2,
-    title: 'Deteksi Anomali & Indikasi Fraud Klaim Biaya Reimbursement',
-    module: 'Finance & Accounting',
-    model: 'Gemini 1.5 Pro',
-    description: 'Pemeriksaan silang nota pengeluaran dengan histori transaksi, kesesuaian plafon divisi, dan duplikasi kwitansi vendor.',
-    tags: ['receipt_total', 'vendor_npwp', 'employee_role'],
-    system: 'Anda adalah Corporate Forensic Auditor bersertifikasi CFE (Certified Fraud Examiner).',
-    sampleInput: 'Divisi: Sales Enterprise\nKlaim: Jamuan Klien Rp 4.850.000\nVendor: Restoran Bintang 5 Sudirman\nTanggal: Sabtu malam pukul 22:30 WIB\nKwitansi: Tidak ada rincian item (hanya nominal total).',
-    sampleOutput: `
-      <h4 class="font-bold text-gray-900 dark:text-white mb-1">🚨 Analisis Audit Kepatuhan Pengeluaran:</h4>
-      <p><strong>Status: PERLU INVESTIGASI LANJUTAN (Flagged Anomaly)</strong></p>
-      <p><strong>Faktor Risiko:</strong></p>
-      <ul class="list-disc list-inside space-y-1 mt-1 text-gray-600 dark:text-gray-300">
-        <li>Kwitansi tanpa rincian pesanan (itemized receipt) melanggar SOP Finance Pasal 8 Ayat 2.</li>
-        <li>Transaksi pada Sabtu malam di luar hari kerja operasional tanpa surat penugasan resmi (ST).</li>
-        <li>Nominal Rp 4.850.000 mendekati plafon maksimal per event (Rp 5.000.000).</li>
-      </ul>
-      <p class="mt-2"><strong>Instruksi ke Finance Officer:</strong> Minta bukti daftar hadir klien (attendees list) dan invoice terperinci sebelum pembayaran diproses.</p>
-    `,
-    icon: '🔍'
-  },
-  {
-    id: 3,
-    title: 'Prediksi Kebutuhan Safety Stock Menghadapi Tren Musiman',
-    module: 'Supply Chain',
-    model: 'Gemini 1.5 Pro',
-    description: 'Menghitung buffer stock gudang, lead time vendor, dan reorder point optimal menjelang puncak permintaan kuartal.',
-    tags: ['sku_code', 'lead_time_days', 'sales_growth_pct'],
-    system: 'Anda adalah Kepala Perencanaan Logistik & Supply Chain Terpadu.',
-    sampleInput: 'SKU: MAT-STEEL-01 (Bahan Baku Utama)\nStok Saat Ini: 420 Unit\nKonsumsi Rata-rata: 50 Unit / Hari\nLead Time Pengiriman Vendor: 14 Hari\nProyeksi Kenaikan Order Q4: +35%',
-    sampleOutput: `
-      <h4 class="font-bold text-gray-900 dark:text-white mb-1">📦 Rekomendasi Pengadaan Persediaan (SCM):</h4>
-      <p><strong>1. Estimasi Kebutuhan Harian Baru:</strong> 50 unit x 1.35 = <strong>67.5 Unit / Hari</strong>.</p>
-      <p><strong>2. Lead Time Demand:</strong> 67.5 x 14 hari = <strong>945 Unit</strong>.</p>
-      <p><strong>3. Status Stok Kritis:</strong> Stok saat ini (420 unit) hanya cukup untuk <strong>6.2 hari ke depan</strong>. Risiko <em>stockout</em> dalam 8 hari ke depan!</p>
-      <p><strong>4. Tindakan Segera:</strong> Rilis Purchase Order (PO) Darurat minimal <strong>1.200 Unit</strong> ke vendor rekanan terverifikasi hari ini.</p>
-    `,
-    icon: '📦'
-  },
-  {
-    id: 4,
-    title: 'Strategi Negosiasi & Closing Deals Penjualan B2B Nilai Tinggi',
-    module: 'Sales & CRM',
-    model: 'Gemini 1.5 Pro',
-    description: 'Menyusun naskah penawaran win-win, mengatasi keberatan diskon harga, dan menyusun klausul kontrak tahunan.',
-    tags: ['deal_size', 'client_industry', 'objection_reason'],
-    system: 'Anda adalah VP of Enterprise Sales berpengalaman menutup kontrak B2B multi-miliar.',
-    sampleInput: 'Klien: PT Manufaktur Logam Prima\nNilai Deal: Rp 1.2 Miliar / Tahun\nKeberatan: "Kompetitor menawarkan harga 15% lebih murah, anggaran kami terbatas kuartal ini."',
-    sampleOutput: `
-      <h4 class="font-bold text-gray-900 dark:text-white mb-1">💼 Strategi Negosiasi B2B:</h4>
-      <p><strong>Taktik: Jangan Menurunkan Harga Pokok, Ubah Struktur Nilai (Value Restructuring)</strong></p>
-      <p><strong>Draf Respon ke Klien:</strong></p>
-      <blockquote class="border-l-2 border-brand-500 pl-3 italic text-gray-600 dark:text-gray-300 mt-1">
-        "Kami sangat memahami pertimbangan anggaran PT Manufaktur Logam Prima. Solusi kami mencakup garansi SLA 99.9% dan dukungan onsite engineer 24/7 yang rata-rata menghemat downtime senilai Rp 300 Juta/tahun dibandingkan opsi lain. Sebagai solusi kuartal ini, kami tawarkan skema pembayaran kuartalan (Rp 300 Juta x 4 termin) ditambah bonus gratis modul IoT Biometrik."
-      </blockquote>
-    `,
-    icon: '🎯'
-  }
-])
+const providerList = [
+  { key: 'GEMINI', name: 'Google Gemini', icon: '✨', desc: '1M Context, Cepat & Cerdas' },
+  { key: 'OPENAI', name: 'OpenAI GPT', icon: '🧠', desc: 'GPT-4o & Mini Standard' },
+  { key: 'CLAUDE', name: 'Anthropic Claude', icon: '🎭', desc: 'Penalaran & Analisis Mendalam' },
+  { key: 'DEEPSEEK', name: 'DeepSeek', icon: '⚡', desc: 'Performa Tinggi & Hemat' },
+  { key: 'OLLAMA', name: 'Ollama Local', icon: '🦙', desc: 'Offline On-Premises Privacy' },
+]
+
+const aiConfig = ref<AIConfigData>({
+  active_provider: 'GEMINI',
+  gemini_api_key: '',
+  gemini_model: 'gemini-1.5-flash',
+  gemini_configured: false,
+  openai_api_key: '',
+  openai_model: 'gpt-4o-mini',
+  openai_base_url: 'https://api.openai.com/v1',
+  openai_configured: false,
+  claude_api_key: '',
+  claude_model: 'claude-3-5-sonnet-20241022',
+  claude_configured: false,
+  deepseek_api_key: '',
+  deepseek_model: 'deepseek-chat',
+  deepseek_base_url: 'https://api.deepseek.com/v1',
+  deepseek_configured: false,
+  ollama_base_url: 'http://localhost:11434',
+  ollama_model: 'llama3',
+  ollama_configured: true,
+})
+
+const isSavingConfig = ref(false)
+const configSaveSuccess = ref(false)
+
+const prompts = ref<any[]>([])
+const isLoading = ref(false)
 
 // Simulator state
 const selectedPromptId = ref<number>(1)
+const simProvider = ref<string>('GEMINI')
+const simModel = ref<string>('gemini-1.5-flash')
 const simSystemPrompt = ref<string>('')
 const simUserInput = ref<string>('')
 const simResult = ref<string>('')
 const isGenerating = ref<boolean>(false)
+const simMeta = ref<{ model_version?: string; latency_ms?: number; tokens_used?: number; is_live?: boolean } | null>(null)
 
 // Modal state
 const isModalOpen = ref(false)
@@ -456,6 +735,86 @@ const formData = ref<any>({
   prompt: ''
 })
 
+const availableModelsFor = (provider: string): string[] => {
+  switch (provider) {
+    case 'GEMINI':
+      return ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash-exp']
+    case 'OPENAI':
+      return ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo']
+    case 'CLAUDE':
+      return ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307']
+    case 'DEEPSEEK':
+      return ['deepseek-chat', 'deepseek-coder']
+    case 'OLLAMA':
+      return ['llama3', 'mistral', 'qwen2.5', 'deepseek-r1']
+    default:
+      return ['default-model']
+  }
+}
+
+const onSimProviderChange = () => {
+  const models = availableModelsFor(simProvider.value)
+  if (models.length > 0) {
+    simModel.value = models[0]
+  }
+}
+
+const getActiveProviderLabel = (): string => {
+  const found = providerList.find(p => p.key === aiConfig.value.active_provider)
+  return found ? found.name : aiConfig.value.active_provider
+}
+
+const getActiveModelLabel = (): string => {
+  switch (aiConfig.value.active_provider) {
+    case 'GEMINI': return aiConfig.value.gemini_model || 'gemini-1.5-flash'
+    case 'OPENAI': return aiConfig.value.openai_model || 'gpt-4o-mini'
+    case 'CLAUDE': return aiConfig.value.claude_model || 'claude-3-5-sonnet'
+    case 'DEEPSEEK': return aiConfig.value.deepseek_model || 'deepseek-chat'
+    case 'OLLAMA': return aiConfig.value.ollama_model || 'llama3'
+    default: return 'Default Model'
+  }
+}
+
+const isProviderConfigured = (key: string): boolean => {
+  switch (key) {
+    case 'GEMINI': return !!aiConfig.value.gemini_configured
+    case 'OPENAI': return !!aiConfig.value.openai_configured
+    case 'CLAUDE': return !!aiConfig.value.claude_configured
+    case 'DEEPSEEK': return !!aiConfig.value.deepseek_configured
+    case 'OLLAMA': return true
+    default: return false
+  }
+}
+
+const getConfiguredProvidersCount = (): number => {
+  let count = 1 // Ollama is always available locally
+  if (aiConfig.value.gemini_configured) count++
+  if (aiConfig.value.openai_configured) count++
+  if (aiConfig.value.claude_configured) count++
+  if (aiConfig.value.deepseek_configured) count++
+  return count
+}
+
+const getProviderStatusBadgeClass = (key: string): string => {
+  if (key === 'OLLAMA') return 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+  if (isProviderConfigured(key)) {
+    return 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+  }
+  return 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+}
+
+const getProviderStatusText = (key: string): string => {
+  if (key === 'OLLAMA') return 'Siap Digunakan'
+  const isEnv = (key === 'GEMINI' && aiConfig.value.gemini_from_env) ||
+    (key === 'OPENAI' && aiConfig.value.openai_from_env) ||
+    (key === 'CLAUDE' && aiConfig.value.claude_from_env) ||
+    (key === 'DEEPSEEK' && aiConfig.value.deepseek_from_env)
+
+  if (isEnv) return 'Terhubung (.env)'
+  if (isProviderConfigured(key)) return 'Terhubung (DB)'
+  return 'Belum Dikonfigurasi'
+}
+
 const getCategoryBadgeClass = (module: string) => {
   switch (module) {
     case 'HR & Payroll': return 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400'
@@ -463,6 +822,67 @@ const getCategoryBadgeClass = (module: string) => {
     case 'Supply Chain': return 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'
     case 'Sales & CRM': return 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'
     default: return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
+  }
+}
+
+const fetchAIConfig = async () => {
+  try {
+    const data = await artificialIntelligenceService.getConfig()
+    if (data) {
+      aiConfig.value = {
+        ...aiConfig.value,
+        ...data,
+      }
+      simProvider.value = data.active_provider || 'GEMINI'
+      onSimProviderChange()
+    }
+  } catch (err) {
+    console.error('Error fetching AI configuration:', err)
+  }
+}
+
+const saveAIConfigurations = async () => {
+  isSavingConfig.value = true
+  configSaveSuccess.value = false
+  try {
+    await artificialIntelligenceService.saveConfig(aiConfig.value)
+    configSaveSuccess.value = true
+    setTimeout(() => {
+      configSaveSuccess.value = false
+    }, 4000)
+    await fetchAIConfig()
+  } catch (err: any) {
+    alert('Gagal menyimpan konfigurasi AI: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isSavingConfig.value = false
+  }
+}
+
+const fetchPrompts = async () => {
+  isLoading.value = true
+  try {
+    const res = await artificialIntelligenceService.getAll()
+    const list = Array.isArray(res) ? res : (res as any)?.data || []
+    prompts.value = list.map((item: any) => ({
+      id: item.id,
+      title: item.title || item.name || 'AI Prompt',
+      module: item.module || 'HR & Payroll',
+      model: item.model || 'Gemini 1.5 Pro',
+      description: item.description || '-',
+      tags: ['data_input', 'parameter'],
+      system: item.system || item.system_prompt || '',
+      sampleInput: item.sampleInput || item.sample_input || 'Input kasus pengujian...',
+      sampleOutput: item.sampleOutput || item.sample_output || '<p>Hasil analisis generatif AI telah siap.</p>',
+      icon: item.icon || '✨'
+    }))
+    if (prompts.value.length > 0) {
+      selectedPromptId.value = prompts.value[0].id
+      onPromptSelected()
+    }
+  } catch (err) {
+    console.error('Error fetching AI prompts:', err)
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -483,16 +903,33 @@ const runInSimulator = (p: any) => {
   activeView.value = 'simulator'
 }
 
-const executeAiSimulation = () => {
+const executeAiSimulation = async () => {
   isGenerating.value = true
-  const currentPrompt = prompts.value.find(item => item.id === selectedPromptId.value)
-  setTimeout(() => {
+  simMeta.value = null
+  try {
+    const res = await artificialIntelligenceService.generate({
+      prompt_id: selectedPromptId.value,
+      provider: simProvider.value,
+      model: simModel.value,
+      system: simSystemPrompt.value,
+      input: simUserInput.value
+    })
+    simResult.value = res?.result || '<p>Analisis AI berhasil diproses.</p>'
+    simMeta.value = {
+      model_version: res?.model_version,
+      latency_ms: res?.latency_ms,
+      tokens_used: res?.tokens_used,
+      is_live: res?.is_live,
+    }
+  } catch (err: any) {
+    alert('Gagal mengeksekusi AI: ' + (err.response?.data?.message || err.message))
+  } finally {
     isGenerating.value = false
-    simResult.value = currentPrompt ? currentPrompt.sampleOutput : '<p>Analisis AI berhasil diproses.</p>'
-  }, 1000)
+  }
 }
 
 const copySimResult = () => {
+  navigator.clipboard.writeText(simResult.value.replace(/<[^>]*>/g, ''))
   alert('Rangkuman AI berhasil disalin ke papan klip.')
 }
 
@@ -516,29 +953,51 @@ const closeModal = () => {
   isModalOpen.value = false
 }
 
-const savePrompt = () => {
-  if (modalMode.value === 'edit') {
-    const idx = prompts.value.findIndex(p => p.id === formData.value.id)
-    if (idx !== -1) {
-      prompts.value[idx] = { ...prompts.value[idx], ...formData.value }
-    }
-  } else {
-    prompts.value.unshift({
-      id: Date.now(),
-      title: formData.value.title,
-      module: formData.value.module,
-      model: formData.value.model,
-      description: formData.value.description,
-      tags: ['data_input', 'parameter'],
-      system: formData.value.prompt,
-      sampleInput: 'Input kasus pengujian...',
-      sampleOutput: '<p>Hasil analisis generatif AI telah siap.</p>',
-      icon: '✨'
-    })
+const deletePrompt = async (p: any) => {
+  if (!confirm(`Hapus template prompt "${p.title}"?`)) return
+  try {
+    await artificialIntelligenceService.delete(p.id)
+    await fetchPrompts()
+  } catch (err: any) {
+    alert('Gagal menghapus prompt: ' + (err.response?.data?.message || err.message))
   }
-  closeModal()
 }
 
-// Initial simulator setup
-onPromptSelected()
+const savePrompt = async () => {
+  try {
+    if (modalMode.value === 'edit') {
+      await artificialIntelligenceService.update(formData.value.id, {
+        title: formData.value.title,
+        name: formData.value.title,
+        module: formData.value.module,
+        model: formData.value.model,
+        description: formData.value.description,
+        system: formData.value.prompt,
+        system_prompt: formData.value.prompt
+      })
+    } else {
+      await artificialIntelligenceService.create({
+        title: formData.value.title,
+        name: formData.value.title,
+        module: formData.value.module,
+        model: formData.value.model,
+        description: formData.value.description,
+        system: formData.value.prompt,
+        system_prompt: formData.value.prompt,
+        sampleInput: 'Input kasus pengujian...',
+        sampleOutput: '<p>Hasil analisis generatif AI telah siap.</p>',
+        icon: '✨'
+      })
+    }
+    closeModal()
+    await fetchPrompts()
+  } catch (err: any) {
+    alert('Gagal menyimpan prompt: ' + (err.response?.data?.message || err.message))
+  }
+}
+
+onMounted(() => {
+  fetchAIConfig()
+  fetchPrompts()
+})
 </script>

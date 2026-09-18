@@ -408,59 +408,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import { reportService } from '@/services/core/report.service'
 
 const activeTab = ref<'templates' | 'exports'>('templates')
 
-const printTemplates = ref([
-  { id: 1, name: 'Faktur Penjualan (Commercial Invoice A4)', code: 'TPL-INV-01', module: 'Finance & Sales', paper_size: 'A4', orientation: 'Portrait', has_header: true, is_default: true, icon: '🧾' },
-  { id: 2, name: 'Slip Gaji Karyawan TER 2024 (Payslip)', code: 'TPL-PAY-02', module: 'HRD & Payroll', paper_size: 'A4 / Half', orientation: 'Portrait', has_header: true, is_default: true, icon: '💵' },
-  { id: 3, name: 'Pesanan Pembelian Vendor (Purchase Order PO)', code: 'TPL-PO-03', module: 'Procurement SCM', paper_size: 'A4', orientation: 'Portrait', has_header: true, is_default: true, icon: '📋' },
-  { id: 4, name: 'Surat Jalan / Bukti Pengiriman Barang (Delivery Order)', code: 'TPL-DO-04', module: 'Warehouse SCM', paper_size: 'Continuous 9.5x11"', orientation: 'Landscape', has_header: false, is_default: true, icon: '🚚' },
-  { id: 5, name: 'Bukti Kas Keluar / Payment Voucher', code: 'TPL-VCH-05', module: 'Finance Cash', paper_size: 'A5', orientation: 'Landscape', has_header: true, is_default: true, icon: '🎫' },
-  { id: 6, name: 'Form Penawaran Resmi (Quotation Letter)', code: 'TPL-QUO-06', module: 'Sales CRM', paper_size: 'A4', orientation: 'Portrait', has_header: true, is_default: true, icon: '💼' }
-])
-
-const exportReports = ref([
-  {
-    id: 1,
-    title: 'Laporan Laba Rugi & Neraca Konsolidasi SAK',
-    frequency: 'Bulanan / Kuartalan',
-    description: 'Neraca lajur, arus kas operasional, dan performa profitabilitas bulanan.',
-    last_run: '31 Agustus 2025',
-    size: '1.4 MB',
-    icon: '📈'
-  },
-  {
-    id: 2,
-    title: 'Rekapitulasi Absensi, Lembur & Potongan PPh 21 Karyawan',
-    frequency: 'Bulanan (Periode 25-25)',
-    description: 'Detail 248 pegawai aktif dengan tarif TER 2024, iuran BPJS TK & BPJS Kesehatan.',
-    last_run: '01 September 2025',
-    size: '890 KB',
-    icon: '👥'
-  },
-  {
-    id: 3,
-    title: 'Laporan Mutasi Persediaan & Nilai Valuasi FIFO Gudang',
-    frequency: 'Mingguan',
-    description: 'Daftar pergerakan SKU keluar-masuk, safety stock, dan dead stock gudang Cikarang & Surabaya.',
-    last_run: '08 September 2025',
-    size: '2.8 MB',
-    icon: '📦'
-  },
-  {
-    id: 4,
-    title: 'Ringkasan Pipeline Penjualan & Realisasi Omzet per Sales Rep',
-    frequency: 'Mingguan',
-    description: 'Konversi leads, win rate deal, dan target kuota revenue kuartal berjalan.',
-    last_run: '12 September 2025',
-    size: '620 KB',
-    icon: '🎯'
-  }
-])
+const printTemplates = ref<any[]>([])
+const exportReports = ref<any[]>([])
+const isExporting = ref(false)
 
 const availableTags = [
   { token: 'company_name', label: 'Nama Resmi Perusahaan (PT Nusa Maju Bersama)' },
@@ -476,6 +433,19 @@ const availableTags = [
 
 const previewingTemplate = ref<any>(null)
 const customizingTpl = ref<any>(null)
+
+const fetchReportData = async () => {
+  try {
+    const [tpls, exports] = await Promise.all([
+      reportService.getTemplates(),
+      reportService.getExports()
+    ])
+    printTemplates.value = Array.isArray(tpls) ? tpls : (tpls as any)?.data || []
+    exportReports.value = Array.isArray(exports) ? exports : (exports as any)?.data || []
+  } catch (err) {
+    console.error('Error fetching report data:', err)
+  }
+}
 
 const openAddTemplateModal = () => {
   alert('Form Tambah Template Layout Baru siap dikonfigurasi.')
@@ -493,8 +463,79 @@ const printSimulation = () => {
   window.print()
 }
 
-const triggerExport = (rep: any, format: string) => {
-  alert(`Memproses pembuatan laporan "${rep.title}" dalam format ${format}. Berkas akan otomatis terunduh...`)
+const triggerExport = async (rep: any, format: string) => {
+  if (isExporting.value) return
+  isExporting.value = true
+  try {
+    let blob: Blob
+    let filename = `${rep.title.replace(/[^a-zA-Z0-9_-]/g, '_')}`
+    if (format === 'PDF') {
+      filename += '.pdf'
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2 style="color: #1e3a8a;">${rep.title}</h2>
+          <p style="color: #64748b; font-size: 12px;">${rep.description}</p>
+          <hr style="border: 1px solid #e2e8f0; margin: 15px 0;" />
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background: #f8fafc;">
+                <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left;">No</th>
+                <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left;">Deskripsi Akun / Item</th>
+                <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">Jumlah (IDR)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="border: 1px solid #cbd5e1; padding: 8px;">1</td>
+                <td style="border: 1px solid #cbd5e1; padding: 8px;">Pendapatan Usaha Utama</td>
+                <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">Rp 850.000.000</td>
+              </tr>
+              <tr>
+                <td style="border: 1px solid #cbd5e1; padding: 8px;">2</td>
+                <td style="border: 1px solid #cbd5e1; padding: 8px;">Beban Operasional & Gaji</td>
+                <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right;">(Rp 320.000.000)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `
+      blob = await reportService.exportPDF({
+        file_name: filename,
+        html_content: htmlContent,
+        page_size: 'A4',
+        orientation: 'Portrait'
+      })
+    } else {
+      filename += '.xlsx'
+      blob = await reportService.exportExcel({
+        file_name: filename,
+        sheet_name: 'Laporan Konsolidasi',
+        headers: ['No', 'Deskripsi / Uraian', 'Periode', 'Nominal (IDR)', 'Status'],
+        data: [
+          [1, 'Pendapatan Usaha', 'September 2026', 850000000, 'Tervalidasi'],
+          [2, 'Biaya Operasional & SDM', 'September 2026', 320000000, 'Tervalidasi'],
+          [3, 'Laba Bersih Sebelum Pajak', 'September 2026', 530000000, 'Final']
+        ]
+      })
+    }
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (err: any) {
+    console.error('Export failed:', err)
+    alert('Gagal mengekspor laporan: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isExporting.value = false
+  }
 }
+
+onMounted(() => {
+  fetchReportData()
+})
 </script>
 

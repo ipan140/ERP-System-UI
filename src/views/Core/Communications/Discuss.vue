@@ -46,7 +46,7 @@
                 <button
                   v-for="ch in publicChannels"
                   :key="ch.id"
-                  @click="activeChannel = ch"
+                  @click="selectChannel(ch)"
                   class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors text-left"
                   :class="activeChannel.id === ch.id ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'"
                 >
@@ -65,7 +65,7 @@
                 <button
                   v-for="dm in directMessages"
                   :key="dm.id"
-                  @click="activeChannel = dm"
+                  @click="selectChannel(dm)"
                   class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors text-left"
                   :class="activeChannel.id === dm.id ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'"
                 >
@@ -142,61 +142,122 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import { discussService } from '@/services/core/discuss.service'
+
+interface IChannelItem {
+  id: number | string
+  code: string
+  name: string
+  members?: string
+  topic?: string
+  unread?: number
+  type?: string
+  online?: boolean
+}
 
 const channelSearch = ref('')
 const newMessage = ref('')
+const isSending = ref(false)
 
-const publicChannels = ref([
-  { id: 'ch_general', name: 'general', members: '248 Anggota', topic: 'Pengumuman umum seluruh karyawan perusahaan', unread: 0 },
-  { id: 'ch_hr', name: 'pengumuman-hrd', members: '248 Anggota', topic: 'Informasi cuti bersama, benefit BPJS, dan slip gaji', unread: 2 },
-  { id: 'ch_finance', name: 'finance-budgeting', members: '18 Anggota', topic: 'Koordinasi penutupan buku akhir bulan & perpajakan', unread: 0 },
-  { id: 'ch_warehouse', name: 'warehouse-cikarang', members: '34 Anggota', topic: 'Laporan barang masuk inbound & mutasi rak', unread: 0 },
-  { id: 'ch_sales', name: 'sales-champions', members: '52 Anggota', topic: 'Target closing kuartal III & diskon approval', unread: 1 },
-])
+const allChannels = ref<IChannelItem[]>([])
+const messages = ref<any[]>([])
 
-const directMessages = ref([
-  { id: 'dm_hr_lead', name: 'Siti Aminah (HR Specialist)', online: true, members: 'Direct Message', topic: 'Obrolan pribadi' },
-  { id: 'dm_finance_head', name: 'Budi Santoso (Finance Manager)', online: true, members: 'Direct Message', topic: 'Obrolan pribadi' },
-  { id: 'dm_director', name: 'Ahmad Fauzi (Direktur)', online: false, members: 'Direct Message', topic: 'Obrolan pribadi' },
-])
-
-const activeChannel = ref(publicChannels.value[0])
-
-const messagesMap = ref<Record<string, any[]>>({
-  ch_general: [
-    { id: 1, sender: 'Ahmad Fauzi (Direktur)', text: 'Selamat pagi rekan-rekan. Terima kasih atas kerja keras seluruh tim pada kuartal ini.', time: '08:30 WIB', isMe: false },
-    { id: 2, sender: 'HR Specialist', text: 'Pengingat: Batas akhir klaim pengobatan bulan September adalah besok pukul 17:00 WIB.', time: '09:15 WIB', isMe: false },
-    { id: 3, sender: 'Saya (Superadmin)', text: 'Server sistem ERP telah diperbarui ke versi Enterprise v2.5.0. Semua modul normal.', time: '10:00 WIB', isMe: true },
-  ],
-  ch_hr: [
-    { id: 1, sender: 'HR Specialist', text: 'Batch slip gaji periode September 2026 telah diposting dan dikirimkan via email/WhatsApp.', time: '10:05 WIB', isMe: false },
-  ],
-  ch_finance: [
-    { id: 1, sender: 'Finance Manager', text: 'Rekonsiliasi bank BCA dan Mandiri sudah sinkron 100%. File e-Faktur PPN siap lapor.', time: '11:20 WIB', isMe: false },
-  ],
+const publicChannels = computed(() => {
+  return allChannels.value.filter(c => c.type !== 'DIRECT')
 })
+
+const directMessages = computed(() => {
+  return allChannels.value.filter(c => c.type === 'DIRECT')
+})
+
+const activeChannel = ref<IChannelItem>({
+  id: 'ch_general',
+  code: 'ch_general',
+  name: 'general',
+  members: '248 Anggota',
+  topic: 'Pengumuman umum seluruh karyawan perusahaan',
+  unread: 0
+})
+
+const getChannelKey = (ch: IChannelItem) => {
+  return ch.code || String(ch.id)
+}
+
+const selectChannel = (ch: IChannelItem) => {
+  activeChannel.value = ch
+  fetchMessages(getChannelKey(ch))
+}
+
+const fetchChannels = async () => {
+  try {
+    const res = await discussService.getChannels()
+    const list = Array.isArray(res) ? res : (res as any)?.data || []
+    if (list.length > 0) {
+      allChannels.value = list.map((item: any) => ({
+        id: item.id,
+        code: item.code || `ch_${item.id}`,
+        name: item.name,
+        members: item.members || '248 Anggota',
+        topic: item.topic || 'Forum diskusi resmi',
+        unread: item.unread || 0,
+        type: item.type || 'PUBLIC',
+        online: item.online || false
+      }))
+      const firstPublic = allChannels.value.find(c => c.type !== 'DIRECT')
+      if (firstPublic) {
+        activeChannel.value = firstPublic
+        await fetchMessages(getChannelKey(firstPublic))
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching channels:', err)
+  }
+}
+
+const fetchMessages = async (channelKey: string) => {
+  try {
+    const res = await discussService.getMessages(channelKey)
+    const list = Array.isArray(res) ? res : (res as any)?.data || []
+    messages.value = list.map((m: any) => ({
+      id: m.id,
+      sender: m.sender || 'System',
+      text: m.text || m.message || '',
+      time: m.created_at ? new Date(m.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB' : 'Sekarang',
+      isMe: m.is_me ?? false
+    }))
+  } catch (err) {
+    console.error('Error fetching messages:', err)
+  }
+}
 
 const activeMessages = computed(() => {
-  return messagesMap.value[activeChannel.value.id] || [
-    { id: 1, sender: 'Sistem', text: 'Belum ada riwayat pesan di percakapan ini. Mulailah menyapa!', time: 'Sekarang', isMe: false },
-  ]
+  if (messages.value.length === 0) {
+    return [
+      { id: 0, sender: 'Sistem', text: 'Belum ada riwayat pesan di saluran ini. Mulailah menyapa!', time: 'Sekarang', isMe: false }
+    ]
+  }
+  return messages.value
 })
 
-const sendMessage = () => {
-  if (!newMessage.value.trim()) return
-  if (!messagesMap.value[activeChannel.value.id]) {
-    messagesMap.value[activeChannel.value.id] = []
+const sendMessage = async () => {
+  const text = newMessage.value.trim()
+  if (!text || isSending.value) return
+  isSending.value = true
+  try {
+    const key = getChannelKey(activeChannel.value)
+    await discussService.sendMessage(key, text, 'Saya (Superadmin)')
+    newMessage.value = ''
+    await fetchMessages(key)
+  } catch (err: any) {
+    alert('Gagal mengirim pesan: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isSending.value = false
   }
-  const now = new Date()
-  messagesMap.value[activeChannel.value.id].push({
-    id: Date.now(),
-    sender: 'Saya (Superadmin)',
-    text: newMessage.value.trim(),
-    time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB',
-    isMe: true,
-  })
-  newMessage.value = ''
 }
+
+onMounted(() => {
+  fetchChannels()
+})
 </script>

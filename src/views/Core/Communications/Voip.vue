@@ -142,31 +142,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import { voipService } from '@/services/core/voip.service'
 
 const isDialerOpen = ref(false)
 const dialNumber = ref('')
 const callStatus = ref('Siap Melakukan Panggilan')
+const isCalling = ref(false)
 
-const extensions = ref([
-  { ext: '101', user: 'Siti Aminah', dept: 'Human Resources & General Affairs', device: 'Yealink T46U SIP', ip: '192.168.10.101', status: 'AVAILABLE' },
-  { ext: '102', user: 'Budi Santoso', dept: 'Finance & Accounting', device: 'Grandstream GXP2170', ip: '192.168.10.102', status: 'AVAILABLE' },
-  { ext: '103', user: 'Joko Prabowo', dept: 'Supply Chain & Warehouse Cikarang', device: 'Fanvil X4U Industrial', ip: '192.168.20.103', status: 'ON CALL' },
-  { ext: '104', user: 'Rina Kusuma', dept: 'Sales & Marketing Enterprise', device: 'WebRTC Softphone Desktop', ip: '192.168.10.104', status: 'AVAILABLE' },
-  { ext: '201', user: 'Helpdesk Support Tier-1', dept: 'Customer Service & IT Support', device: 'Call Center Queue SIP', ip: '192.168.10.201', status: 'AVAILABLE' },
-])
+const extensions = ref<any[]>([])
+
+const fetchExtensions = async () => {
+  try {
+    const res = await voipService.getExtensions()
+    extensions.value = Array.isArray(res) ? res : (res as any)?.data || []
+  } catch (err) {
+    console.error('Error fetching VoIP extensions:', err)
+  }
+}
 
 const callExtension = (ext: string) => {
   dialNumber.value = ext
   isDialerOpen.value = true
 }
 
-const startCall = () => {
-  if (!dialNumber.value) return
+const startCall = async () => {
+  if (!dialNumber.value || isCalling.value) return
+  isCalling.value = true
   callStatus.value = `Menghubungi Ekstensi ${dialNumber.value}...`
-  setTimeout(() => {
-    callStatus.value = `Tersambung (00:03) - Audio HD Clear`
-  }, 1500)
+  try {
+    const res = await voipService.initiateCall(dialNumber.value)
+    callStatus.value = res?.status || 'Tersambung (00:03) - Audio HD Clear'
+  } catch (err: any) {
+    callStatus.value = 'Gagal terhubung: ' + (err.response?.data?.message || err.message)
+  } finally {
+    isCalling.value = false
+  }
 }
+
+onMounted(() => {
+  fetchExtensions()
+})
 </script>

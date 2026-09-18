@@ -171,7 +171,7 @@
               <span class="rounded bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                 {{ tpl.category }}
               </span>
-              <span class="text-[10px] font-mono text-gray-400">ID: {{ tpl.id }}</span>
+              <span class="text-[10px] font-mono text-gray-400">ID: {{ tpl.code || tpl.id }}</span>
             </div>
             <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-2">{{ tpl.name }}</h4>
             <div class="rounded-lg bg-gray-50 p-3 font-mono text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300 whitespace-pre-line leading-relaxed">
@@ -209,14 +209,14 @@
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
               <tr v-for="log in waLogs" :key="log.id" class="hover:bg-gray-50/50 dark:hover:bg-gray-800/40">
                 <td class="px-5 py-3.5 font-mono text-emerald-600 dark:text-emerald-400 font-medium">{{ log.phone }}</td>
-                <td class="px-5 py-3.5 font-medium text-gray-900 dark:text-white">{{ log.name }}</td>
-                <td class="px-5 py-3.5 text-gray-600 dark:text-gray-300">{{ log.template }}</td>
+                <td class="px-5 py-3.5 font-medium text-gray-900 dark:text-white">{{ log.recipient || log.name || '-' }}</td>
+                <td class="px-5 py-3.5 text-gray-600 dark:text-gray-300">{{ log.template_name || log.template || '-' }}</td>
                 <td class="px-5 py-3.5">
-                  <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                  <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="log.status === 'FAILED' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'">
                     {{ log.status }}
                   </span>
                 </td>
-                <td class="px-5 py-3.5 text-gray-400">{{ log.time }}</td>
+                <td class="px-5 py-3.5 text-gray-400">{{ formatTime(log.sent_at || log.time) }}</td>
               </tr>
             </tbody>
           </table>
@@ -253,7 +253,7 @@
                 v-model="selectedTestTemplateId"
                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               >
-                <option v-for="t in templates" :key="t.id" :value="t.id">{{ t.name }}</option>
+                <option v-for="t in templates" :key="t.code || t.id" :value="t.code || t.id">{{ t.name }}</option>
               </select>
             </div>
 
@@ -286,12 +286,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { http } from '@/services/http'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PaginationBar from '@/components/common/PaginationBar.vue'
 import type { PaginationMeta } from '@/types'
 
 const activeTab = ref<'config' | 'templates' | 'logs'>('config')
+const isSaving = ref(false)
 const saveSuccessMsg = ref(false)
 const isTestModalOpen = ref(false)
 const testPhone = ref('6281298765432')
@@ -302,73 +304,125 @@ const testResult = ref<string | null>(null)
 const pagination = ref<PaginationMeta>({
   page: 1,
   per_page: 10,
-  total: 4,
+  total: 0,
   total_pages: 1,
   has_next: false,
   has_prev: false
 })
 
 const onPaginationChange = (newPag: PaginationMeta) => {
-  pagination.value = newPag
+  fetchLogs(newPag.page, newPag.per_page)
 }
 
 const gwConfig = ref({
   provider: 'WABA_CLOUD',
-  apiToken: 'EAAG12348765SECRETTOKENERP...',
-  phoneId: '1092837465019',
+  apiToken: '',
+  phoneId: '',
   webhookUrl: 'https://erp.perusahaan.co.id/api/whatsapp/webhook',
 })
 
-const templates = ref([
-  {
-    id: 'TPL_PAYROLL_01',
-    category: 'Payroll & HRIS',
-    name: 'Notifikasi Slip Gaji Karyawan',
-    content: `Halo {{1}}, Slip Gaji Elektronik Anda untuk periode {{2}} telah terbit.\nTotal Gaji Bersih: {{3}}.\nSilakan unduh dokumen terlampir pada portal ERP ESS. Terima kasih.`,
-  },
-  {
-    id: 'TPL_LEAVE_APPROVAL',
-    category: 'HR Attendance',
-    name: 'Persetujuan Pengajuan Cuti',
-    content: `Yth {{1}}, permohonan {{2}} Anda selama {{3}} hari telah DISETUJUI oleh atasan langsung.\nSisa cuti tahunan Anda: {{4}} hari.`,
-  },
-  {
-    id: 'TPL_INVOICE_BILLING',
-    category: 'Finance & Accounting',
-    name: 'Tagihan Faktur Penjualan',
-    content: `Yth. Pelanggan {{1}}, Invoice {{2}} senilai {{3}} telah jatuh tempo pada {{4}}.\nSilakan lakukan pembayaran ke rekening Virtual Account BCA / Mandiri terlampir.`,
-  },
-  {
-    id: 'TPL_AUTH_OTP',
-    category: 'Security & Auth',
-    name: 'Kode OTP Verifikasi Login',
-    content: `KODE KEAMANAN ERP: {{1}} adalah kode rahasia verifikasi login sistem Anda. Jangan berikan kepada siapapun termasuk staf IT. Berlaku 5 menit.`,
-  },
-])
+const templates = ref<any[]>([])
+const waLogs = ref<any[]>([])
 
-const waLogs = ref([
-  { id: 1, phone: '+62 812-8812-9901', name: 'Budi Santoso (Staff HR)', template: 'Notifikasi Slip Gaji Karyawan', status: 'READ ✓✓', time: '10:14 WIB' },
-  { id: 2, phone: '+62 813-7721-4452', name: 'Siti Aminah (Finance AP)', template: 'Notifikasi Slip Gaji Karyawan', status: 'READ ✓✓', time: '10:14 WIB' },
-  { id: 3, phone: '+62 821-3344-5566', name: 'PT Surya Prima (Vendor)', template: 'Tagihan Faktur Penjualan', status: 'DELIVERED ✓', time: '09:30 WIB' },
-  { id: 4, phone: '+62 811-9988-1122', name: 'Direktur Operasional', template: 'Persetujuan Pengajuan Cuti', status: 'READ ✓✓', time: 'Kemarin 16:45' },
-])
+const fetchGatewayConfig = async () => {
+  try {
+    const res = await http.get('/whatsapp/config')
+    if (res.data?.data) {
+      const d = res.data.data
+      gwConfig.value = {
+        provider: d.provider || 'WABA_CLOUD',
+        apiToken: d.api_token || '',
+        phoneId: d.phone_id || '',
+        webhookUrl: d.webhook_url || 'https://erp.perusahaan.co.id/api/whatsapp/webhook',
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load WhatsApp config:', err)
+  }
+}
 
-const saveGatewayConfig = () => {
-  saveSuccessMsg.value = true
-  setTimeout(() => { saveSuccessMsg.value = false }, 3000)
+const saveGatewayConfig = async () => {
+  isSaving.value = true
+  saveSuccessMsg.value = false
+  try {
+    await http.post('/whatsapp/config', {
+      provider: gwConfig.value.provider,
+      api_token: gwConfig.value.apiToken,
+      phone_id: gwConfig.value.phoneId,
+      webhook_url: gwConfig.value.webhookUrl,
+    })
+    saveSuccessMsg.value = true
+    setTimeout(() => { saveSuccessMsg.value = false }, 3000)
+  } catch (err: any) {
+    alert(`Gagal menyimpan konfigurasi WhatsApp: ${err.response?.data?.message || err.message}`)
+  } finally {
+    isSaving.value = false
+  }
+}
+
+const fetchTemplates = async () => {
+  try {
+    const res = await http.get('/whatsapp/templates')
+    if (res.data?.data) {
+      templates.value = res.data.data
+      if (templates.value.length > 0 && !selectedTestTemplateId.value) {
+        selectedTestTemplateId.value = templates.value[0].code || templates.value[0].id
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load templates:', err)
+  }
+}
+
+const fetchLogs = async (page = pagination.value.page, perPage = pagination.value.per_page) => {
+  try {
+    const res = await http.get('/whatsapp/logs', {
+      params: { page, per_page: perPage }
+    })
+    if (res.data?.data) {
+      waLogs.value = res.data.data
+      if (res.data?.meta) {
+        pagination.value = res.data.meta
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load WhatsApp logs:', err)
+  }
 }
 
 const testTemplate = (tpl: any) => {
-  selectedTestTemplateId.value = tpl.id
+  selectedTestTemplateId.value = tpl.code || tpl.id
   isTestModalOpen.value = true
 }
 
-const sendTestWA = () => {
+const sendTestWA = async () => {
   isSending.value = true
   testResult.value = null
-  setTimeout(() => {
+  try {
+    const res = await http.post('/whatsapp/test', {
+      phone: testPhone.value,
+      template_code: selectedTestTemplateId.value,
+    })
+    testResult.value = res.data?.message || `✓ Berhasil! Pesan template WhatsApp telah terkirim ke ${testPhone.value}.`
+    fetchLogs()
+  } catch (err: any) {
+    const errMsg = err.response?.data?.message || err.response?.data?.error || err.message
+    testResult.value = `✗ Gagal mengirim: ${errMsg}`
+    fetchLogs()
+  } finally {
     isSending.value = false
-    testResult.value = `✓ Berhasil! Pesan template WhatsApp telah terkirim ke nomor ${testPhone.value} dengan status DELIVERED.`
-  }, 1000)
+  }
 }
+
+const formatTime = (ts: string) => {
+  if (!ts) return '-'
+  const d = new Date(ts)
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
+
+onMounted(() => {
+  fetchGatewayConfig()
+  fetchTemplates()
+  fetchLogs()
+})
 </script>

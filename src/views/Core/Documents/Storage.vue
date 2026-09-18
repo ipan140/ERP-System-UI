@@ -36,20 +36,20 @@
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <span class="text-xs font-semibold uppercase text-gray-400">Total Terpakai</span>
           <div class="mt-2 flex items-baseline justify-between">
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">14.8 GB</h3>
-            <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-300">14.8%</span>
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatSize(storageStats.total_bytes) }}</h3>
+            <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-300">{{ storageStats.used_percent.toFixed(1) }}%</span>
           </div>
           <div class="mt-3 h-2 w-full rounded-full bg-gray-100 dark:bg-gray-800">
-            <div class="h-2 rounded-full bg-amber-500" style="width: 14.8%"></div>
+            <div class="h-2 rounded-full bg-amber-500" :style="{ width: Math.min(storageStats.used_percent, 100) + '%' }"></div>
           </div>
-          <p class="text-xs text-gray-500 mt-2">Batas Kuota: 100.0 GB</p>
+          <p class="text-xs text-gray-500 mt-2">Batas Kuota: {{ formatSize(storageStats.quota_bytes) }}</p>
         </div>
 
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <span class="text-xs font-semibold uppercase text-gray-400">Arsip HR & Slip Gaji</span>
           <div class="mt-2 flex items-baseline justify-between">
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">4.2 GB</h3>
-            <span class="text-xs text-gray-500">2,480 Files</span>
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatSize(storageStats.hr_bytes) }}</h3>
+            <span class="text-xs text-gray-500">{{ storageStats.hr_files }} Files</span>
           </div>
           <p class="text-xs text-blue-600 mt-2">PDF Slip Gaji, KTP & Kontrak</p>
         </div>
@@ -57,8 +57,8 @@
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <span class="text-xs font-semibold uppercase text-gray-400">Faktur & Keuangan</span>
           <div class="mt-2 flex items-baseline justify-between">
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">5.8 GB</h3>
-            <span class="text-xs text-gray-500">4,120 Files</span>
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatSize(storageStats.finance_bytes) }}</h3>
+            <span class="text-xs text-gray-500">{{ storageStats.finance_files }} Files</span>
           </div>
           <p class="text-xs text-emerald-600 mt-2">e-Faktur PPN, Bukti Bayar & PO</p>
         </div>
@@ -66,10 +66,10 @@
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <span class="text-xs font-semibold uppercase text-gray-400">Penyedia Storage</span>
           <div class="mt-2 flex items-baseline justify-between">
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white">AWS S3 / MinIO</h3>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ storageDriver === 'S3' ? 'AWS S3 / MinIO' : storageDriver }}</h3>
             <span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">ACTIVE</span>
           </div>
-          <p class="text-xs text-gray-500 mt-2">Bucket: erp-company-dms</p>
+          <p class="text-xs text-gray-500 mt-2">Bucket: {{ s3Config.bucket || 'erp-company-dms' }}</p>
         </div>
       </div>
 
@@ -252,6 +252,18 @@ const storageDriver = ref('S3')
 const isLoading = ref(false)
 const records = ref<any[]>([])
 
+const storageStats = ref({
+  total_bytes: 0,
+  used_percent: 0,
+  hr_bytes: 0,
+  hr_files: 0,
+  finance_bytes: 0,
+  finance_files: 0,
+  quota_bytes: 100 * 1024 * 1024 * 1024,
+  driver: 'S3',
+  bucket: ''
+})
+
 const pagination = ref<IPaginationMeta>({
   current_page: 1,
   per_page: 10,
@@ -270,31 +282,48 @@ const onPaginationChange = (payload: { page: number; limit: number }) => {
 const s3Config = ref({
   bucket: 'erp-company-dms',
   region: 'ap-southeast-1',
-  accessKey: 'AKIAIOSFODNN7EXAMPLE',
-  secretKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+  accessKey: '',
+  secretKey: ''
 })
 
-const cleanTempFiles = () => {
+const cleanTempFiles = async () => {
   isCleaning.value = true
-  setTimeout(() => {
+  try {
+    const res = await storageService.cleanTemp()
+    alert(res?.message || '✓ Berhasil membersihkan temporary cache storage.')
+    fetchStats()
+  } catch (err: any) {
+    alert('Gagal membersihkan temp files: ' + (err.response?.data?.message || err.message))
+  } finally {
     isCleaning.value = false
-    alert('✓ Berhasil! 382 MB file temporary cache & preview PDF berhasil dibersihkan.')
-  }, 1000)
+  }
 }
 
-const saveStorageConfig = () => {
-  saveSuccess.value = true
-  setTimeout(() => {
-    saveSuccess.value = false
-  }, 3000)
+const saveStorageConfig = async () => {
+  try {
+    await storageService.saveConfig({
+      driver: storageDriver.value,
+      bucket: s3Config.value.bucket,
+      region: s3Config.value.region,
+      access_key: s3Config.value.accessKey,
+      secret_key: s3Config.value.secretKey
+    })
+    saveSuccess.value = true
+    setTimeout(() => {
+      saveSuccess.value = false
+    }, 3000)
+    fetchStats()
+  } catch (err: any) {
+    alert('Gagal menyimpan konfigurasi: ' + (err.response?.data?.message || err.message))
+  }
 }
 
 const formatSize = (bytes?: number) => {
   if (!bytes || bytes === 0) return '0 B'
   const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + (sizes[i] || 'B')
 }
 
 const formatDate = (dateStr?: string) => {
@@ -303,6 +332,45 @@ const formatDate = (dateStr?: string) => {
     return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
   } catch {
     return dateStr
+  }
+}
+
+const fetchStats = async () => {
+  try {
+    const res = await storageService.getStats()
+    if (res) {
+      storageStats.value = {
+        total_bytes: res.total_bytes || 0,
+        used_percent: res.used_percent || 0,
+        hr_bytes: res.hr_bytes || 0,
+        hr_files: res.hr_files || 0,
+        finance_bytes: res.finance_bytes || 0,
+        finance_files: res.finance_files || 0,
+        quota_bytes: res.quota_bytes || 100 * 1024 * 1024 * 1024,
+        driver: res.driver || 'S3',
+        bucket: res.bucket || ''
+      }
+      if (res.driver) storageDriver.value = res.driver
+    }
+  } catch (err) {
+    console.error('Error fetching storage stats:', err)
+  }
+}
+
+const fetchConfig = async () => {
+  try {
+    const res = await storageService.getConfig()
+    if (res) {
+      if (res.driver) storageDriver.value = res.driver
+      s3Config.value = {
+        bucket: res.bucket || '',
+        region: res.region || '',
+        accessKey: res.access_key || '',
+        secretKey: res.secret_key || ''
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching storage config:', err)
   }
 }
 
@@ -328,5 +396,7 @@ const fetchData = async () => {
 
 onMounted(() => {
   fetchData()
+  fetchStats()
+  fetchConfig()
 })
 </script>

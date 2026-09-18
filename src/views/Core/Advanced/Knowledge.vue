@@ -305,14 +305,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import { knowledgeService } from '@/services/core/knowledge.service'
 
 interface IArticle {
   id: number
   title: string
-  category: 'HR & Kepegawaian' | 'Finance & Pajak' | 'SCM & Gudang' | 'IT & Keamanan'
+  name?: string
+  category: 'HR & Kepegawaian' | 'Finance & Pajak' | 'SCM & Gudang' | 'IT & Keamanan' | string
   summary: string
   content: string
   author: string
@@ -320,92 +322,9 @@ interface IArticle {
   updated_at: string
 }
 
-const articles = ref<IArticle[]>([
-  {
-    id: 1,
-    title: 'Buku Panduan Karyawan Baru (Employee Handbook 2025)',
-    category: 'HR & Kepegawaian',
-    summary: 'Pedoman lengkap orientasi dan budaya korporat bagi 100-1000 karyawan: jam kerja, dress code, tunjangan BPJS, dan hak asuransi.',
-    content: `
-      <h4 class="font-bold text-gray-900 dark:text-white">1. Jam Kerja & Presensi</h4>
-      <p>Jam kerja reguler adalah Senin s.d. Jumat pukul 08.30 - 17.30 WIB dengan istirahat 1 jam. Presensi wajib dilakukan melalui mesin biometrik atau mobile GPS portal sebelum pukul 08.45 WIB.</p>
-      <h4 class="font-bold text-gray-900 dark:text-white mt-3">2. Tunjangan & Asuransi</h4>
-      <p>Seluruh pegawai tetap dan PKWT didaftarkan pada BPJS Ketenagakerjaan (JKK, JKM, JHT, JP) dan BPJS Kesehatan sejak hari pertama kerja. Plafon rawat inap tambahan berlaku setelah masa percobaan 3 bulan.</p>
-    `,
-    author: 'HR People & Culture Lead',
-    reading_time: '12 Menit',
-    updated_at: '10 September 2025'
-  },
-  {
-    id: 2,
-    title: 'SOP Pengajuan Cuti Tahunan, Izin Sakit & Cuti Melahirkan',
-    category: 'HR & Kepegawaian',
-    summary: 'Mekanisme mandiri pengajuan kuota 12 hari cuti tahunan, dispensasi khusus berbayar, dan SLA persetujuan atasan langsung.',
-    content: `
-      <h4 class="font-bold text-gray-900 dark:text-white">1. Prosedur Cuti Tahunan</h4>
-      <p>Pengajuan wajib diajukan minimal 3 hari kerja sebelum tanggal pelaksanaan melalui menu Self-Service Portal Karyawan.</p>
-      <h4 class="font-bold text-gray-900 dark:text-white mt-3">2. Izin Sakit</h4>
-      <p>Izin sakit lebih dari 1 (satu) hari kalender wajib melampirkan Surat Keterangan Dokter berizin resmi dengan diagnosa medis.</p>
-    `,
-    author: 'HR Operations',
-    reading_time: '5 Menit',
-    updated_at: '08 September 2025'
-  },
-  {
-    id: 3,
-    title: 'Pedoman Klaim Reimbursement Rawat Jalan & Perjalanan Dinas',
-    category: 'Finance & Pajak',
-    summary: 'Ketentuan nota kuitansi bermeterai, plafon kacamata tahunan Rp 1.500.000, serta uang saku perjalanan dinas luar kota.',
-    content: `
-      <h4 class="font-bold text-gray-900 dark:text-white">1. Nota & Bukti Pembayaran</h4>
-      <p>Semua kuitansi rawat jalan wajib mencantumkan nama pegawai dan cap stempel klinik/rumah sakit. Batas pengajuan adalah tanggal 20 setiap bulannya.</p>
-      <h4 class="font-bold text-gray-900 dark:text-white mt-3">2. Perjalanan Dinas</h4>
-      <p>Tiket transportasi dan hotel bintang 3/4 dipesan terpusat oleh General Affairs. Uang saku harian ditransfer via Payroll pada hari kepulangan.</p>
-    `,
-    author: 'Finance & Accounting Lead',
-    reading_time: '7 Menit',
-    updated_at: '02 September 2025'
-  },
-  {
-    id: 4,
-    title: 'SOP Pengadaan Barang & Approval Purchase Order (PO) > Rp 50 Juta',
-    category: 'SCM & Gudang',
-    summary: 'Kebijakan 3 vendor pembanding (tender komparatif) dan matriks tanda tangan otorisasi berjenjang untuk integritas pengeluaran.',
-    content: `
-      <h4 class="font-bold text-gray-900 dark:text-white">1. Batas Nominal & Matriks Approval</h4>
-      <p>Nilai pengadaan Rp 1 - 50 Juta disetujui Department Head. Nilai > Rp 50 Juta wajib melampirkan minimal 3 penawaran vendor dan disetujui oleh Direktur Keuangan.</p>
-    `,
-    author: 'Procurement Specialist',
-    reading_time: '8 Menit',
-    updated_at: '25 Agustus 2025'
-  },
-  {
-    id: 5,
-    title: 'Standar K3, APD, dan Keselamatan Gudang Distribusi Cikarang',
-    category: 'SCM & Gudang',
-    summary: 'Prosedur keselamatan kerja area bongkar muat, kewajiban sepatu safety boot, helm pelindung, dan batas kecepatan forklift 10 km/jam.',
-    content: `
-      <h4 class="font-bold text-gray-900 dark:text-white">1. Alat Pelindung Diri (APD)</h4>
-      <p>Setiap orang yang memasuki zona gudang wajib mengenakan helm keselamatan, rompi high-visibility, dan sepatu boot berujung baja (steel-toe).</p>
-    `,
-    author: 'Warehouse HSE Officer',
-    reading_time: '10 Menit',
-    updated_at: '15 Agustus 2025'
-  },
-  {
-    id: 6,
-    title: 'Protokol Keamanan Password, Otentikasi 2FA, & Anti-Phishing',
-    category: 'IT & Keamanan',
-    summary: 'Standar kata sandi minimum 12 karakter alfanumerik, aktivasi TOTP authenticator untuk hak akses ERP, dan cara lapor insiden siber.',
-    content: `
-      <h4 class="font-bold text-gray-900 dark:text-white">1. Kebijakan Kredensial</h4>
-      <p>Kata sandi akun ERP kedaluwarsa otomatis setiap 90 hari. Dilarang menggunakan password berulang atau membagikan akun kepada rekan kerja.</p>
-    `,
-    author: 'Chief Information Security Officer',
-    reading_time: '6 Menit',
-    updated_at: '11 September 2025'
-  }
-])
+const articles = ref<IArticle[]>([])
+const isLoading = ref(false)
+const isSaving = ref(false)
 
 const searchQuery = ref('')
 const selectedCategory = ref('Semua')
@@ -420,6 +339,29 @@ const newArticle = ref<Partial<IArticle>>({
   content: '',
   reading_time: '5 Menit'
 })
+
+const fetchArticles = async () => {
+  isLoading.value = true
+  try {
+    const res = await knowledgeService.getAll()
+    const list = Array.isArray(res) ? res : (res as any)?.data || []
+    articles.value = list.map((item: any) => ({
+      id: item.id,
+      title: item.title || item.name || 'Dokumen SOP',
+      name: item.name || item.title || '',
+      category: item.category || 'HR & Kepegawaian',
+      summary: item.summary || '-',
+      content: item.content || '',
+      author: item.author || 'HR Operations',
+      reading_time: item.reading_time || '5 Menit',
+      updated_at: item.updated_at ? new Date(item.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Baru saja'
+    }))
+  } catch (err) {
+    console.error('Error loading SOP articles:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const filteredArticles = computed(() => {
   return articles.value.filter(art => {
@@ -457,23 +399,35 @@ const openCreateModal = () => {
   isCreateModalOpen.value = true
 }
 
-const saveArticle = () => {
-  const item: IArticle = {
-    id: Date.now(),
-    title: newArticle.value.title || 'SOP Baru',
-    category: newArticle.value.category as any,
-    summary: newArticle.value.summary || '-',
-    content: `<p>${newArticle.value.content?.replace(/\n/g, '<br/>') || ''}</p>`,
-    author: 'Superadmin',
-    reading_time: newArticle.value.reading_time || '5 Menit',
-    updated_at: 'Hari ini'
+const saveArticle = async () => {
+  if (!newArticle.value.title?.trim()) return
+  isSaving.value = true
+  try {
+    await knowledgeService.create({
+      title: newArticle.value.title,
+      name: newArticle.value.title,
+      category: newArticle.value.category,
+      summary: newArticle.value.summary || '-',
+      content: `<p>${newArticle.value.content?.replace(/\n/g, '<br/>') || ''}</p>`,
+      author: 'Superadmin',
+      reading_time: newArticle.value.reading_time || '5 Menit',
+      status: 'PUBLISHED'
+    })
+    isCreateModalOpen.value = false
+    await fetchArticles()
+  } catch (err: any) {
+    alert('Gagal menyimpan SOP: ' + (err.response?.data?.message || err.message))
+  } finally {
+    isSaving.value = false
   }
-  articles.value.unshift(item)
-  isCreateModalOpen.value = false
 }
 
 const printArticle = () => {
   window.print()
 }
+
+onMounted(() => {
+  fetchArticles()
+})
 </script>
 

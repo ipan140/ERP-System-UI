@@ -25,4 +25,24 @@ export const iotService = {
   async delete(id: number | string): Promise<void> {
     await http.delete(`/iot/${id}`);
   },
+
+  async getDevices(): Promise<any[]> {
+    const response = await http.get<IResponse<any[]>>("/iot/devices");
+    return response.data.data ?? response.data;
+  },
+
+  async getAttendanceLogs(): Promise<any[]> {
+    const response = await http.get<IResponse<any[]>>("/iot/attendance-logs");
+    return response.data.data ?? response.data;
+  },
+
+  async pingDevice(id: number | string): Promise<any> {
+    const response = await http.post<IResponse<any>>(`/iot/ping/${id}`);
+    return response.data.data ?? response.data;
+  },
+
+  async syncPresensi(): Promise<any> {
+    const response = await http.post<IResponse<any>>("/iot/sync-presensi");
+    return response.data.data ?? response.data;
+  }
 };

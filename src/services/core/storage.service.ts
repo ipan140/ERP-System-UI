@@ -35,4 +35,24 @@ export const storageService = {
   async delete(id: number | string): Promise<void> {
     await http.delete(`/core/storage/${id}`);
   },
+
+  async getConfig(): Promise<any> {
+    const response = await http.get<IResponse<any>>("/core/storage/config");
+    return response.data.data ?? response.data;
+  },
+
+  async saveConfig(payload: any): Promise<any> {
+    const response = await http.post<IResponse<any>>("/core/storage/config", payload);
+    return response.data.data ?? response.data;
+  },
+
+  async getStats(): Promise<any> {
+    const response = await http.get<IResponse<any>>("/core/storage/stats");
+    return response.data.data ?? response.data;
+  },
+
+  async cleanTemp(): Promise<any> {
+    const response = await http.post<IResponse<any>>("/core/storage/clean-temp");
+    return response.data.data ?? response.data;
+  },
 };

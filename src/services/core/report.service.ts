@@ -25,4 +25,29 @@ export const reportService = {
   async delete(id: number | string): Promise<void> {
     await http.delete(`/core/report/${id}`);
   },
+
+  async getTemplates(): Promise<any[]> {
+    const response = await http.get<IResponse<any[]>>("/core/report/templates");
+    return response.data.data ?? response.data;
+  },
+
+  async createTemplate(payload: any): Promise<any> {
+    const response = await http.post<IResponse<any>>("/core/report/templates", payload);
+    return response.data.data ?? response.data;
+  },
+
+  async getExports(): Promise<any[]> {
+    const response = await http.get<IResponse<any[]>>("/core/report/exports");
+    return response.data.data ?? response.data;
+  },
+
+  async exportExcel(payload: any): Promise<Blob> {
+    const response = await http.post("/core/report/excel", payload, { responseType: "blob" });
+    return response.data;
+  },
+
+  async exportPDF(payload: any): Promise<Blob> {
+    const response = await http.post("/core/report/pdf", payload, { responseType: "blob" });
+    return response.data;
+  }
 };
